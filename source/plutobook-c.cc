@@ -1,6 +1,6 @@
 #include "plutobook.hpp"
 
-#include <cairo-pdf.h>
+#include <cairo/cairo-pdf.h>
 
 #include <cstdarg>
 #include <cstring>

@@ -1,7 +1,7 @@
 #include "svg-resource-box.h"
 #include "svg-geometry-box.h"
 
-#include <cairo.h>
+#include <cairo/cairo.h>
 
 namespace plutobook {
 
