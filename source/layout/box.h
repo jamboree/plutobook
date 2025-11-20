@@ -1,7 +1,7 @@
 #ifndef PLUTOBOOK_BOX_H
 #define PLUTOBOOK_BOX_H
 
-#include "boxstyle.h"
+#include "box-style.h"
 #include "geometry.h"
 
 #include <memory>
@@ -116,29 +116,29 @@ public:
     virtual bool isTableSectionBox() const { return false; }
     virtual bool isTextInputBox() const { return false; }
     virtual bool isSelectBox() const { return false; }
-    virtual bool isSVGInlineTextBox() const { return false; }
-    virtual bool isSVGTSpanBox() const { return false; }
-    virtual bool isSVGTextBox() const { return false; }
-    virtual bool isSVGBoxModel() const { return false; }
-    virtual bool isSVGRootBox() const { return false; }
-    virtual bool isSVGImageBox() const { return false; }
-    virtual bool isSVGGeometryBox() const { return false; }
-    virtual bool isSVGPathBox() const { return false; }
-    virtual bool isSVGShapeBox() const { return false; }
-    virtual bool isSVGContainerBox() const { return false; }
-    virtual bool isSVGHiddenContainerBox() const { return false; }
-    virtual bool isSVGTransformableContainerBox() const { return false; }
-    virtual bool isSVGViewportContainerBox() const { return false; }
-    virtual bool isSVGResourceContainerBox() const { return false; }
-    virtual bool isSVGResourceMarkerBox() const { return false; }
-    virtual bool isSVGResourceClipperBox() const { return false; }
-    virtual bool isSVGResourceMaskerBox() const { return false; }
-    virtual bool isSVGResourcePaintServerBox() const { return false; }
-    virtual bool isSVGResourcePatternBox() const { return false; }
-    virtual bool isSVGGradientStopBox() const { return false; }
-    virtual bool isSVGResourceGradientBox() const { return false; }
-    virtual bool isSVGResourceLinearGradientBox() const { return false; }
-    virtual bool isSVGResourceRadialGradientBox() const { return false; }
+    virtual bool isSvgInlineTextBox() const { return false; }
+    virtual bool isSvgTSpanBox() const { return false; }
+    virtual bool isSvgTextBox() const { return false; }
+    virtual bool isSvgBoxModel() const { return false; }
+    virtual bool isSvgRootBox() const { return false; }
+    virtual bool isSvgImageBox() const { return false; }
+    virtual bool isSvgGeometryBox() const { return false; }
+    virtual bool isSvgPathBox() const { return false; }
+    virtual bool isSvgShapeBox() const { return false; }
+    virtual bool isSvgContainerBox() const { return false; }
+    virtual bool isSvgHiddenContainerBox() const { return false; }
+    virtual bool isSvgTransformableContainerBox() const { return false; }
+    virtual bool isSvgViewportContainerBox() const { return false; }
+    virtual bool isSvgResourceContainerBox() const { return false; }
+    virtual bool isSvgResourceMarkerBox() const { return false; }
+    virtual bool isSvgResourceClipperBox() const { return false; }
+    virtual bool isSvgResourceMaskerBox() const { return false; }
+    virtual bool isSvgResourcePaintServerBox() const { return false; }
+    virtual bool isSvgResourcePatternBox() const { return false; }
+    virtual bool isSvgGradientStopBox() const { return false; }
+    virtual bool isSvgResourceGradientBox() const { return false; }
+    virtual bool isSvgResourceLinearGradientBox() const { return false; }
+    virtual bool isSvgResourceRadialGradientBox() const { return false; }
 
     bool isRelativePositioned() const { return m_style->position() == Position::Relative; }
     bool isFixedPositioned() const { return m_style->position() == Position::Fixed; }

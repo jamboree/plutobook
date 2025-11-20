@@ -1,17 +1,17 @@
 #ifndef PLUTOBOOK_DOCUMENT_H
 #define PLUTOBOOK_DOCUMENT_H
 
-#include "cssstylesheet.h"
-#include "fragmentbuilder.h"
-#include "globalstring.h"
-#include "heapstring.h"
+#include "css-stylesheet.h"
+#include "fragment-builder.h"
+#include "global-string.h"
+#include "heap-string.h"
 #include "url.h"
 
 #include <forward_list>
 
 namespace plutobook {
 
-class CSSProperty;
+class CssProperty;
 class Counters;
 class ContainerNode;
 class Box;
@@ -25,18 +25,18 @@ public:
     virtual bool isContainerNode() const { return false; }
     virtual bool isElementNode() const { return false; }
     virtual bool isDocumentNode() const { return false; }
-    virtual bool isHTMLElement() const { return false; }
-    virtual bool isSVGElement() const { return false; }
-    virtual bool isHTMLDocument() const { return false; }
-    virtual bool isSVGDocument() const { return false; }
+    virtual bool isHtmlElement() const { return false; }
+    virtual bool isSvgElement() const { return false; }
+    virtual bool isHtmlDocument() const { return false; }
+    virtual bool isSvgDocument() const { return false; }
     virtual bool isXMLDocument() const { return false; }
 
     bool isRootNode() const;
-    bool isSVGRootNode() const;
+    bool isSvgRootNode() const;
     bool isOfType(const GlobalString& namespaceURI, const GlobalString& tagName) const;
 
-    bool inHTMLDocument() const;
-    bool inSVGDocument() const;
+    bool inHtmlDocument() const;
+    bool inSvgDocument() const;
     bool inXMLDocument() const;
 
     const GlobalString& namespaceURI() const;
@@ -177,7 +177,7 @@ inline bool operator!=(const Attribute& a, const Attribute& b) { return a.name()
 
 using AttributeList = std::pmr::forward_list<Attribute>;
 using ClassNameList = std::pmr::forward_list<HeapString>;
-using CSSPropertyList = std::pmr::vector<CSSProperty>;
+using CssPropertyList = std::pmr::vector<CssProperty>;
 
 class Element : public ContainerNode {
 public:
@@ -212,8 +212,8 @@ public:
     virtual void collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const {}
     virtual void collectAdditionalAttributeStyle(std::string& output) const {}
 
-    CSSPropertyList inlineStyle();
-    CSSPropertyList presentationAttributeStyle();
+    CssPropertyList inlineStyle();
+    CssPropertyList presentationAttributeStyle();
 
     Element* parentElement() const;
     Element* firstChildElement() const;
@@ -279,11 +279,11 @@ inline const GlobalString& Node::tagName() const
 }
 
 
-class CSSMediaQuery;
-class CSSMediaFeature;
+class CssMediaQuery;
+class CssMediaFeature;
 
-using CSSMediaQueryList = std::pmr::forward_list<CSSMediaQuery>;
-using CSSMediaFeatureList = std::pmr::forward_list<CSSMediaFeature>;
+using CssMediaQueryList = std::pmr::forward_list<CssMediaQuery>;
+using CssMediaFeatureList = std::pmr::forward_list<CssMediaFeature>;
 
 class Resource;
 class ResourceData;
@@ -322,7 +322,7 @@ public:
     ~Document() override;
 
     bool isDocumentNode() const final { return true; }
-    bool isSVGImageDocument() const { return !m_book && isSVGDocument(); }
+    bool isSvgImageDocument() const { return !m_book && isSvgDocument(); }
 
     Book* book() const { return m_book; }
     Heap* heap() const { return m_heap; }
@@ -370,10 +370,10 @@ public:
     void addAuthorStyleSheet(const std::string_view& content, Url baseUrl);
     void addUserStyleSheet(const std::string_view& content);
 
-    bool supportsMediaFeature(const CSSMediaFeature& feature) const;
-    bool supportsMediaFeatures(const CSSMediaFeatureList& features) const;
-    bool supportsMediaQuery(const CSSMediaQuery& query) const;
-    bool supportsMediaQueries(const CSSMediaQueryList& queries) const;
+    bool supportsMediaFeature(const CssMediaFeature& feature) const;
+    bool supportsMediaFeatures(const CssMediaFeatureList& features) const;
+    bool supportsMediaQuery(const CssMediaQuery& query) const;
+    bool supportsMediaQueries(const CssMediaQueryList& queries) const;
     bool supportsMedia(const std::string_view& type, const std::string_view& media) const;
 
     RefPtr<BoxStyle> styleForElement(Element* element, const BoxStyle* parentStyle) const;
@@ -435,7 +435,7 @@ private:
     DocumentFontMap m_fontCache;
     DocumentCounterMap m_counterCache;
     DocumentRunningStyleMap m_runningStyles;
-    CSSStyleSheet m_styleSheet;
+    CssStyleSheet m_styleSheet;
 
     float m_containerWidth{0};
     float m_containerHeight{0};
@@ -446,8 +446,8 @@ inline bool Node::isRootNode() const
     return this == m_document->rootElement();
 }
 
-inline bool Node::inHTMLDocument() const { return m_document->isHTMLDocument(); }
-inline bool Node::inSVGDocument() const  { return m_document->isSVGDocument(); }
+inline bool Node::inHtmlDocument() const { return m_document->isHtmlDocument(); }
+inline bool Node::inSvgDocument() const  { return m_document->isSvgDocument(); }
 inline bool Node::inXMLDocument() const  { return m_document->isXMLDocument(); }
 
 inline Heap* Node::heap() const

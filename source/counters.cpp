@@ -1,7 +1,7 @@
 #include "counters.h"
-#include "htmldocument.h"
+#include "html-document.h"
 #include "box.h"
-#include "cssrule.h"
+#include "css-rule.h"
 
 namespace plutobook {
 
@@ -69,26 +69,26 @@ void Counters::update(const Box* box)
 {
     auto hasListItemCounter = false;
     auto hasPageCounter = false;
-    for(auto id : { CSSPropertyID::CounterReset, CSSPropertyID::CounterIncrement, CSSPropertyID::CounterSet }) {
+    for(auto id : { CssPropertyID::CounterReset, CssPropertyID::CounterIncrement, CssPropertyID::CounterSet }) {
         auto counters = box->style()->get(id);
-        if(counters == nullptr || counters->id() == CSSValueID::None)
+        if(counters == nullptr || counters->id() == CssValueID::None)
             continue;
-        for(const auto& counter : to<CSSListValue>(*counters)) {
-            const auto& pair = to<CSSPairValue>(*counter);
-            const auto& name = to<CSSCustomIdentValue>(*pair.first());
-            const auto& value = to<CSSIntegerValue>(*pair.second());
+        for(const auto& counter : to<CssListValue>(*counters)) {
+            const auto& pair = to<CssPairValue>(*counter);
+            const auto& name = to<CssCustomIdentValue>(*pair.first());
+            const auto& value = to<CssIntegerValue>(*pair.second());
             hasListItemCounter |= listItemGlo == name.value();
             hasPageCounter |= pageGlo == name.value();
             if(m_pageCount && pagesGlo == name.value())
                 continue;
             switch(id) {
-            case CSSPropertyID::CounterReset:
+            case CssPropertyID::CounterReset:
                 reset(name.value(), value.value());
                 break;
-            case CSSPropertyID::CounterIncrement:
+            case CssPropertyID::CounterIncrement:
                 increment(name.value(), value.value());
                 break;
-            case CSSPropertyID::CounterSet:
+            case CssPropertyID::CounterSet:
                 set(name.value(), value.value());
                 break;
             default:
@@ -97,10 +97,10 @@ void Counters::update(const Box* box)
         }
     }
 
-    auto element = to<HTMLElement>(box->node());
+    auto element = to<HtmlElement>(box->node());
     if(element && !hasListItemCounter) {
         if(element->tagName() == olTag) {
-            auto olElement = static_cast<HTMLOLElement*>(element);
+            auto olElement = static_cast<HtmlOlElement*>(element);
             reset(listItemGlo, olElement->start() - 1);
             hasListItemCounter = true;
         } else if(element->tagName() == ulTag
@@ -109,7 +109,7 @@ void Counters::update(const Box* box)
             reset(listItemGlo, 0);
             hasListItemCounter = true;
         } else if(element->tagName() == liTag) {
-            auto liElement = static_cast<HTMLLIElement*>(element);
+            auto liElement = static_cast<HtmlLiElement*>(element);
             if(auto value = liElement->value()) {
                 reset(listItemGlo, *value);
                 hasListItemCounter = true;

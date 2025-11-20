@@ -1,5 +1,5 @@
 #include "color.h"
-#include "stringutils.h"
+#include "string-utils.h"
 
 #include <cmath>
 

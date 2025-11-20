@@ -1,17 +1,17 @@
 #include "document.h"
-#include "htmldocument.h"
-#include "svgdocument.h"
-#include "cssparser.h"
+#include "html-document.h"
+#include "svg-document.h"
+#include "css-parser.h"
 #include "counters.h"
-#include "textbox.h"
-#include "svgtextbox.h"
-#include "pagebox.h"
-#include "boxview.h"
-#include "boxlayer.h"
-#include "textresource.h"
-#include "imageresource.h"
-#include "fontresource.h"
-#include "stringutils.h"
+#include "text-box.h"
+#include "svg-text-box.h"
+#include "page-box.h"
+#include "box-view.h"
+#include "box-layer.h"
+#include "text-resource.h"
+#include "image-resource.h"
+#include "font-resource.h"
+#include "string-utils.h"
 #include "plutobook.hpp"
 
 #include <cmath>
@@ -117,8 +117,8 @@ Node* TextNode::cloneNode(bool deep)
 
 Box* TextNode::createBox(const RefPtr<BoxStyle>& style)
 {
-    if(parentNode()->isSVGElement())
-        return new (heap()) SVGInlineTextBox(this, style);
+    if(parentNode()->isSvgElement())
+        return new (heap()) SvgInlineTextBox(this, style);
     auto box = new (heap()) TextBox(this, style);
     box->setText(m_data);
     return box;
@@ -396,17 +396,17 @@ void Element::parseAttribute(const GlobalString& name, const HeapString& value)
     }
 }
 
-CSSPropertyList Element::inlineStyle()
+CssPropertyList Element::inlineStyle()
 {
     const auto& value = getAttribute(styleAttr);
     if(value.empty())
-        return CSSPropertyList();
-    CSSParserContext context(this, CSSStyleOrigin::Inline, document()->baseUrl());
-    CSSParser parser(context, document()->heap());
+        return CssPropertyList();
+    CssParserContext context(this, CssStyleOrigin::Inline, document()->baseUrl());
+    CssParser parser(context, document()->heap());
     return parser.parseStyle(value);
 }
 
-CSSPropertyList Element::presentationAttributeStyle()
+CssPropertyList Element::presentationAttributeStyle()
 {
     std::string output;
     for(const auto& attribute : attributes())
@@ -414,9 +414,9 @@ CSSPropertyList Element::presentationAttributeStyle()
     collectAdditionalAttributeStyle(output);
 
     if(output.empty())
-        return CSSPropertyList();
-    CSSParserContext context(this, CSSStyleOrigin::PresentationAttribute, document()->baseUrl());
-    CSSParser parser(context, document()->heap());
+        return CssPropertyList();
+    CssParserContext context(this, CssStyleOrigin::PresentationAttribute, document()->baseUrl());
+    CssParser parser(context, document()->heap());
     return parser.parseStyle(output);
 }
 
@@ -582,96 +582,96 @@ Element* Document::createElement(const GlobalString& namespaceURI, const GlobalS
 {
     if(namespaceURI == xhtmlNs) {
         if(tagName == bodyTag)
-            return new (m_heap) HTMLBodyElement(this);
+            return new (m_heap) HtmlBodyElement(this);
         if(tagName == fontTag)
-            return new (m_heap) HTMLFontElement(this);
+            return new (m_heap) HtmlFontElement(this);
         if(tagName == imgTag)
-            return new (m_heap) HTMLImageElement(this);
+            return new (m_heap) HtmlImageElement(this);
         if(tagName == hrTag)
-            return new (m_heap) HTMLHRElement(this);
+            return new (m_heap) HtmlHrElement(this);
         if(tagName == brTag)
-            return new (m_heap) HTMLBRElement(this);
+            return new (m_heap) HtmlBrElement(this);
         if(tagName == wbrTag)
-            return new (m_heap) HTMLWBRElement(this);
+            return new (m_heap) HtmlWbrElement(this);
         if(tagName == liTag)
-            return new (m_heap) HTMLLIElement(this);
+            return new (m_heap) HtmlLiElement(this);
         if(tagName == olTag)
-            return new (m_heap) HTMLOLElement(this);
+            return new (m_heap) HtmlOlElement(this);
         if(tagName == tableTag)
-            return new (m_heap) HTMLTableElement(this);
+            return new (m_heap) HtmlTableElement(this);
         if(tagName == theadTag || tagName == tbodyTag || tagName == tfootTag)
-            return new (m_heap) HTMLTableSectionElement(this, tagName);
+            return new (m_heap) HtmlTableSectionElement(this, tagName);
         if(tagName == trTag)
-            return new (m_heap) HTMLTableRowElement(this);
+            return new (m_heap) HtmlTableRowElement(this);
         if(tagName == colTag || tagName == colgroupTag)
-            return new (m_heap) HTMLTableColElement(this, tagName);
+            return new (m_heap) HtmlTableColElement(this, tagName);
         if(tagName == tdTag || tagName == thTag)
-            return new (m_heap) HTMLTableCellElement(this, tagName);
+            return new (m_heap) HtmlTableCellElement(this, tagName);
         if(tagName == inputTag)
-            return new (m_heap) HTMLInputElement(this);
+            return new (m_heap) HtmlInputElement(this);
         if(tagName == textareaTag)
-            return new (m_heap) HTMLTextAreaElement(this);
+            return new (m_heap) HtmlTextAreaElement(this);
         if(tagName == selectTag)
-            return new (m_heap) HTMLSelectElement(this);
+            return new (m_heap) HtmlSelectElement(this);
         if(tagName == styleTag)
-            return new (m_heap) HTMLStyleElement(this);
+            return new (m_heap) HtmlStyleElement(this);
         if(tagName == linkTag)
-            return new (m_heap) HTMLLinkElement(this);
+            return new (m_heap) HtmlLinkElement(this);
         if(tagName == titleTag)
-            return new (m_heap) HTMLTitleElement(this);
+            return new (m_heap) HtmlTitleElement(this);
         if(tagName == baseTag)
-            return new (m_heap) HTMLBaseElement(this);
-        return new (m_heap) HTMLElement(this, tagName);
+            return new (m_heap) HtmlBaseElement(this);
+        return new (m_heap) HtmlElement(this, tagName);
     }
 
     if(namespaceURI == svgNs) {
         if(tagName == svgTag)
-            return new (m_heap) SVGSVGElement(this);
+            return new (m_heap) SvgSvgElement(this);
         if(tagName == useTag)
-            return new (m_heap) SVGUseElement(this);
+            return new (m_heap) SvgUseElement(this);
         if(tagName == imageTag)
-            return new (m_heap) SVGImageElement(this);
+            return new (m_heap) SvgImageElement(this);
         if(tagName == symbolTag)
-            return new (m_heap) SVGSymbolElement(this);
+            return new (m_heap) SvgSymbolElement(this);
         if(tagName == aTag)
-            return new (m_heap) SVGAElement(this);
+            return new (m_heap) SvgAElement(this);
         if(tagName == gTag)
-            return new (m_heap) SVGGElement(this);
+            return new (m_heap) SvgGElement(this);
         if(tagName == defsTag)
-            return new (m_heap) SVGDefsElement(this);
+            return new (m_heap) SvgDefsElement(this);
         if(tagName == lineTag)
-            return new (m_heap) SVGLineElement(this);
+            return new (m_heap) SvgLineElement(this);
         if(tagName == rectTag)
-            return new (m_heap) SVGRectElement(this);
+            return new (m_heap) SvgRectElement(this);
         if(tagName == circleTag)
-            return new (m_heap) SVGCircleElement(this);
+            return new (m_heap) SvgCircleElement(this);
         if(tagName == ellipseTag)
-            return new (m_heap) SVGEllipseElement(this);
+            return new (m_heap) SvgEllipseElement(this);
         if(tagName == polylineTag || tagName == polygonTag)
-            return new (m_heap) SVGPolyElement(this, tagName);
+            return new (m_heap) SvgPolyElement(this, tagName);
         if(tagName == pathTag)
-            return new (m_heap) SVGPathElement(this);
+            return new (m_heap) SvgPathElement(this);
         if(tagName == tspanTag)
-            return new (m_heap) SVGTSpanElement(this);
+            return new (m_heap) SvgTSpanElement(this);
         if(tagName == textTag)
-            return new (m_heap) SVGTextElement(this);
+            return new (m_heap) SvgTextElement(this);
         if(tagName == markerTag)
-            return new (m_heap) SVGMarkerElement(this);
+            return new (m_heap) SvgMarkerElement(this);
         if(tagName == clipPathTag)
-            return new (m_heap) SVGClipPathElement(this);
+            return new (m_heap) SvgClipPathElement(this);
         if(tagName == maskTag)
-            return new (m_heap) SVGMaskElement(this);
+            return new (m_heap) SvgMaskElement(this);
         if(tagName == patternTag)
-            return new (m_heap) SVGPatternElement(this);
+            return new (m_heap) SvgPatternElement(this);
         if(tagName == stopTag)
-            return new (m_heap) SVGStopElement(this);
+            return new (m_heap) SvgStopElement(this);
         if(tagName == linearGradientTag)
-            return new (m_heap) SVGLinearGradientElement(this);
+            return new (m_heap) SvgLinearGradientElement(this);
         if(tagName == radialGradientTag)
-            return new (m_heap) SVGRadialGradientElement(this);
+            return new (m_heap) SvgRadialGradientElement(this);
         if(tagName == styleTag)
-            return new (m_heap) SVGStyleElement(this);
-        return new (m_heap) SVGElement(this, tagName);
+            return new (m_heap) SvgStyleElement(this);
+        return new (m_heap) SvgElement(this, tagName);
     }
 
     return new (m_heap) Element(this, namespaceURI, tagName);
@@ -679,11 +679,11 @@ Element* Document::createElement(const GlobalString& namespaceURI, const GlobalS
 
 Element* Document::bodyElement() const
 {
-    auto element = to<HTMLElement>(m_rootElement);
+    auto element = to<HtmlElement>(m_rootElement);
     if(element && element->tagName() == htmlTag) {
         auto child = element->firstChild();
         while(child) {
-            auto element = to<HTMLElement>(child);
+            auto element = to<HtmlElement>(child);
             if(element && element->tagName() == bodyTag)
                 return element;
             child = child->nextSibling();
@@ -796,44 +796,44 @@ void Document::runJavaScript(const std::string_view& script)
 
 void Document::addAuthorStyleSheet(const std::string_view& content, Url baseUrl)
 {
-    m_styleSheet.parseStyle(content, CSSStyleOrigin::Author, std::move(baseUrl));
+    m_styleSheet.parseStyle(content, CssStyleOrigin::Author, std::move(baseUrl));
 }
 
 void Document::addUserStyleSheet(const std::string_view& content)
 {
-    m_styleSheet.parseStyle(content, CSSStyleOrigin::User, m_baseUrl);
+    m_styleSheet.parseStyle(content, CssStyleOrigin::User, m_baseUrl);
 }
 
-bool Document::supportsMediaFeature(const CSSMediaFeature& feature) const
+bool Document::supportsMediaFeature(const CssMediaFeature& feature) const
 {
     const auto viewportWidth = m_book->viewportWidth();
     const auto viewportHeight = m_book->viewportHeight();
-    if(feature.id() == CSSPropertyID::Orientation) {
-        const auto& orientation = to<CSSIdentValue>(*feature.value());
-        if(orientation.value() == CSSValueID::Portrait)
+    if(feature.id() == CssPropertyID::Orientation) {
+        const auto& orientation = to<CssIdentValue>(*feature.value());
+        if(orientation.value() == CssValueID::Portrait)
             return viewportWidth < viewportHeight;
-        assert(orientation.value() == CSSValueID::Landscape);
+        assert(orientation.value() == CssValueID::Landscape);
         return viewportWidth > viewportHeight;
     }
 
-    const auto value = CSSLengthResolver(this, nullptr).resolveLength(*feature.value());
-    if(feature.id() == CSSPropertyID::Width)
+    const auto value = CssLengthResolver(this, nullptr).resolveLength(*feature.value());
+    if(feature.id() == CssPropertyID::Width)
         return viewportWidth == value;
-    if(feature.id() == CSSPropertyID::MinWidth)
+    if(feature.id() == CssPropertyID::MinWidth)
         return viewportWidth >= value;
-    if(feature.id() == CSSPropertyID::MaxWidth) {
+    if(feature.id() == CssPropertyID::MaxWidth) {
         return viewportWidth <= value;
     }
 
-    if(feature.id() == CSSPropertyID::Height)
+    if(feature.id() == CssPropertyID::Height)
         return viewportHeight == value;
-    if(feature.id() == CSSPropertyID::MinHeight)
+    if(feature.id() == CssPropertyID::MinHeight)
         return viewportHeight >= value;
-    assert(feature.id() == CSSPropertyID::MaxHeight);
+    assert(feature.id() == CssPropertyID::MaxHeight);
     return viewportHeight <= value;
 }
 
-bool Document::supportsMediaFeatures(const CSSMediaFeatureList& features) const
+bool Document::supportsMediaFeatures(const CssMediaFeatureList& features) const
 {
     for(const auto& feature : features) {
         if(!supportsMediaFeature(feature)) {
@@ -844,20 +844,20 @@ bool Document::supportsMediaFeatures(const CSSMediaFeatureList& features) const
     return true;
 }
 
-bool Document::supportsMediaQuery(const CSSMediaQuery& query) const
+bool Document::supportsMediaQuery(const CssMediaQuery& query) const
 {
-    if(query.type() == CSSMediaQuery::Type::Print && m_book->mediaType() != MediaType::Print)
-        return query.restrictor() == CSSMediaQuery::Restrictor::Not;
-    if(query.type() == CSSMediaQuery::Type::Screen && m_book->mediaType() != MediaType::Screen) {
-        return query.restrictor() == CSSMediaQuery::Restrictor::Not;
+    if(query.type() == CssMediaQuery::Type::Print && m_book->mediaType() != MediaType::Print)
+        return query.restrictor() == CssMediaQuery::Restrictor::Not;
+    if(query.type() == CssMediaQuery::Type::Screen && m_book->mediaType() != MediaType::Screen) {
+        return query.restrictor() == CssMediaQuery::Restrictor::Not;
     }
 
     if(supportsMediaFeatures(query.features()))
-        return query.restrictor() != CSSMediaQuery::Restrictor::Not;
-    return query.restrictor() == CSSMediaQuery::Restrictor::Not;
+        return query.restrictor() != CssMediaQuery::Restrictor::Not;
+    return query.restrictor() == CssMediaQuery::Restrictor::Not;
 }
 
-bool Document::supportsMediaQueries(const CSSMediaQueryList& queries) const
+bool Document::supportsMediaQueries(const CssMediaQueryList& queries) const
 {
     if(m_book == nullptr || queries.empty())
         return true;
@@ -875,9 +875,9 @@ bool Document::supportsMedia(const std::string_view& type, const std::string_vie
     if(m_book == nullptr || media.empty())
         return true;
     if(type.empty() || equals(type, "text/css", isXMLDocument())) {
-        CSSParserContext context(this, CSSStyleOrigin::Author, m_baseUrl);
-        CSSParser parser(context, m_heap);
-        CSSMediaQueryList queries(parser.parseMediaQueries(media));
+        CssParserContext context(this, CssStyleOrigin::Author, m_baseUrl);
+        CssParser parser(context, m_heap);
+        CssMediaQueryList queries(parser.parseMediaQueries(media));
         return supportsMediaQueries(queries);
     }
 

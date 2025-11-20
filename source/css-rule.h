@@ -1,0 +1,1980 @@
+#ifndef PLUTOBOOK_CssRULE_H
+#define PLUTOBOOK_CssRULE_H
+
+#include "pointer.h"
+#include "global-string.h"
+#include "css-tokenizer.h"
+#include "color.h"
+#include "url.h"
+
+#include <map>
+#include <forward_list>
+#include <memory>
+#include <numbers>
+#include <vector>
+#include <set>
+
+namespace plutobook {
+
+enum class CssValueID : uint16_t {
+    Unknown,
+    A3,
+    A4,
+    A5,
+    Absolute,
+    Additive,
+    AfterEdge,
+    All,
+    AllPetiteCaps,
+    AllSmallCaps,
+    Alpha,
+    Alphabetic,
+    Anywhere,
+    Auto,
+    Avoid,
+    AvoidColumn,
+    AvoidPage,
+    B4,
+    B5,
+    Balance,
+    Baseline,
+    BeforeEdge,
+    Bevel,
+    BidiOverride,
+    Block,
+    Bold,
+    Bolder,
+    BorderBox,
+    Both,
+    Bottom,
+    BreakAll,
+    BreakWord,
+    Butt,
+    Capitalize,
+    Center,
+    Central,
+    Circle,
+    Clip,
+    CloseQuote,
+    Collapse,
+    Color,
+    ColorBurn,
+    ColorDodge,
+    Column,
+    ColumnReverse,
+    CommonLigatures,
+    Condensed,
+    Contain,
+    ContentBox,
+    Contextual,
+    Cover,
+    CurrentColor,
+    Cyclic,
+    Darken,
+    Dashed,
+    DiagonalFractions,
+    Difference,
+    Disc,
+    DiscretionaryLigatures,
+    Dotted,
+    Double,
+    Ellipsis,
+    Embed,
+    Emoji,
+    End,
+    Evenodd,
+    Exclusion,
+    Expanded,
+    Extends,
+    ExtraCondensed,
+    ExtraExpanded,
+    Fill,
+    FitContent,
+    Fixed,
+    Flex,
+    FlexEnd,
+    FlexStart,
+    FullWidth,
+    Groove,
+    Hanging,
+    HardLight,
+    Hidden,
+    Hide,
+    HistoricalLigatures,
+    HorizontalTb,
+    Hue,
+    Ideographic,
+    Infinite,
+    Inline,
+    InlineBlock,
+    InlineFlex,
+    InlineTable,
+    Inset,
+    Inside,
+    Isolate,
+    IsolateOverride,
+    Italic,
+    Jis04,
+    Jis78,
+    Jis83,
+    Jis90,
+    Justify,
+    KeepAll,
+    Landscape,
+    Large,
+    Larger,
+    Ledger,
+    Left,
+    Legal,
+    Letter,
+    Lighten,
+    Lighter,
+    LineThrough,
+    LiningNums,
+    ListItem,
+    Local,
+    Lowercase,
+    Ltr,
+    Luminance,
+    Luminosity,
+    Manual,
+    Markers,
+    Mathematical,
+    MaxContent,
+    Medium,
+    Middle,
+    MinContent,
+    Miter,
+    Mixed,
+    Multiply,
+    NoChange,
+    NoCloseQuote,
+    NoCommonLigatures,
+    NoContextual,
+    NoDiscretionaryLigatures,
+    NoHistoricalLigatures,
+    NoOpenQuote,
+    NoRepeat,
+    NonScalingStroke,
+    None,
+    Nonzero,
+    Normal,
+    Nowrap,
+    Numeric,
+    Oblique,
+    Off,
+    OldstyleNums,
+    On,
+    OpenQuote,
+    Ordinal,
+    Outset,
+    Outside,
+    Overlay,
+    Overline,
+    PaddingBox,
+    Page,
+    PetiteCaps,
+    Portrait,
+    Pre,
+    PreLine,
+    PreWrap,
+    ProportionalNums,
+    ProportionalWidth,
+    Recto,
+    Relative,
+    Repeat,
+    RepeatX,
+    RepeatY,
+    ResetSize,
+    Ridge,
+    Right,
+    Round,
+    Row,
+    RowReverse,
+    Rtl,
+    Ruby,
+    Saturation,
+    ScaleDown,
+    Screen,
+    Scroll,
+    SemiCondensed,
+    SemiExpanded,
+    Separate,
+    Show,
+    Simplified,
+    SlashedZero,
+    Small,
+    SmallCaps,
+    Smaller,
+    SoftLight,
+    Solid,
+    Space,
+    SpaceAround,
+    SpaceBetween,
+    SpaceEvenly,
+    Square,
+    StackedFractions,
+    Start,
+    Static,
+    Stretch,
+    Stroke,
+    Sub,
+    Super,
+    Symbolic,
+    Table,
+    TableCaption,
+    TableCell,
+    TableColumn,
+    TableColumnGroup,
+    TableFooterGroup,
+    TableHeaderGroup,
+    TableRow,
+    TableRowGroup,
+    TabularNums,
+    Text,
+    TextAfterEdge,
+    TextBeforeEdge,
+    TextBottom,
+    TextTop,
+    Thick,
+    Thin,
+    TitlingCaps,
+    Top,
+    Traditional,
+    UltraCondensed,
+    UltraExpanded,
+    Underline,
+    Unicase,
+    Unicode,
+    Uppercase,
+    Upright,
+    UseScript,
+    Verso,
+    VerticalLr,
+    VerticalRl,
+    Visible,
+    Wavy,
+    Wrap,
+    WrapReverse,
+    XLarge,
+    XSmall,
+    XxLarge,
+    XxSmall,
+    XxxLarge,
+    LastCssValueID
+};
+
+constexpr auto kNumCssValueIDs = static_cast<int>(CssValueID::LastCssValueID);
+
+enum class CssValueType {
+    Initial,
+    Inherit,
+    Unset,
+    Ident,
+    CustomIdent,
+    CustomProperty,
+    VariableReference,
+    Integer,
+    Number,
+    Percent,
+    Angle,
+    Length,
+    Calc,
+    Attr,
+    String,
+    LocalUrl,
+    Url,
+    Image,
+    Color,
+    Counter,
+    FontFeature,
+    FontVariation,
+    UnicodeRange,
+    Pair,
+    Rect,
+    List,
+    Function,
+    UnaryFunction
+};
+
+class CssValue : public HeapMember, public RefCounted<CssValue> {
+public:
+    CssValue() = default;
+    virtual ~CssValue() = default;
+    virtual CssValueType type() const = 0;
+    CssValueID id() const;
+};
+
+using CssValueList = std::pmr::vector<RefPtr<CssValue>>;
+
+enum class CssPropertyID : uint16_t {
+    Unknown,
+    Custom,
+    AdditiveSymbols,
+    AlignContent,
+    AlignItems,
+    AlignSelf,
+    AlignmentBaseline,
+    Background,
+    BackgroundAttachment,
+    BackgroundClip,
+    BackgroundColor,
+    BackgroundImage,
+    BackgroundOrigin,
+    BackgroundPosition,
+    BackgroundRepeat,
+    BackgroundSize,
+    BaselineShift,
+    Border,
+    BorderBottom,
+    BorderBottomColor,
+    BorderBottomLeftRadius,
+    BorderBottomRightRadius,
+    BorderBottomStyle,
+    BorderBottomWidth,
+    BorderCollapse,
+    BorderColor,
+    BorderHorizontalSpacing,
+    BorderLeft,
+    BorderLeftColor,
+    BorderLeftStyle,
+    BorderLeftWidth,
+    BorderRadius,
+    BorderRight,
+    BorderRightColor,
+    BorderRightStyle,
+    BorderRightWidth,
+    BorderSpacing,
+    BorderStyle,
+    BorderTop,
+    BorderTopColor,
+    BorderTopLeftRadius,
+    BorderTopRightRadius,
+    BorderTopStyle,
+    BorderTopWidth,
+    BorderVerticalSpacing,
+    BorderWidth,
+    Bottom,
+    BoxSizing,
+    BreakAfter,
+    BreakBefore,
+    BreakInside,
+    CaptionSide,
+    Clear,
+    Clip,
+    ClipPath,
+    ClipRule,
+    Color,
+    ColumnBreakAfter,
+    ColumnBreakBefore,
+    ColumnBreakInside,
+    ColumnCount,
+    ColumnFill,
+    ColumnGap,
+    ColumnRule,
+    ColumnRuleColor,
+    ColumnRuleStyle,
+    ColumnRuleWidth,
+    ColumnSpan,
+    ColumnWidth,
+    Columns,
+    Content,
+    CounterIncrement,
+    CounterReset,
+    CounterSet,
+    Cx,
+    Cy,
+    Direction,
+    Display,
+    DominantBaseline,
+    EmptyCells,
+    Fallback,
+    Fill,
+    FillOpacity,
+    FillRule,
+    Flex,
+    FlexBasis,
+    FlexDirection,
+    FlexFlow,
+    FlexGrow,
+    FlexShrink,
+    FlexWrap,
+    Float,
+    Font,
+    FontFamily,
+    FontFeatureSettings,
+    FontKerning,
+    FontSize,
+    FontStretch,
+    FontStyle,
+    FontVariant,
+    FontVariantCaps,
+    FontVariantEastAsian,
+    FontVariantEmoji,
+    FontVariantLigatures,
+    FontVariantNumeric,
+    FontVariantPosition,
+    FontVariationSettings,
+    FontWeight,
+    Gap,
+    Height,
+    Hyphens,
+    JustifyContent,
+    Left,
+    LetterSpacing,
+    LineHeight,
+    ListStyle,
+    ListStyleImage,
+    ListStylePosition,
+    ListStyleType,
+    Margin,
+    MarginBottom,
+    MarginLeft,
+    MarginRight,
+    MarginTop,
+    Marker,
+    MarkerEnd,
+    MarkerMid,
+    MarkerStart,
+    Mask,
+    MaskType,
+    MaxHeight,
+    MaxWidth,
+    MinHeight,
+    MinWidth,
+    MixBlendMode,
+    Negative,
+    ObjectFit,
+    ObjectPosition,
+    Opacity,
+    Order,
+    Orientation,
+    Orphans,
+    Outline,
+    OutlineColor,
+    OutlineOffset,
+    OutlineStyle,
+    OutlineWidth,
+    Overflow,
+    OverflowWrap,
+    Pad,
+    Padding,
+    PaddingBottom,
+    PaddingLeft,
+    PaddingRight,
+    PaddingTop,
+    Page,
+    PageBreakAfter,
+    PageBreakBefore,
+    PageBreakInside,
+    PageScale,
+    PaintOrder,
+    Position,
+    Prefix,
+    Quotes,
+    R,
+    Range,
+    Right,
+    RowGap,
+    Rx,
+    Ry,
+    Size,
+    Src,
+    StopColor,
+    StopOpacity,
+    Stroke,
+    StrokeDasharray,
+    StrokeDashoffset,
+    StrokeLinecap,
+    StrokeLinejoin,
+    StrokeMiterlimit,
+    StrokeOpacity,
+    StrokeWidth,
+    Suffix,
+    Symbols,
+    System,
+    TabSize,
+    TableLayout,
+    TextAlign,
+    TextAnchor,
+    TextDecoration,
+    TextDecorationColor,
+    TextDecorationLine,
+    TextDecorationStyle,
+    TextIndent,
+    TextOrientation,
+    TextOverflow,
+    TextTransform,
+    Top,
+    Transform,
+    TransformOrigin,
+    UnicodeBidi,
+    UnicodeRange,
+    VectorEffect,
+    VerticalAlign,
+    Visibility,
+    WhiteSpace,
+    Widows,
+    Width,
+    WordBreak,
+    WordSpacing,
+    WritingMode,
+    X,
+    Y,
+    ZIndex
+};
+
+enum class CssStyleOrigin : uint8_t {
+    UserAgent,
+    PresentationAttribute,
+    Author,
+    Inline,
+    User
+};
+
+class CssProperty {
+public:
+    CssProperty(CssPropertyID id, CssStyleOrigin origin, bool important, RefPtr<CssValue> value)
+        : m_id(id), m_origin(origin), m_important(important), m_value(std::move(value))
+    {}
+
+    CssPropertyID id() const { return m_id; }
+    CssStyleOrigin origin() const { return m_origin; }
+    bool important() const { return m_important; }
+    const RefPtr<CssValue>& value() const { return m_value; }
+
+private:
+    CssPropertyID m_id;
+    CssStyleOrigin m_origin;
+    bool m_important;
+    RefPtr<CssValue> m_value;
+};
+
+using CssPropertyList = std::pmr::vector<CssProperty>;
+
+class CssInitialValue final : public CssValue {
+public:
+    static RefPtr<CssInitialValue> create();
+
+    CssValueType type() const final { return CssValueType::Initial; }
+
+private:
+    CssInitialValue() = default;
+    friend class CssValuePool;
+};
+
+template<>
+struct is_a<CssInitialValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Initial; }
+};
+
+class CssInheritValue final : public CssValue {
+public:
+    static RefPtr<CssInheritValue> create();
+
+    CssValueType type() const final { return CssValueType::Inherit; }
+
+private:
+    CssInheritValue() = default;
+    friend class CssValuePool;
+};
+
+template<>
+struct is_a<CssInheritValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Inherit; }
+};
+
+class CssUnsetValue final : public CssValue {
+public:
+    static RefPtr<CssUnsetValue> create();
+
+    CssValueType type() const final { return CssValueType::Unset; }
+
+private:
+    CssUnsetValue() = default;
+    friend class CssValuePool;
+};
+
+template<>
+struct is_a<CssUnsetValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Unset; }
+};
+
+class CssIdentValue final : public CssValue {
+public:
+    static RefPtr<CssIdentValue> create(CssValueID value);
+
+    CssValueID value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::Ident; }
+
+private:
+    CssIdentValue(CssValueID value) : m_value(value) {}
+    friend class CssValuePool;
+    CssValueID m_value;
+};
+
+template<>
+struct is_a<CssIdentValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Ident; }
+};
+
+inline CssValueID CssValue::id() const
+{
+    if(auto ident = to<CssIdentValue>(this))
+        return ident->value();
+    return CssValueID::Unknown;
+}
+
+class CssCustomIdentValue final : public CssValue {
+public:
+    static RefPtr<CssCustomIdentValue> create(Heap* heap, const GlobalString& value);
+
+    const GlobalString& value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::CustomIdent; }
+
+private:
+    CssCustomIdentValue(const GlobalString& value) : m_value(value) {}
+    GlobalString m_value;
+};
+
+inline RefPtr<CssCustomIdentValue> CssCustomIdentValue::create(Heap* heap, const GlobalString& value)
+{
+    return adoptPtr(new (heap) CssCustomIdentValue(value));
+}
+
+template<>
+struct is_a<CssCustomIdentValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::CustomIdent; }
+};
+
+class BoxStyle;
+
+class CssVariableData : public HeapMember, public RefCounted<CssVariableData> {
+public:
+    static RefPtr<CssVariableData> create(Heap* heap, const CssTokenStream& value);
+
+    bool resolve(const BoxStyle* style, CssTokenList& tokens, std::set<CssVariableData*>& references) const;
+
+private:
+    CssVariableData(Heap* heap, const CssTokenStream& value);
+    bool resolve(CssTokenStream input, const BoxStyle* style, CssTokenList& tokens, std::set<CssVariableData*>& references) const;
+    bool resolveVar(CssTokenStream input, const BoxStyle* style, CssTokenList& tokens, std::set<CssVariableData*>& references) const;
+    std::pmr::vector<CssToken> m_tokens;
+};
+
+class CssCustomPropertyValue final : public CssValue {
+public:
+    static RefPtr<CssCustomPropertyValue> create(Heap* heap, const GlobalString& name, RefPtr<CssVariableData> value);
+
+    const GlobalString& name() const { return m_name; }
+    const RefPtr<CssVariableData>& value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::CustomProperty; }
+
+private:
+    CssCustomPropertyValue(const GlobalString& name, RefPtr<CssVariableData> value);
+    GlobalString m_name;
+    RefPtr<CssVariableData> m_value;
+};
+
+template<>
+struct is_a<CssCustomPropertyValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::CustomProperty; }
+};
+
+class Node;
+
+class CssParserContext {
+public:
+    CssParserContext(const Node* node, CssStyleOrigin origin, Url baseUrl);
+
+    bool inHtmlDocument() const { return m_inHtmlDocument; }
+    bool inSvgElement() const { return m_inSvgElement; }
+
+    CssStyleOrigin origin() const { return m_origin; }
+    const Url& baseUrl() const { return m_baseUrl; }
+
+    Url completeUrl(std::string_view url) const { return m_baseUrl.complete(url); }
+
+private:
+    bool m_inHtmlDocument;
+    bool m_inSvgElement;
+    CssStyleOrigin m_origin;
+    Url m_baseUrl;
+};
+
+class CssVariableReferenceValue final : public CssValue {
+public:
+    static RefPtr<CssVariableReferenceValue> create(Heap* heap, const CssParserContext& context, CssPropertyID id, bool important, RefPtr<CssVariableData> value);
+
+    const CssParserContext& context() const { return m_context; }
+    CssPropertyID id() const { return m_id; }
+    bool important() const { return m_important; }
+    const RefPtr<CssVariableData>& value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::VariableReference; }
+
+    CssPropertyList resolve(const BoxStyle* style) const;
+
+private:
+    CssVariableReferenceValue(const CssParserContext& context, CssPropertyID id, bool important, RefPtr<CssVariableData> value);
+    CssParserContext m_context;
+    CssPropertyID m_id;
+    bool m_important;
+    RefPtr<CssVariableData> m_value;
+};
+
+template<>
+struct is_a<CssVariableReferenceValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::VariableReference; }
+};
+
+class CssIntegerValue final : public CssValue {
+public:
+    static RefPtr<CssIntegerValue> create(Heap* heap, int value);
+
+    int value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::Integer; }
+
+private:
+    CssIntegerValue(int value) : m_value(value) {}
+    int m_value;
+};
+
+inline RefPtr<CssIntegerValue> CssIntegerValue::create(Heap* heap, int value)
+{
+    return adoptPtr(new (heap) CssIntegerValue(value));
+}
+
+template<>
+struct is_a<CssIntegerValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Integer; }
+};
+
+class CssNumberValue final : public CssValue {
+public:
+    static RefPtr<CssNumberValue> create(Heap* heap, float value);
+
+    float value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::Number; }
+
+private:
+    CssNumberValue(float value) : m_value(value) {}
+    float m_value;
+};
+
+inline RefPtr<CssNumberValue> CssNumberValue::create(Heap* heap, float value)
+{
+    return adoptPtr(new (heap) CssNumberValue(value));
+}
+
+template<>
+struct is_a<CssNumberValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Number; }
+};
+
+class CssPercentValue final : public CssValue {
+public:
+    static RefPtr<CssPercentValue> create(Heap* heap, float value);
+
+    float value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::Percent; }
+
+private:
+    CssPercentValue(float value) : m_value(value) {}
+    float m_value;
+};
+
+inline RefPtr<CssPercentValue> CssPercentValue::create(Heap* heap, float value)
+{
+    return adoptPtr(new (heap) CssPercentValue(value));
+}
+
+template<>
+struct is_a<CssPercentValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Percent; }
+};
+
+class CssAngleValue final : public CssValue {
+public:
+    enum class Unit {
+        Degrees,
+        Radians,
+        Gradians,
+        Turns
+    };
+
+    static RefPtr<CssAngleValue> create(Heap* heap, float value, Unit unit);
+
+    float value() const { return m_value; }
+    Unit unit() const { return m_unit; }
+    CssValueType type() const final { return CssValueType::Angle; }
+
+    float valueInDegrees() const;
+
+private:
+    CssAngleValue(float value, Unit unit)
+        : m_value(value), m_unit(unit)
+    {}
+
+    float m_value;
+    Unit m_unit;
+};
+
+inline float CssAngleValue::valueInDegrees() const
+{
+    switch(m_unit) {
+    case CssAngleValue::Unit::Degrees:
+        return m_value;
+    case CssAngleValue::Unit::Radians:
+        return m_value * 180.0 / std::numbers::pi;
+    case CssAngleValue::Unit::Gradians:
+        return m_value * 360.0 / 400.0;
+    case CssAngleValue::Unit::Turns:
+        return m_value * 360.0;
+    default:
+        assert(false);
+    }
+
+    return 0.0;
+}
+
+inline RefPtr<CssAngleValue> CssAngleValue::create(Heap* heap, float value, Unit unit)
+{
+    return adoptPtr(new (heap) CssAngleValue(value, unit));
+}
+
+template<>
+struct is_a<CssAngleValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Angle; }
+};
+
+enum class CssLengthUnits : uint8_t {
+    None,
+    Pixels,
+    Points,
+    Picas,
+    Centimeters,
+    Millimeters,
+    Inches,
+    ViewportWidth,
+    ViewportHeight,
+    ViewportMin,
+    ViewportMax,
+    Ems,
+    Exs,
+    Chs,
+    Rems
+};
+
+class CssLengthValue final : public CssValue {
+public:
+    static RefPtr<CssLengthValue> create(Heap* heap, float value, CssLengthUnits units = CssLengthUnits::Pixels);
+
+    float value() const { return m_value; }
+    CssLengthUnits units() const { return m_units; }
+    CssValueType type() const final { return CssValueType::Length; }
+
+private:
+    CssLengthValue(float value, CssLengthUnits units)
+        : m_value(value), m_units(units)
+    {}
+
+    float m_value;
+    CssLengthUnits m_units;
+};
+
+inline RefPtr<CssLengthValue> CssLengthValue::create(Heap* heap, float value, CssLengthUnits units)
+{
+    return adoptPtr(new (heap) CssLengthValue(value, units));
+}
+
+template<>
+struct is_a<CssLengthValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Length; }
+};
+
+class Font;
+class Document;
+
+class CssLengthResolver {
+public:
+    CssLengthResolver(const Document* document, const Font* font);
+
+    float resolveLength(const CssValue& value) const;
+    float resolveLength(const CssLengthValue& length) const;
+    float resolveLength(float value, CssLengthUnits units) const;
+
+private:
+    float emFontSize() const;
+    float exFontSize() const;
+    float chFontSize() const;
+    float remFontSize() const;
+
+    float viewportWidth() const;
+    float viewportHeight() const;
+    float viewportMin() const;
+    float viewportMax() const;
+
+    const Document* m_document;
+    const Font* m_font;
+};
+
+enum class CssCalcOperator : uint8_t {
+    None,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Min,
+    Max
+};
+
+struct CssCalc {
+    CssCalc() = default;
+    explicit CssCalc(CssCalcOperator op) : op(op) {}
+    CssCalc(float value, CssLengthUnits units = CssLengthUnits::None)
+        : value(value), units(units)
+    {}
+
+    float value = 0;
+    CssLengthUnits units = CssLengthUnits::None;
+    CssCalcOperator op = CssCalcOperator::None;
+};
+
+using CssCalcList = std::pmr::vector<CssCalc>;
+
+class CssCalcValue final : public CssValue {
+public:
+    static RefPtr<CssCalcValue> create(Heap* heap, bool negative, bool unitless, CssCalcList values);
+
+    const bool negative() const { return m_negative; }
+    const bool unitless() const { return m_unitless; }
+    const CssCalcList& values() const { return m_values; }
+    CssValueType type() const final { return CssValueType::Calc; }
+
+    float resolve(const CssLengthResolver& resolver) const;
+
+private:
+    CssCalcValue(bool negative, bool unitless, CssCalcList values)
+        : m_negative(negative), m_unitless(unitless)
+        , m_values(std::move(values))
+    {}
+
+    const bool m_negative;
+    const bool m_unitless;
+    CssCalcList m_values;
+};
+
+inline RefPtr<CssCalcValue> CssCalcValue::create(Heap* heap, bool negative, bool unitless, CssCalcList values)
+{
+    return adoptPtr(new (heap) CssCalcValue(negative, unitless, std::move(values)));
+}
+
+template<>
+struct is_a<CssCalcValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Calc; }
+};
+
+class CssAttrValue final : public CssValue {
+public:
+    static RefPtr<CssAttrValue> create(Heap* heap, const GlobalString& name, const HeapString& fallback);
+
+    const GlobalString& name() const { return m_name; }
+    const HeapString& fallback() const { return m_fallback; }
+    CssValueType type() const final { return CssValueType::Attr; }
+
+private:
+    CssAttrValue(const GlobalString& name, const HeapString& fallback)
+        : m_name(name), m_fallback(fallback)
+    {}
+
+    GlobalString m_name;
+    HeapString m_fallback;
+};
+
+inline RefPtr<CssAttrValue> CssAttrValue::create(Heap* heap, const GlobalString& name, const HeapString& fallback)
+{
+    return adoptPtr(new (heap) CssAttrValue(name, fallback));
+}
+
+template<>
+struct is_a<CssAttrValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Attr; }
+};
+
+class CssStringValue final : public CssValue {
+public:
+    static RefPtr<CssStringValue> create(Heap* heap, const HeapString& value);
+
+    const HeapString& value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::String; }
+
+private:
+    CssStringValue(const HeapString& value) : m_value(value) {}
+    HeapString m_value;
+};
+
+inline RefPtr<CssStringValue> CssStringValue::create(Heap* heap, const HeapString& value)
+{
+    return adoptPtr(new (heap) CssStringValue(value));
+}
+
+template<>
+struct is_a<CssStringValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::String; }
+};
+
+class CssLocalUrlValue final : public CssValue {
+public:
+    static RefPtr<CssLocalUrlValue> create(Heap* heap, const HeapString& value);
+
+    const HeapString& value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::LocalUrl; }
+
+private:
+    CssLocalUrlValue(const HeapString& value) : m_value(value) {}
+    HeapString m_value;
+};
+
+inline RefPtr<CssLocalUrlValue> CssLocalUrlValue::create(Heap* heap, const HeapString& value)
+{
+    return adoptPtr(new (heap) CssLocalUrlValue(value));
+}
+
+template<>
+struct is_a<CssLocalUrlValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::LocalUrl; }
+};
+
+class CssUrlValue final : public CssValue {
+public:
+    static RefPtr<CssUrlValue> create(Heap* heap, Url value);
+
+    const Url& value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::Url; }
+
+private:
+    CssUrlValue(Url value) : m_value(std::move(value)) {}
+    Url m_value;
+};
+
+inline RefPtr<CssUrlValue> CssUrlValue::create(Heap* heap, Url value)
+{
+    return adoptPtr(new (heap) CssUrlValue(std::move(value)));
+}
+
+template<>
+struct is_a<CssUrlValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Url; }
+};
+
+class Image;
+
+class CssImageValue final : public CssValue {
+public:
+    static RefPtr<CssImageValue> create(Heap* heap, Url value);
+
+    const Url& value() const { return m_value; }
+    const RefPtr<Image>& image() const { return m_image; }
+    const RefPtr<Image>& fetch(Document* document) const;
+    CssValueType type() const final { return CssValueType::Image; }
+
+private:
+    CssImageValue(Url value);
+    Url m_value;
+    mutable RefPtr<Image> m_image;
+};
+
+template<>
+struct is_a<CssImageValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Image; }
+};
+
+class CssColorValue final : public CssValue {
+public:
+    static RefPtr<CssColorValue> create(Heap* heap, const Color& value);
+
+    const Color& value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::Color; }
+
+private:
+    CssColorValue(Color value) : m_value(value) {}
+    Color m_value;
+};
+
+inline RefPtr<CssColorValue> CssColorValue::create(Heap* heap, const Color& value)
+{
+    return adoptPtr(new (heap) CssColorValue(value));
+}
+
+template<>
+struct is_a<CssColorValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Color; }
+};
+
+class CssCounterValue final : public CssValue {
+public:
+    static RefPtr<CssCounterValue> create(Heap* heap, const GlobalString& identifier, const GlobalString& listStyle, const HeapString& separator);
+
+    const GlobalString& identifier() const { return m_identifier; }
+    const GlobalString& listStyle() const { return m_listStyle; }
+    const HeapString& separator() const { return m_separator; }
+    CssValueType type() const final { return CssValueType::Counter; }
+
+private:
+    CssCounterValue(const GlobalString& identifier, const GlobalString& listStyle, const HeapString& separator)
+        : m_identifier(identifier), m_listStyle(listStyle), m_separator(separator)
+    {}
+
+    GlobalString m_identifier;
+    GlobalString m_listStyle;
+    HeapString m_separator;
+};
+
+inline RefPtr<CssCounterValue> CssCounterValue::create(Heap* heap, const GlobalString& identifier, const GlobalString& listStyle, const HeapString& separator)
+{
+    return adoptPtr(new (heap) CssCounterValue(identifier, listStyle, separator));
+}
+
+template<>
+struct is_a<CssCounterValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Counter; }
+};
+
+class CssFontFeatureValue : public CssValue {
+public:
+    static RefPtr<CssFontFeatureValue> create(Heap* heap, const GlobalString& tag, int value);
+
+    const GlobalString& tag() const { return m_tag; }
+    int value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::FontFeature; }
+
+private:
+    CssFontFeatureValue(const GlobalString& tag, int value)
+        : m_tag(tag), m_value(value)
+    {}
+
+    GlobalString m_tag;
+    int m_value;
+};
+
+inline RefPtr<CssFontFeatureValue> CssFontFeatureValue::create(Heap* heap, const GlobalString& tag, int value)
+{
+    return adoptPtr(new (heap) CssFontFeatureValue(tag, value));
+}
+
+template<>
+struct is_a<CssFontFeatureValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::FontFeature; }
+};
+
+class CssFontVariationValue : public CssValue {
+public:
+    static RefPtr<CssFontVariationValue> create(Heap* heap, const GlobalString& tag, float value);
+
+    const GlobalString& tag() const { return m_tag; }
+    float value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::FontVariation; }
+
+private:
+    CssFontVariationValue(const GlobalString& tag, float value)
+        : m_tag(tag), m_value(value)
+    {}
+
+    GlobalString m_tag;
+    float m_value;
+};
+
+inline RefPtr<CssFontVariationValue> CssFontVariationValue::create(Heap* heap, const GlobalString& tag, float value)
+{
+    return adoptPtr(new (heap) CssFontVariationValue(tag, value));
+}
+
+template<>
+struct is_a<CssFontVariationValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::FontVariation; }
+};
+
+class CssUnicodeRangeValue : public CssValue {
+public:
+    static RefPtr<CssUnicodeRangeValue> create(Heap* heap, uint32_t from, uint32_t to);
+
+    uint32_t from() const { return m_from; }
+    uint32_t to() const { return m_to; }
+    CssValueType type() const final { return CssValueType::UnicodeRange; }
+
+private:
+    CssUnicodeRangeValue(uint32_t from, uint32_t to)
+        : m_from(from), m_to(to)
+    {}
+
+    uint32_t m_from;
+    uint32_t m_to;
+};
+
+inline RefPtr<CssUnicodeRangeValue> CssUnicodeRangeValue::create(Heap* heap, uint32_t from, uint32_t to)
+{
+    return adoptPtr(new (heap) CssUnicodeRangeValue(from, to));
+}
+
+template<>
+struct is_a<CssUnicodeRangeValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::UnicodeRange; }
+};
+
+class CssPairValue final : public CssValue {
+public:
+    static RefPtr<CssPairValue> create(Heap* heap, RefPtr<CssValue> first, RefPtr<CssValue> second);
+
+    const RefPtr<CssValue>& first() const { return m_first; }
+    const RefPtr<CssValue>& second() const { return m_second; }
+    CssValueType type() const final { return CssValueType::Pair; }
+
+private:
+    CssPairValue(RefPtr<CssValue> first, RefPtr<CssValue> second)
+        : m_first(std::move(first)), m_second(std::move(second))
+    {}
+
+    RefPtr<CssValue> m_first;
+    RefPtr<CssValue> m_second;
+};
+
+inline RefPtr<CssPairValue> CssPairValue::create(Heap* heap, RefPtr<CssValue> first, RefPtr<CssValue> second)
+{
+    return adoptPtr(new (heap) CssPairValue(std::move(first), std::move(second)));
+}
+
+template<>
+struct is_a<CssPairValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Pair; }
+};
+
+class CssRectValue final : public CssValue {
+public:
+    static RefPtr<CssRectValue> create(Heap* heap, RefPtr<CssValue> top, RefPtr<CssValue> right, RefPtr<CssValue> bottom, RefPtr<CssValue> left);
+
+    const RefPtr<CssValue>& top() const { return m_top; }
+    const RefPtr<CssValue>& right() const { return m_right; }
+    const RefPtr<CssValue>& bottom() const { return m_bottom; }
+    const RefPtr<CssValue>& left() const { return m_left; }
+    CssValueType type() const final { return CssValueType::Rect; }
+
+private:
+    CssRectValue(RefPtr<CssValue> top, RefPtr<CssValue> right, RefPtr<CssValue> bottom, RefPtr<CssValue> left)
+        : m_top(std::move(top)), m_right(std::move(right)), m_bottom(std::move(bottom)), m_left(std::move(left))
+    {}
+
+    RefPtr<CssValue> m_top;
+    RefPtr<CssValue> m_right;
+    RefPtr<CssValue> m_bottom;
+    RefPtr<CssValue> m_left;
+};
+
+inline RefPtr<CssRectValue> CssRectValue::create(Heap* heap, RefPtr<CssValue> top, RefPtr<CssValue> right, RefPtr<CssValue> bottom, RefPtr<CssValue> left)
+{
+    return adoptPtr(new (heap) CssRectValue(std::move(top), std::move(right), std::move(bottom), std::move(left)));
+}
+
+template<>
+struct is_a<CssRectValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Rect; }
+};
+
+class CssListValue : public CssValue {
+public:
+    static RefPtr<CssListValue> create(Heap* heap, CssValueList values);
+
+    using Iterator = CssValueList::const_iterator;
+    Iterator begin() const { return m_values.begin(); }
+    Iterator end() const { return m_values.end(); }
+
+    const RefPtr<CssValue>& front() const { return m_values.front(); }
+    const RefPtr<CssValue>& back() const { return m_values.back(); }
+    const RefPtr<CssValue>& at(size_t index) const { return m_values.at(index); }
+    const CssValueList& values() const { return m_values; }
+    size_t size() const { return m_values.size(); }
+    bool empty() const { return m_values.empty(); }
+    CssValueType type() const override { return CssValueType::List; }
+
+protected:
+    CssListValue(CssValueList values) : m_values(std::move(values)) {}
+    CssValueList m_values;
+};
+
+inline RefPtr<CssListValue> CssListValue::create(Heap* heap, CssValueList values)
+{
+    return adoptPtr(new (heap) CssListValue(std::move(values)));
+}
+
+template<>
+struct is_a<CssListValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::List; }
+};
+
+enum class CssFunctionID {
+    Element,
+    Format,
+    Leader,
+    Local,
+    Matrix,
+    Qrcode,
+    Rotate,
+    Running,
+    Scale,
+    ScaleX,
+    ScaleY,
+    Skew,
+    SkewX,
+    SkewY,
+    TargetCounter,
+    TargetCounters,
+    Translate,
+    TranslateX,
+    TranslateY
+};
+
+class CssFunctionValue final : public CssListValue {
+public:
+    static RefPtr<CssFunctionValue> create(Heap* heap, CssFunctionID id, CssValueList values);
+
+    CssFunctionID id() const { return m_id; }
+    CssValueType type() const final { return CssValueType::Function; }
+
+private:
+    CssFunctionValue(CssFunctionID id, CssValueList values)
+        : CssListValue(std::move(values))
+        , m_id(id)
+    {}
+
+    CssFunctionID m_id;
+};
+
+inline RefPtr<CssFunctionValue> CssFunctionValue::create(Heap* heap, CssFunctionID id, CssValueList values)
+{
+    return adoptPtr(new (heap) CssFunctionValue(id, std::move(values)));
+}
+
+template<>
+struct is_a<CssFunctionValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::Function; }
+};
+
+class CssUnaryFunctionValue final : public CssValue {
+public:
+    static RefPtr<CssUnaryFunctionValue> create(Heap* heap, CssFunctionID id, RefPtr<CssValue> value);
+
+    CssFunctionID id() const { return m_id; }
+    const RefPtr<CssValue>& value() const { return m_value; }
+    CssValueType type() const final { return CssValueType::UnaryFunction; }
+
+private:
+    CssUnaryFunctionValue(CssFunctionID id, RefPtr<CssValue> value)
+        : m_id(id), m_value(std::move(value))
+    {}
+
+    CssFunctionID m_id;
+    RefPtr<CssValue> m_value;
+};
+
+inline RefPtr<CssUnaryFunctionValue> CssUnaryFunctionValue::create(Heap* heap, CssFunctionID id, RefPtr<CssValue> value)
+{
+    return adoptPtr(new (heap) CssUnaryFunctionValue(id, std::move(value)));
+}
+
+template<>
+struct is_a<CssUnaryFunctionValue> {
+    static bool check(const CssValue& value) { return value.type() == CssValueType::UnaryFunction; }
+};
+
+class CssSimpleSelector;
+class CssComplexSelector;
+
+using CssCompoundSelector = std::pmr::forward_list<CssSimpleSelector>;
+using CssSelector = std::pmr::forward_list<CssComplexSelector>;
+
+using CssCompoundSelectorList = std::pmr::forward_list<CssCompoundSelector>;
+using CssSelectorList = std::pmr::forward_list<CssSelector>;
+
+using CssPageSelector = CssCompoundSelector;
+using CssPageSelectorList = CssCompoundSelectorList;
+
+enum class PseudoType : uint8_t;
+
+class CssSimpleSelector {
+public:
+    enum class MatchType {
+        Universal,
+        Namespace,
+        Tag,
+        Id,
+        Class,
+        AttributeContains,
+        AttributeDashEquals,
+        AttributeEndsWith,
+        AttributeEquals,
+        AttributeHas,
+        AttributeIncludes,
+        AttributeStartsWith,
+        PseudoClassActive,
+        PseudoClassAnyLink,
+        PseudoClassChecked,
+        PseudoClassDisabled,
+        PseudoClassEmpty,
+        PseudoClassEnabled,
+        PseudoClassFirstChild,
+        PseudoClassFirstOfType,
+        PseudoClassFocus,
+        PseudoClassFocusVisible,
+        PseudoClassFocusWithin,
+        PseudoClassHas,
+        PseudoClassHover,
+        PseudoClassIs,
+        PseudoClassLang,
+        PseudoClassLastChild,
+        PseudoClassLastOfType,
+        PseudoClassLink,
+        PseudoClassLocalLink,
+        PseudoClassNot,
+        PseudoClassNthChild,
+        PseudoClassNthLastChild,
+        PseudoClassNthLastOfType,
+        PseudoClassNthOfType,
+        PseudoClassOnlyChild,
+        PseudoClassOnlyOfType,
+        PseudoClassRoot,
+        PseudoClassScope,
+        PseudoClassTarget,
+        PseudoClassTargetWithin,
+        PseudoClassVisited,
+        PseudoClassWhere,
+        PseudoElementAfter,
+        PseudoElementBefore,
+        PseudoElementFirstLetter,
+        PseudoElementFirstLine,
+        PseudoElementMarker,
+        PseudoPageBlank,
+        PseudoPageFirst,
+        PseudoPageLeft,
+        PseudoPageName,
+        PseudoPageNth,
+        PseudoPageRight
+    };
+
+    enum class AttributeCaseType {
+        Sensitive,
+        InSensitive
+    };
+
+    using MatchPattern = std::pair<int, int>;
+
+    explicit CssSimpleSelector(MatchType matchType) : m_matchType(matchType) {}
+    CssSimpleSelector(MatchType matchType, const GlobalString& name) : m_matchType(matchType), m_name(name) {}
+    CssSimpleSelector(MatchType matchType, const HeapString& value) : m_matchType(matchType), m_value(value) {}
+    CssSimpleSelector(MatchType matchType, const MatchPattern& matchPattern) : m_matchType(matchType), m_matchPattern(matchPattern) {}
+    CssSimpleSelector(MatchType matchType, CssSelectorList subSelectors) : m_matchType(matchType), m_subSelectors(std::move(subSelectors)) {}
+    CssSimpleSelector(MatchType matchType, AttributeCaseType attributeCaseType, const GlobalString& name, const HeapString& value)
+        : m_matchType(matchType), m_attributeCaseType(attributeCaseType), m_name(name), m_value(value)
+    {}
+
+    MatchType matchType() const { return m_matchType; }
+    AttributeCaseType attributeCaseType() const { return m_attributeCaseType; }
+    const MatchPattern& matchPattern() const { return m_matchPattern; }
+    const GlobalString& name() const { return m_name; }
+    const HeapString& value() const { return m_value; }
+    const CssSelectorList& subSelectors() const { return m_subSelectors; }
+    bool isCaseSensitive() const { return m_attributeCaseType == AttributeCaseType::Sensitive; }
+
+    bool matchnth(int count) const;
+    PseudoType pseudoType() const;
+    uint32_t specificity() const;
+
+private:
+    MatchType m_matchType;
+    AttributeCaseType m_attributeCaseType;
+    MatchPattern m_matchPattern;
+    GlobalString m_name;
+    HeapString m_value;
+    CssSelectorList m_subSelectors;
+};
+
+class CssComplexSelector {
+public:
+    enum class Combinator {
+        None,
+        Descendant,
+        Child,
+        DirectAdjacent,
+        InDirectAdjacent
+    };
+
+    CssComplexSelector(Combinator combinator, CssCompoundSelector compoundSelector)
+        : m_combinator(combinator), m_compoundSelector(std::move(compoundSelector))
+    {}
+
+    Combinator combinator() const { return m_combinator; }
+    const CssCompoundSelector& compoundSelector() const { return m_compoundSelector; }
+
+private:
+    Combinator m_combinator;
+    CssCompoundSelector m_compoundSelector;
+};
+
+enum class CssRuleType : uint8_t {
+    Style,
+    Media,
+    Import,
+    Namespace,
+    FontFace,
+    CounterStyle,
+    Page,
+    PageMargin
+};
+
+class CssRule : public HeapMember, public RefCounted<CssRule> {
+public:
+    CssRule() = default;
+    virtual ~CssRule() = default;
+    virtual CssRuleType type() const = 0;
+};
+
+using CssRuleList = std::pmr::vector<RefPtr<CssRule>>;
+
+class CssStyleRule final : public CssRule {
+public:
+    static RefPtr<CssStyleRule> create(Heap* heap, CssSelectorList selectors, CssPropertyList properties);
+
+    const CssSelectorList& selectors() const { return m_selectors; }
+    const CssPropertyList& properties() const { return m_properties; }
+    CssRuleType type() const final { return CssRuleType::Style; }
+
+private:
+    CssStyleRule(CssSelectorList selectors, CssPropertyList properties)
+        : m_selectors(std::move(selectors))
+        , m_properties(std::move(properties))
+    {}
+
+    CssSelectorList m_selectors;
+    CssPropertyList m_properties;
+};
+
+inline RefPtr<CssStyleRule> CssStyleRule::create(Heap* heap, CssSelectorList selectors, CssPropertyList properties)
+{
+    return adoptPtr(new (heap) CssStyleRule(std::move(selectors), std::move(properties)));
+}
+
+template<>
+struct is_a<CssStyleRule> {
+    static bool check(const CssRule& value) { return value.type() == CssRuleType::Style; }
+};
+
+class CssMediaFeature {
+public:
+    CssMediaFeature(CssPropertyID id, RefPtr<CssValue> value)
+        : m_id(id), m_value(std::move(value))
+    {}
+
+    CssPropertyID id() const { return m_id; }
+    const RefPtr<CssValue>& value() const { return m_value; }
+
+private:
+    CssPropertyID m_id;
+    RefPtr<CssValue> m_value;
+};
+
+using CssMediaFeatureList = std::pmr::forward_list<CssMediaFeature>;
+
+class CssMediaQuery {
+public:
+    enum class Type {
+        None,
+        All,
+        Print,
+        Screen
+    };
+
+    enum class Restrictor {
+        None,
+        Only,
+        Not
+    };
+
+    CssMediaQuery(Type type, Restrictor restrictor, CssMediaFeatureList features)
+        : m_type(type), m_restrictor(restrictor), m_features(std::move(features))
+    {}
+
+    Type type() const { return m_type; }
+    Restrictor restrictor() const { return m_restrictor; }
+    const CssMediaFeatureList& features() const { return m_features; }
+
+private:
+    Type m_type;
+    Restrictor m_restrictor;
+    CssMediaFeatureList m_features;
+};
+
+using CssMediaQueryList = std::pmr::forward_list<CssMediaQuery>;
+
+class CssMediaRule final : public CssRule {
+public:
+    static RefPtr<CssMediaRule> create(Heap* heap, CssMediaQueryList queries, CssRuleList rules);
+
+    const CssMediaQueryList& queries() const { return m_queries; }
+    const CssRuleList& rules() const { return m_rules; }
+    CssRuleType type() const final { return CssRuleType::Media; }
+
+private:
+    CssMediaRule(CssMediaQueryList queries, CssRuleList rules)
+        : m_queries(std::move(queries)), m_rules(std::move(rules))
+    {}
+
+    CssMediaQueryList m_queries;
+    CssRuleList m_rules;
+};
+
+inline RefPtr<CssMediaRule> CssMediaRule::create(Heap* heap, CssMediaQueryList queries, CssRuleList rules)
+{
+    return adoptPtr(new (heap) CssMediaRule(std::move(queries), std::move(rules)));
+}
+
+template<>
+struct is_a<CssMediaRule> {
+    static bool check(const CssRule& value) { return value.type() == CssRuleType::Media; }
+};
+
+class CssImportRule final : public CssRule {
+public:
+    static RefPtr<CssImportRule> create(Heap* heap, CssStyleOrigin origin, Url href, CssMediaQueryList queries);
+
+    CssStyleOrigin origin() const { return m_origin; }
+    const Url& href() const { return m_href; }
+    const CssMediaQueryList& queries() const { return m_queries; }
+    CssRuleType type() const final { return CssRuleType::Import; }
+
+private:
+    CssImportRule(CssStyleOrigin origin, Url href, CssMediaQueryList queries)
+        : m_origin(origin), m_href(std::move(href)), m_queries(std::move(queries))
+    {}
+
+    CssStyleOrigin m_origin;
+    Url m_href;
+    CssMediaQueryList m_queries;
+};
+
+inline RefPtr<CssImportRule> CssImportRule::create(Heap* heap, CssStyleOrigin origin, Url href, CssMediaQueryList queries)
+{
+    return adoptPtr(new (heap) CssImportRule(origin, std::move(href), std::move(queries)));
+}
+
+template<>
+struct is_a<CssImportRule> {
+    static bool check(const CssRule& value) { return value.type() == CssRuleType::Import; }
+};
+
+class CssNamespaceRule final : public CssRule {
+public:
+    static RefPtr<CssNamespaceRule> create(Heap* heap, const GlobalString& prefix, const GlobalString& uri);
+
+    const GlobalString& prefix() const { return m_prefix; }
+    const GlobalString& uri() const { return m_uri; }
+    CssRuleType type() const final { return CssRuleType::Namespace; }
+
+private:
+    CssNamespaceRule(const GlobalString& prefix, const GlobalString& uri)
+        : m_prefix(prefix), m_uri(uri)
+    {}
+
+    GlobalString m_prefix;
+    GlobalString m_uri;
+};
+
+inline RefPtr<CssNamespaceRule> CssNamespaceRule::create(Heap* heap, const GlobalString& prefix, const GlobalString& uri)
+{
+    return adoptPtr(new (heap) CssNamespaceRule(prefix, uri));
+}
+
+template<>
+struct is_a<CssNamespaceRule> {
+    static bool check(const CssRule& value) { return value.type() == CssRuleType::Namespace; }
+};
+
+class CssFontFaceRule final : public CssRule {
+public:
+    static RefPtr<CssFontFaceRule> create(Heap* heap, CssPropertyList properties);
+
+    const CssPropertyList& properties() const { return m_properties; }
+    CssRuleType type() const final { return CssRuleType::FontFace; }
+
+private:
+    CssFontFaceRule(CssPropertyList properties)
+        : m_properties(std::move(properties))
+    {}
+
+    CssPropertyList m_properties;
+};
+
+inline RefPtr<CssFontFaceRule> CssFontFaceRule::create(Heap* heap, CssPropertyList properties)
+{
+    return adoptPtr(new (heap) CssFontFaceRule(std::move(properties)));
+}
+
+template<>
+struct is_a<CssFontFaceRule> {
+    static bool check(const CssRule& value) { return value.type() == CssRuleType::FontFace; }
+};
+
+class CssCounterStyleRule final : public CssRule {
+public:
+    static RefPtr<CssCounterStyleRule> create(Heap* heap, const GlobalString& name, CssPropertyList properties);
+
+    const GlobalString& name() const { return m_name; }
+    const CssPropertyList& properties() const { return m_properties; }
+    CssRuleType type() const final { return CssRuleType::CounterStyle; }
+
+private:
+    CssCounterStyleRule(const GlobalString& name, CssPropertyList properties)
+        : m_name(name), m_properties(std::move(properties))
+    {}
+
+    GlobalString m_name;
+    CssPropertyList m_properties;
+};
+
+inline RefPtr<CssCounterStyleRule> CssCounterStyleRule::create(Heap* heap, const GlobalString& name, CssPropertyList properties)
+{
+    return adoptPtr(new (heap) CssCounterStyleRule(name, std::move(properties)));
+}
+
+template<>
+struct is_a<CssCounterStyleRule> {
+    static bool check(const CssRule& value) { return value.type() == CssRuleType::CounterStyle; }
+};
+
+enum class PageMarginType : uint8_t {
+    TopLeftCorner,
+    TopLeft,
+    TopCenter,
+    TopRight,
+    TopRightCorner,
+    RightTop,
+    RightMiddle,
+    RightBottom,
+    BottomRightCorner,
+    BottomRight,
+    BottomCenter,
+    BottomLeft,
+    BottomLeftCorner,
+    LeftBottom,
+    LeftMiddle,
+    LeftTop,
+    None
+};
+
+class CssPageMarginRule final : public CssRule {
+public:
+    static RefPtr<CssPageMarginRule> create(Heap* heap, PageMarginType marginType, CssPropertyList properties);
+
+    PageMarginType marginType() const { return m_marginType; }
+    const CssPropertyList& properties() const { return m_properties; }
+    CssRuleType type() const final { return CssRuleType::PageMargin; }
+
+private:
+    CssPageMarginRule(PageMarginType marginType, CssPropertyList properties)
+        : m_marginType(marginType), m_properties(std::move(properties))
+    {}
+
+    PageMarginType m_marginType;
+    CssPropertyList m_properties;
+};
+
+inline RefPtr<CssPageMarginRule> CssPageMarginRule::create(Heap* heap, PageMarginType marginType, CssPropertyList properties)
+{
+    return adoptPtr(new (heap) CssPageMarginRule(marginType, std::move(properties)));
+}
+
+template<>
+struct is_a<CssPageMarginRule> {
+    static bool check(const CssRule& value) { return value.type() == CssRuleType::PageMargin; }
+};
+
+using CssPageMarginRuleList = std::pmr::vector<RefPtr<CssPageMarginRule>>;
+
+class CssPageRule : public CssRule {
+public:
+    static RefPtr<CssPageRule> create(Heap* heap, CssPageSelectorList selectors, CssPageMarginRuleList margins, CssPropertyList properties);
+
+    const CssPageSelectorList& selectors() const { return m_selectors; }
+    const CssPageMarginRuleList& margins() const { return m_margins; }
+    const CssPropertyList& properties() const { return m_properties; }
+    CssRuleType type() const final { return CssRuleType::Page; }
+
+private:
+    CssPageRule(CssPageSelectorList selectors, CssPageMarginRuleList margins, CssPropertyList properties)
+        : m_selectors(std::move(selectors))
+        , m_margins(std::move(margins))
+        , m_properties(std::move(properties))
+    {}
+
+    CssPageSelectorList m_selectors;
+    CssPageMarginRuleList m_margins;
+    CssPropertyList m_properties;
+};
+
+inline RefPtr<CssPageRule> CssPageRule::create(Heap* heap, CssPageSelectorList selectors, CssPageMarginRuleList margins, CssPropertyList properties)
+{
+    return adoptPtr(new (heap) CssPageRule(std::move(selectors), std::move(margins), std::move(properties)));
+}
+
+template<>
+struct is_a<CssPageRule> {
+    static bool check(const CssRule& value) { return value.type() == CssRuleType::Page; }
+};
+
+class Element;
+
+class CssRuleData {
+public:
+    CssRuleData(const RefPtr<CssStyleRule>& rule, const CssSelector& selector, uint32_t specificity, uint32_t position)
+        : m_rule(rule), m_selector(&selector), m_specificity(specificity), m_position(position)
+    {}
+
+    const RefPtr<CssStyleRule>& rule() const { return m_rule; }
+    const CssSelector* selector() const { return m_selector; }
+    const CssPropertyList& properties() const { return m_rule->properties(); }
+    const uint32_t specificity() const { return m_specificity; }
+    const uint32_t position() const { return m_position; }
+
+    bool match(const Element* element, PseudoType pseudoType) const;
+
+private:
+    static bool matchSelector(const Element* element, PseudoType pseudoType, const CssSelector& selector);
+    static bool matchCompoundSelector(const Element* element, PseudoType pseudoType, const CssCompoundSelector& selector);
+    static bool matchSimpleSelector(const Element* element, const CssSimpleSelector& selector);
+
+    static bool matchNamespaceSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchTagSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchIdSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchClassSelector(const Element* element, const CssSimpleSelector& selector);
+
+    static bool matchAttributeHasSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchAttributeEqualsSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchAttributeIncludesSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchAttributeContainsSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchAttributeDashEqualsSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchAttributeStartsWithSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchAttributeEndsWithSelector(const Element* element, const CssSimpleSelector& selector);
+
+    static bool matchPseudoClassIsSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassNotSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassHasSelector(const Element* element, const CssSimpleSelector& selector);
+
+    static bool matchPseudoClassLinkSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassLocalLinkSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassEnabledSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassDisabledSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassCheckedSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassLangSelector(const Element* element, const CssSimpleSelector& selector);
+
+    static bool matchPseudoClassRootSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassEmptySelector(const Element* element, const CssSimpleSelector& selector);
+
+    static bool matchPseudoClassFirstChildSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassLastChildSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassOnlyChildSelector(const Element* element, const CssSimpleSelector& selector);
+
+    static bool matchPseudoClassFirstOfTypeSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassLastOfTypeSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassOnlyOfTypeSelector(const Element* element, const CssSimpleSelector& selector);
+
+    static bool matchPseudoClassNthChildSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassNthLastChildSelector(const Element* element, const CssSimpleSelector& selector);
+
+    static bool matchPseudoClassNthOfTypeSelector(const Element* element, const CssSimpleSelector& selector);
+    static bool matchPseudoClassNthLastOfTypeSelector(const Element* element, const CssSimpleSelector& selector);
+
+    RefPtr<CssStyleRule> m_rule;
+    const CssSelector* m_selector;
+    uint32_t m_specificity;
+    uint32_t m_position;
+};
+
+class CssPageRuleData {
+public:
+    CssPageRuleData(const RefPtr<CssPageRule>& rule, const CssPageSelector* selector, uint32_t specificity, uint32_t position)
+        : m_rule(rule), m_selector(selector), m_specificity(specificity), m_position(position)
+    {}
+
+    const RefPtr<CssPageRule>& rule() const { return m_rule; }
+    const CssPageSelector* selector() const { return m_selector; }
+    const CssPropertyList& properties() const { return m_rule->properties(); }
+    const CssPageMarginRuleList& margins() const { return m_rule->margins(); }
+    const uint32_t specificity() const { return m_specificity; }
+    const uint32_t position() const { return m_position; }
+
+    bool match(const GlobalString& pageName, uint32_t pageIndex, PseudoType pseudoType) const;
+
+private:
+    static bool matchSelector(const GlobalString& pageName, uint32_t pageIndex, PseudoType pseudoType, const CssSimpleSelector& selector);
+    RefPtr<CssPageRule> m_rule;
+    const CssPageSelector* m_selector;
+    uint32_t m_specificity;
+    uint32_t m_position;
+};
+
+class CssCounterStyle : public HeapMember, public RefCounted<CssCounterStyle> {
+public:
+    static RefPtr<CssCounterStyle> create(Heap* heap, RefPtr<CssCounterStyleRule> rule);
+
+    std::string generateInitialRepresentation(int value) const;
+    std::string generateFallbackRepresentation(int value) const;
+    std::string generateRepresentation(int value) const;
+
+    bool rangeContains(int value) const;
+    bool needsNegativeSign(int value) const;
+
+    const GlobalString& name() const;
+    const GlobalString& extendsName() const;
+    const GlobalString& fallbackName() const;
+    const CssValueID system() const;
+
+    const HeapString& prefix() const;
+    const HeapString& suffix() const;
+
+    void setFallbackStyle(CssCounterStyle& fallbackStyle) { m_fallbackStyle = fallbackStyle; }
+    const RefPtr<CssCounterStyle>& fallbackStyle() const { return m_fallbackStyle; }
+    void extend(const CssCounterStyle& extended);
+
+    static CssCounterStyle& defaultStyle();
+
+private:
+    explicit CssCounterStyle(RefPtr<CssCounterStyleRule> rule);
+    RefPtr<CssCounterStyleRule> m_rule;
+    RefPtr<CssIdentValue> m_system;
+    RefPtr<CssCustomIdentValue> m_extends;
+    RefPtr<CssIntegerValue> m_fixed;
+    RefPtr<CssValue> m_negative;
+    RefPtr<CssValue> m_prefix;
+    RefPtr<CssValue> m_suffix;
+    RefPtr<CssListValue> m_range;
+    RefPtr<CssPairValue> m_pad;
+    RefPtr<CssCustomIdentValue> m_fallback;
+    RefPtr<CssListValue> m_symbols;
+    RefPtr<CssListValue> m_additiveSymbols;
+    mutable RefPtr<CssCounterStyle> m_fallbackStyle;
+};
+
+class CssCounterStyleMap : public HeapMember {
+public:
+    static std::unique_ptr<CssCounterStyleMap> create(Heap* heap, const CssRuleList& rules, const CssCounterStyleMap* parent);
+
+    CssCounterStyle* findCounterStyle(const GlobalString& name) const;
+
+private:
+    CssCounterStyleMap(Heap* heap, const CssRuleList& rules, const CssCounterStyleMap* parent);
+    const CssCounterStyleMap* m_parent;
+    std::pmr::map<GlobalString, RefPtr<CssCounterStyle>> m_counterStyles;
+};
+
+const CssCounterStyleMap* userAgentCounterStyleMap();
+
+} // namespace plutobook
+
+#endif // PLUTOBOOK_CssRULE_H

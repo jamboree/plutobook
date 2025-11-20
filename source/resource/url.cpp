@@ -1,5 +1,5 @@
 #include "url.h"
-#include "stringutils.h"
+#include "string-utils.h"
 
 #include <cassert>
 

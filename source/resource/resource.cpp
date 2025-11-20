@@ -1,5 +1,5 @@
 #include "resource.h"
-#include "stringutils.h"
+#include "string-utils.h"
 #include "url.h"
 
 #include "plutobook.hpp"

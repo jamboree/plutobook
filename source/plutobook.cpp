@@ -1,11 +1,11 @@
 #include "plutobook.hpp"
-#include "htmldocument.h"
-#include "xmldocument.h"
-#include "textresource.h"
-#include "imageresource.h"
-#include "fontresource.h"
-#include "replacedbox.h"
-#include "graphicscontext.h"
+#include "html-document.h"
+#include "xml-document.h"
+#include "text-resource.h"
+#include "image-resource.h"
+#include "font-resource.h"
+#include "replaced-box.h"
+#include "graphics-context.h"
 
 #include <fstream>
 #include <cmath>
@@ -376,14 +376,14 @@ bool Book::loadImage(const char* data, size_t length, const std::string_view& mi
     loadHtml("<img>", userStyle, userScript, baseUrl);
 
     auto document = buildIfNeeded();
-    assert(document && document->isHTMLDocument());
-    auto htmlElement = to<HTMLElement>(document->firstChild());
+    assert(document && document->isHtmlDocument());
+    auto htmlElement = to<HtmlElement>(document->firstChild());
     assert(htmlElement && htmlElement->tagName() == htmlTag);
-    auto headElement = to<HTMLElement>(htmlElement->firstChild());
+    auto headElement = to<HtmlElement>(htmlElement->firstChild());
     assert(headElement && headElement->tagName() == headTag);
-    auto bodyElement = to<HTMLElement>(headElement->nextSibling());
+    auto bodyElement = to<HtmlElement>(headElement->nextSibling());
     assert(bodyElement && bodyElement->tagName() == bodyTag);
-    auto imageElement = to<HTMLElement>(bodyElement->firstChild());
+    auto imageElement = to<HtmlElement>(bodyElement->firstChild());
     assert(imageElement && imageElement->tagName() == imgTag);
 
     auto box = imageElement->box();
@@ -414,7 +414,7 @@ bool Book::loadXml(const std::string_view& content, const std::string_view& user
 bool Book::loadHtml(const std::string_view& content, const std::string_view& userStyle, const std::string_view& userScript, const std::string_view& baseUrl)
 {
     clearContent();
-    m_document = HTMLDocument::create(this, m_heap.get(), m_customResourceFetcher, ResourceLoader::completeUrl(baseUrl));
+    m_document = HtmlDocument::create(this, m_heap.get(), m_customResourceFetcher, ResourceLoader::completeUrl(baseUrl));
     if(!m_document->parse(content)) {
         assert(false);
     }

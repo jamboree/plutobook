@@ -2,7 +2,7 @@
 #define PLUTOBOOK_RESOURCE_H
 
 #include "pointer.h"
-#include "heapstring.h"
+#include "heap-string.h"
 
 namespace plutobook {
 

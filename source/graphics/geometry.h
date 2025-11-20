@@ -10,12 +10,12 @@ namespace plutobook {
 
 constexpr auto kDefaultEpsilon = 1e-5f;
 
-constexpr bool isNearlyZero(float v)
+inline bool isNearlyZero(float v)
 {
     return std::abs(v) <= kDefaultEpsilon;
 }
 
-constexpr bool isNearlyEqual(float a, float b)
+inline bool isNearlyEqual(float a, float b)
 {
     return isNearlyZero(a - b);
 }
