@@ -3,6 +3,7 @@
 
 #include <mutex>
 #include <set>
+#include <boost/unordered/unordered_node_set.hpp>
 
 namespace plutobook {
 
@@ -13,7 +14,15 @@ public:
     const HeapString* add(const std::string_view& value);
 
 private:
-    using StringSet = std::pmr::set<HeapString, std::less<>>;
+    struct Equal : std::equal_to<std::string_view> {
+        using is_transparent = void;
+    };
+
+    struct Hash : boost::hash<std::string_view> {
+        using is_transparent = void;
+    };
+
+    using StringSet = boost::unordered_node_set<HeapString, Hash, Equal, std::pmr::polymorphic_allocator<HeapString>>;
     Heap m_heap;
     StringSet m_table;
     std::mutex m_mutex;
@@ -28,10 +37,10 @@ GlobalStringTable::GlobalStringTable()
 const HeapString* GlobalStringTable::add(const std::string_view& value)
 {
     std::lock_guard guard(m_mutex);
-    auto lb = m_table.lower_bound(value);
+    auto lb = m_table.find(value);
     if(lb != m_table.end() && *lb == value)
         return &*lb;
-    return &*m_table.emplace_hint(lb, m_heap.createString(value));
+    return &*m_table.emplace(m_heap.createString(value)).first;
 }
 
 GlobalStringTable* globalStringTable()

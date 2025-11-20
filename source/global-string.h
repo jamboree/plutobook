@@ -33,17 +33,15 @@ public:
     bool operator==(const GlobalString& o) const { return m_entry == o.m_entry; }
     bool operator!=(const GlobalString& o) const { return m_entry != o.m_entry; }
 
-    const HeapString& value() const;
+    const HeapString& value() const
+    {
+        return m_entry ? *m_entry : nullString;
+    }
 
 private:
     static const HeapString nullString;
     const HeapString* m_entry{nullptr};
 };
-
-inline const HeapString& GlobalString::value() const
-{
-    return m_entry ? *m_entry : nullString;
-}
 
 inline GlobalString operator""_glo(const char* data, size_t length)
 {

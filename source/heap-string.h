@@ -8,61 +8,26 @@
 
 namespace plutobook {
 
-class HeapString {
+class HeapString : public std::string_view {
 public:
     HeapString() = default;
 
-    const char* data() const { return m_value.data(); }
-    size_t size() const { return m_value.size(); }
+    const char* begin() const { return data(); }
+    const char* end() const { return data() + size(); }
 
-    const char* begin() const { return m_value.data(); }
-    const char* end() const { return m_value.data() + m_value.size(); }
+    HeapString substring(size_t offset) const { return substr(offset); }
+    HeapString substring(size_t offset, size_t count) const { return substr(offset, count); }
 
-    const char& at(size_t index) const { return m_value.at(index); }
-    const char& operator[](size_t index) const { return m_value.operator[](index); }
+    const std::string_view& value() const { return *this; }
 
-    const char& front() const { return m_value.front(); }
-    const char& back() const { return m_value.back(); }
-
-    bool empty() const { return m_value.empty(); }
-
-    HeapString substring(size_t offset) const { return m_value.substr(offset); }
-    HeapString substring(size_t offset, size_t count) const { return m_value.substr(offset, count); }
-
-    const std::string_view& value() const { return m_value; }
-    operator const std::string_view&() const { return m_value; }
-
-private:
-    HeapString(const std::string_view& value) : m_value(value) {}
-    std::string_view m_value;
+protected:
+    HeapString(const std::string_view& value) : std::string_view(value) {}
     friend class Heap;
 };
 
-inline std::ostream& operator<<(std::ostream& o, const HeapString& in) { return o << in.value(); }
-
-inline bool operator==(const HeapString& a, const HeapString& b) { return a.value() == b.value(); }
-inline bool operator!=(const HeapString& a, const HeapString& b) { return a.value() != b.value(); }
-
-inline bool operator<(const HeapString& a, const HeapString& b) { return a.value() < b.value(); }
-inline bool operator>(const HeapString& a, const HeapString& b) { return a.value() > b.value(); }
-
-inline bool operator==(const HeapString& a, const std::string_view& b) { return a.value() == b; }
-inline bool operator!=(const HeapString& a, const std::string_view& b) { return a.value() != b; }
-
-inline bool operator==(const std::string_view& a, const HeapString& b) { return a == b.value(); }
-inline bool operator!=(const std::string_view& a, const HeapString& b) { return a != b.value(); }
-
-inline bool operator<(const HeapString& a, const std::string_view& b) { return a.value() < b; }
-inline bool operator>(const HeapString& a, const std::string_view& b) { return a.value() > b; }
-
-inline bool operator<(const std::string_view& a, const HeapString& b) { return a < b.value(); }
-inline bool operator>(const std::string_view& a, const HeapString& b) { return a > b.value(); }
-
-using HeapBase = std::pmr::monotonic_buffer_resource;
-
-class Heap : public HeapBase {
+class Heap : public std::pmr::monotonic_buffer_resource {
 public:
-    explicit Heap(size_t capacity) : HeapBase(capacity) {}
+    explicit Heap(size_t capacity) : monotonic_buffer_resource(capacity) {}
 
     HeapString createString(const std::string_view& value);
     HeapString concatenateString(const std::string_view& a, const std::string_view& b);
