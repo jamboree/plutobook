@@ -126,7 +126,7 @@ void ContentBoxBuilder::addTargetCounter(const CssFunctionValue& function)
     size_t index = 0;
 
     if(auto value = to<CssLocalUrlValue>(function.at(index))) {
-        fragment = to<CssLocalUrlValue>(*value).value();
+        fragment = value->value();
     } else {
         fragment = resolveAttr(to<CssAttrValue>(*function.at(index)));
     }

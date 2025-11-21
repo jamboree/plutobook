@@ -328,7 +328,7 @@ RefPtr<CssCustomPropertyValue> CssCustomPropertyValue::create(Heap* heap, const 
 }
 
 CssCustomPropertyValue::CssCustomPropertyValue(const GlobalString& name, RefPtr<CssVariableData> value)
-    : m_name(name), m_value(std::move(value))
+    : CssValue(classKind), m_name(name), m_value(std::move(value))
 {
 }
 
@@ -357,7 +357,7 @@ CssPropertyList CssVariableReferenceValue::resolve(const BoxStyle* style) const
 }
 
 CssVariableReferenceValue::CssVariableReferenceValue(const CssParserContext& context, CssPropertyID id, bool important, RefPtr<CssVariableData> value)
-    : m_context(context), m_id(id), m_important(important), m_value(std::move(value))
+    : CssValue(classKind), m_context(context), m_id(id), m_important(important), m_value(std::move(value))
 {
 }
 
@@ -378,7 +378,7 @@ const RefPtr<Image>& CssImageValue::fetch(Document* document) const
 }
 
 CssImageValue::CssImageValue(Url value)
-    : m_value(std::move(value))
+    : CssValue(classKind), m_value(std::move(value))
 {
 }
 
