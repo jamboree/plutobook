@@ -5,7 +5,7 @@
 namespace plutobook {
 
 BoxView::BoxView(Document* document, const RefPtr<BoxStyle>& style)
-    : BlockFlowBox(document, style)
+    : BlockFlowBox(classKind, document, style)
 {
 }
 
@@ -51,7 +51,7 @@ void BoxView::build()
 
     if(m_backgroundStyle) {
         auto node = m_backgroundStyle->node();
-        assert(node && node->checkType(NodeType::Element));
+        assert(node && node->isElementNode());
         if(auto box = node->box()) {
             box->setIsBackgroundStolen(true);
         }

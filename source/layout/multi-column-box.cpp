@@ -35,7 +35,7 @@ void MultiColumnRowBox::updateOverflowRect()
 }
 
 MultiColumnRowBox::MultiColumnRowBox(MultiColumnFlowBox* columnFlow, const RefPtr<BoxStyle>& style)
-    : BoxFrame(nullptr, style)
+    : BoxFrame(classKind, nullptr, style)
     , m_columnFlow(columnFlow)
     , m_runs(style->heap())
 {
@@ -338,7 +338,7 @@ void MultiColumnSpanBox::paint(const PaintInfo& info, const Point& offset, Paint
 }
 
 MultiColumnSpanBox::MultiColumnSpanBox(BoxFrame* box, const RefPtr<BoxStyle>& style)
-    : BoxFrame(nullptr, style)
+    : BoxFrame(classKind, nullptr, style)
     , m_box(box)
 {
 }
@@ -535,7 +535,7 @@ void MultiColumnFlowBox::layoutContents(FragmentBuilder* fragmentainer)
 
 static bool isValidColumnSpanner(const Box* box)
 {
-    return box->isBoxFrame() && !box->isInline() && !box->isFloatingOrPositioned() && box->style()->columnSpan() == ColumnSpan::All;
+    return is<BoxFrame>(*box) && !box->isInline() && !box->isFloatingOrPositioned() && box->style()->columnSpan() == ColumnSpan::All;
 }
 
 void MultiColumnFlowBox::build()
@@ -569,7 +569,7 @@ void MultiColumnFlowBox::build()
                 currentRow = newRow;
             }
 
-            if(child->firstChild() && child->isBlockFlowBox() && !child->isChildrenInline()
+            if (child->firstChild() && is<BlockFlowBox>(*child) && !child->isChildrenInline()
                 && !child->style()->hasColumns()) {
                 child = child->firstChild();
                 continue;
@@ -594,7 +594,7 @@ void MultiColumnFlowBox::build()
 }
 
 MultiColumnFlowBox::MultiColumnFlowBox(const RefPtr<BoxStyle>& style)
-    : BlockFlowBox(nullptr, style)
+    : BlockFlowBox(classKind, nullptr, style)
 {
 }
 

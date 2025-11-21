@@ -104,19 +104,16 @@ BoxStyle* Node::style() const
     return nullptr;
 }
 
-bool Node::checkType(ClassKind type) const noexcept {
-    switch (type)
-    {
-    case ClassKind::Text: return is<TextNode>(*this);
-    case ClassKind::Element: return is<ContainerNode>(*this);
-    case ClassKind::HtmlElement: return is<HtmlElement>(*this);
-    case ClassKind::SvgElement: return is<SvgElement>(*this);
-    case ClassKind::HtmlDocument: return is<HtmlDocument>(*this);
-    case ClassKind::SvgDocument: return is<SvgDocument>(*this);
-    case ClassKind::XmlDocument: return is<XmlDocument>(*this);
-    default:
-        std::unreachable();
-    }
+bool Node::isElementNode() const {
+    return is<Element>(*this);
+}
+
+bool Node::isSvgElement() const {
+    return is<SvgElement>(*this);
+}
+
+bool Node::isHtmlDocument() const {
+    return is<HtmlDocument>(*this);
 }
 
 bool Node::inHtmlDocument() const {

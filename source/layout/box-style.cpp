@@ -860,7 +860,7 @@ Overflow BoxStyle::overflow() const
 {
     auto value = get(CssPropertyID::Overflow);
     if(value == nullptr) {
-        if(m_node->checkType(NodeType::SvgElement))
+        if(m_node->isSvgElement())
             return Overflow::Hidden;
         return Overflow::Visible;
     }

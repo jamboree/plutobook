@@ -1,94 +1,82 @@
-#ifndef PLUTOBOOK_CONTENTBOX_H
-#define PLUTOBOOK_CONTENTBOX_H
+#pragma once
 
 #include "global-string.h"
 #include "text-box.h"
 
 namespace plutobook {
+    class ContentBox : public TextBox {
+    public:
+        ContentBox(ClassKind type, const RefPtr<BoxStyle>& style);
 
-class ContentBox : public TextBox {
-public:
-    ContentBox(const RefPtr<BoxStyle>& style);
+        const char* name() const override { return "ContentBox"; }
+    };
 
-    bool isContentBox() const final { return true; }
+    extern template bool is<ContentBox>(const Box& value);
 
-    const char* name() const override { return "ContentBox"; }
-};
+    class LeaderBox final : public ContentBox {
+    public:
+        static constexpr ClassKind classKind = ClassKind::Leader;
 
-template<>
-struct is_a<ContentBox> {
-    static bool check(const Box& box) { return box.isContentBox(); }
-};
+        LeaderBox(const RefPtr<BoxStyle>& style);
 
-class LeaderBox final : public ContentBox {
-public:
-    LeaderBox(const RefPtr<BoxStyle>& style);
+        const char* name() const final { return "LeaderBox"; }
+    };
 
-    bool isLeaderBox() const final { return true; }
+    extern template bool is<LeaderBox>(const Box& value);
 
-    const char* name() const final { return "LeaderBox"; }
-};
+    class TargetCounterBox final : public ContentBox {
+    public:
+        static constexpr ClassKind classKind = ClassKind::TargetCounter;
 
-template<>
-struct is_a<LeaderBox> {
-    static bool check(const Box& box) { return box.isLeaderBox(); }
-};
+        TargetCounterBox(const RefPtr<BoxStyle>& style,
+                         const HeapString& fragment,
+                         const GlobalString& identifier,
+                         const HeapString& seperator,
+                         const GlobalString& listStyle);
 
-class TargetCounterBox final : public ContentBox {
-public:
-    TargetCounterBox(const RefPtr<BoxStyle>& style, const HeapString& fragment, const GlobalString& identifier, const HeapString& seperator, const GlobalString& listStyle);
+        void build() final;
 
-    bool isTargetCounterBox() const final { return true; }
+        const char* name() const final { return "TargetCounterBox"; }
 
-    void build() final;
+    private:
+        HeapString m_fragment;
+        GlobalString m_identifier;
+        HeapString m_seperator;
+        GlobalString m_listStyle;
+    };
 
-    const char* name() const final { return "TargetCounterBox"; }
+    extern template bool is<TargetCounterBox>(const Box& value);
 
-private:
-    HeapString m_fragment;
-    GlobalString m_identifier;
-    HeapString m_seperator;
-    GlobalString m_listStyle;
-};
+    class CssCounterValue;
+    class CssFunctionValue;
+    class CssAttrValue;
 
-template<>
-struct is_a<TargetCounterBox> {
-    static bool check(const Box& box) { return box.isTargetCounterBox(); }
-};
+    class Counters;
+    class Element;
 
-class CssCounterValue;
-class CssFunctionValue;
-class CssAttrValue;
+    class ContentBoxBuilder {
+    public:
+        ContentBoxBuilder(Counters& counters, Element* element, Box* box);
 
-class Counters;
-class Element;
+        void build();
 
-class ContentBoxBuilder {
-public:
-    ContentBoxBuilder(Counters& counters, Element* element, Box* box);
+    private:
+        void addText(const HeapString& text);
+        void addLeaderText(const HeapString& text);
+        void addLeader(const CssValue& value);
+        void addElement(const CssValue& value);
+        void addCounter(const CssCounterValue& counter);
+        void addTargetCounter(const CssFunctionValue& function);
+        void addQuote(CssValueID value);
+        void addQrCode(const CssFunctionValue& function);
+        void addImage(RefPtr<Image> image);
 
-    void build();
+        const HeapString& resolveAttr(const CssAttrValue& attr) const;
 
-private:
-    void addText(const HeapString& text);
-    void addLeaderText(const HeapString& text);
-    void addLeader(const CssValue& value);
-    void addElement(const CssValue& value);
-    void addCounter(const CssCounterValue& counter);
-    void addTargetCounter(const CssFunctionValue& function);
-    void addQuote(CssValueID value);
-    void addQrCode(const CssFunctionValue& function);
-    void addImage(RefPtr<Image> image);
-
-    const HeapString& resolveAttr(const CssAttrValue& attr) const;
-
-    Counters& m_counters;
-    Element* m_element;
-    Box* m_box;
-    BoxStyle* m_style;
-    TextBox* m_lastTextBox{nullptr};
-};
-
+        Counters& m_counters;
+        Element* m_element;
+        Box* m_box;
+        BoxStyle* m_style;
+        TextBox* m_lastTextBox{nullptr};
+    };
 } // namespace plutobook
-
-#endif // PLUTOBOOK_CONTENTBOX_H

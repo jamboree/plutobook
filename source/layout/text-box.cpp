@@ -4,8 +4,8 @@
 
 namespace plutobook {
 
-TextBox::TextBox(Node* node, const RefPtr<BoxStyle>& style)
-    : Box(node, style)
+TextBox::TextBox(ClassKind type, Node* node, const RefPtr<BoxStyle>& style)
+    : Box(type, node, style)
     , m_lines(style->heap())
 {
     setIsInline(true);
@@ -19,13 +19,13 @@ void TextBox::appendText(const std::string_view& text)
 TextBox::~TextBox() = default;
 
 LineBreakBox::LineBreakBox(Node* node, const RefPtr<BoxStyle>& style)
-    : TextBox(node, style)
+    : TextBox(classKind, node, style)
 {
     setText(newLineGlo);
 }
 
 WordBreakBox::WordBreakBox(Node* node, const RefPtr<BoxStyle>& style)
-    : TextBox(node, style)
+    : TextBox(classKind, node, style)
 {
 }
 

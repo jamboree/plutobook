@@ -432,7 +432,7 @@ void PageBox::paintContents(const PaintInfo& info, const Point& offset, PaintPha
 }
 
 PageBox::PageBox(const RefPtr<BoxStyle>& style, const GlobalString& pageName, uint32_t pageIndex, float pageWidth, float pageHeight, float pageScale)
-    : BlockBox(nullptr, style)
+    : BlockBox(classKind, nullptr, style)
     , m_pageName(pageName)
     , m_pageIndex(pageIndex)
     , m_pageWidth(pageWidth)
@@ -443,7 +443,7 @@ PageBox::PageBox(const RefPtr<BoxStyle>& style, const GlobalString& pageName, ui
 }
 
 PageMarginBox::PageMarginBox(const RefPtr<BoxStyle>& style, PageMarginType marginType)
-    : BlockFlowBox(nullptr, style)
+    : BlockFlowBox(classKind, nullptr, style)
     , m_marginType(marginType)
 {
 }

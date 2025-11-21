@@ -1,5 +1,6 @@
 #include "content-box.h"
 #include "replaced-box.h"
+#include "page-box.h"
 #include "image-resource.h"
 #include "html-document.h"
 #include "css-rule.h"
@@ -10,18 +11,18 @@
 
 namespace plutobook {
 
-ContentBox::ContentBox(const RefPtr<BoxStyle>& style)
-    : TextBox(nullptr, style)
+ContentBox::ContentBox(ClassKind type, const RefPtr<BoxStyle>& style)
+    : TextBox(type, nullptr, style)
 {
 }
 
 LeaderBox::LeaderBox(const RefPtr<BoxStyle>& style)
-    : ContentBox(style)
+    : ContentBox(classKind, style)
 {
 }
 
 TargetCounterBox::TargetCounterBox(const RefPtr<BoxStyle>& style, const HeapString& fragment, const GlobalString& identifier, const HeapString& seperator, const GlobalString& listStyle)
-    : ContentBox(style)
+    : ContentBox(classKind, style)
     , m_fragment(fragment)
     , m_identifier(identifier)
     , m_seperator(seperator)
@@ -96,7 +97,7 @@ void ContentBoxBuilder::addLeader(const CssValue& value)
 
 void ContentBoxBuilder::addElement(const CssValue& value)
 {
-    if(!m_box->isPageMarginBox())
+    if (!is<PageMarginBox>(*m_box))
         return;
     const auto& name = to<CssCustomIdentValue>(value).value();
     auto style = m_style->document()->getRunningStyle(name);
@@ -142,7 +143,7 @@ void ContentBoxBuilder::addTargetCounter(const CssFunctionValue& function)
 
     assert(index == function.size());
 
-    if(m_box->isPageMarginBox()) {
+    if (is<PageMarginBox>(*m_box)) {
         addText(m_style->document()->getTargetCounterText(fragment, identifier, listStyle, seperator));
         return;
     }

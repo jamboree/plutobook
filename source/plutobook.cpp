@@ -376,7 +376,7 @@ bool Book::loadImage(const char* data, size_t length, const std::string_view& mi
     loadHtml("<img>", userStyle, userScript, baseUrl);
 
     auto document = buildIfNeeded();
-    assert(document && document->checkType(NodeType::HtmlDocument));
+    assert(document && document->isHtmlDocument());
     auto htmlElement = to<HtmlElement>(document->firstChild());
     assert(htmlElement && htmlElement->tagName() == htmlTag);
     auto headElement = to<HtmlElement>(htmlElement->firstChild());

@@ -4,8 +4,8 @@
 
 namespace plutobook {
 
-InlineBox::InlineBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BoxModel(node, style)
+InlineBox::InlineBox(ClassKind type, Node* node, const RefPtr<BoxStyle>& style)
+    : BoxModel(type, node, style)
     , m_lines(style->heap())
 {
     setIsInline(true);

@@ -1,87 +1,95 @@
-#ifndef PLUTOBOOK_REPLACEDBOX_H
-#define PLUTOBOOK_REPLACEDBOX_H
+#pragma once
 
 #include "box.h"
 
 namespace plutobook {
+    class ReplacedBox : public BoxFrame {
+    public:
+        ReplacedBox(ClassKind type, Node* node, const RefPtr<BoxStyle>& style);
 
-class ReplacedBox : public BoxFrame {
-public:
-    ReplacedBox(Node* node, const RefPtr<BoxStyle>& style);
+        virtual void
+        computeIntrinsicRatioInformation(float& intrinsicWidth,
+                                         float& intrinsicHeight,
+                                         double& intrinsicRatio) const = 0;
+        void computeAspectRatioInformation(float& intrinsicWidth,
+                                           float& intrinsicHeight,
+                                           double& intrinsicRatio) const;
 
-    bool isReplacedBox() const final { return true; }
+        virtual float computePreferredReplacedWidth() const;
+        void computePreferredWidths(float& minPreferredWidth,
+                                    float& maxPreferredWidth) const override;
 
-    virtual void computeIntrinsicRatioInformation(float& intrinsicWidth, float& intrinsicHeight, double& intrinsicRatio) const = 0;
-    void computeAspectRatioInformation(float& intrinsicWidth, float& intrinsicHeight, double& intrinsicRatio) const;
+        void computePositionedReplacedWidth(float& x, float& width,
+                                            float& marginLeft,
+                                            float& marginRight) const;
+        void computePositionedReplacedHeight(float& y, float& height,
+                                             float& marginTop,
+                                             float& marginBottom) const;
 
-    virtual float computePreferredReplacedWidth() const;
-    void computePreferredWidths(float& minPreferredWidth, float& maxPreferredWidth) const override;
+        std::optional<float>
+        computeReplacedWidthUsing(const Length& widthLength) const;
+        std::optional<float>
+        computeReplacedHeightUsing(const Length& heightLength) const;
 
-    void computePositionedReplacedWidth(float& x, float& width, float& marginLeft, float& marginRight) const;
-    void computePositionedReplacedHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
+        float constrainReplacedWidth(float width) const;
+        float constrainReplacedHeight(float height) const;
 
-    std::optional<float> computeReplacedWidthUsing(const Length& widthLength) const;
-    std::optional<float> computeReplacedHeightUsing(const Length& heightLength) const;
+        float availableReplacedWidth() const;
 
-    float constrainReplacedWidth(float width) const;
-    float constrainReplacedHeight(float height) const;
+        virtual float computeReplacedWidth() const;
+        virtual float computeReplacedHeight() const;
 
-    float availableReplacedWidth() const;
+        Rect computeObjectFitRect(const Rect& contentRect) const;
 
-    virtual float computeReplacedWidth() const;
-    virtual float computeReplacedHeight() const;
+        void computeWidth(float& x, float& width, float& marginLeft,
+                          float& marginRight) const override;
+        void computeHeight(float& y, float& height, float& marginTop,
+                           float& marginBottom) const override;
+        void layout(FragmentBuilder* fragmentainer) override;
 
-    Rect computeObjectFitRect(const Rect& contentRect) const;
+        virtual void paintReplaced(const PaintInfo& info,
+                                   const Point& offset) = 0;
+        void paint(const PaintInfo& info, const Point& offset,
+                   PaintPhase phase) override;
 
-    void computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const override;
-    void computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const override;
-    void layout(FragmentBuilder* fragmentainer) override;
+        float intrinsicReplacedWidth() const { return m_intrinsicSize.w; }
+        float intrinsicReplacedHeight() const { return m_intrinsicSize.h; }
 
-    virtual void paintReplaced(const PaintInfo& info, const Point& offset) = 0;
-    void paint(const PaintInfo& info, const Point& offset, PaintPhase phase) override;
+        void setIntrinsicSize(const Size& intrinsicSize) {
+            m_intrinsicSize = intrinsicSize;
+        }
+        Size intrinsicSize() const { return m_intrinsicSize; }
 
-    float intrinsicReplacedWidth() const { return m_intrinsicSize.w; }
-    float intrinsicReplacedHeight() const { return m_intrinsicSize.h; }
+        const char* name() const override { return "ReplacedBox"; }
 
-    void setIntrinsicSize(const Size& intrinsicSize) { m_intrinsicSize = intrinsicSize; }
-    Size intrinsicSize() const { return m_intrinsicSize; }
+    private:
+        Size m_intrinsicSize;
+    };
 
-    const char* name() const override { return "ReplacedBox"; }
+    extern template bool is<ReplacedBox>(const Box& value);
 
-private:
-    Size m_intrinsicSize;
-};
+    class Image;
 
-template<>
-struct is_a<ReplacedBox> {
-    static bool check(const Box& box) { return box.isReplacedBox(); }
-};
+    class ImageBox final : public ReplacedBox {
+    public:
+        static constexpr ClassKind classKind = ClassKind::Image;
 
-class Image;
+        ImageBox(Node* node, const RefPtr<BoxStyle>& style);
 
-class ImageBox final : public ReplacedBox {
-public:
-    ImageBox(Node* node, const RefPtr<BoxStyle>& style);
+        const RefPtr<Image>& image() const { return m_image; }
+        void setImage(RefPtr<Image> image);
 
-    bool isImageBox() const final { return true; }
+        void
+        computeIntrinsicRatioInformation(float& intrinsicWidth,
+                                         float& intrinsicHeight,
+                                         double& intrinsicRatio) const final;
+        void paintReplaced(const PaintInfo& info, const Point& offset) final;
 
-    const RefPtr<Image>& image() const { return m_image; }
-    void setImage(RefPtr<Image> image);
+        const char* name() const final { return "ImageBox"; }
 
-    void computeIntrinsicRatioInformation(float& intrinsicWidth, float& intrinsicHeight, double& intrinsicRatio) const final;
-    void paintReplaced(const PaintInfo& info, const Point& offset) final;
+    private:
+        RefPtr<Image> m_image;
+    };
 
-    const char* name() const final { return "ImageBox"; }
-
-private:
-    RefPtr<Image> m_image;
-};
-
-template<>
-struct is_a<ImageBox> {
-    static bool check(const Box& box) { return box.isImageBox(); }
-};
-
+    extern template bool is<ImageBox>(const Box& value);
 } // namespace plutobook
-
-#endif // PLUTOBOOK_REPLACEDBOX_H

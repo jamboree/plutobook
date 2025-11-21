@@ -8,7 +8,7 @@ ListItemBox::ListItemBox(Node* node, const RefPtr<BoxStyle>& style)
 }
 
 InsideListMarkerBox::InsideListMarkerBox(const RefPtr<BoxStyle>& style)
-    : InlineBox(nullptr, style)
+    : InlineBox(classKind, nullptr, style)
 {
 }
 

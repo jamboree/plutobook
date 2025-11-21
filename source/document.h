@@ -31,7 +31,10 @@ namespace plutobook {
 
         virtual ~Node();
         ClassKind type() const noexcept { return m_type; }
-        bool checkType(ClassKind type) const noexcept;
+
+        bool isElementNode() const;
+        bool isSvgElement() const;
+        bool isHtmlDocument() const;
 
         bool isRootNode() const;
         bool isSvgRootNode() const;

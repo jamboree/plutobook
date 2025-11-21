@@ -1,7 +1,9 @@
 #include "box.h"
+#include "box-view.h"
 #include "box-layer.h"
 #include "flex-box.h"
 #include "list-item-box.h"
+#include "text-box.h"
 #include "table-box.h"
 #include "line-box.h"
 #include "border-painter.h"
@@ -13,8 +15,8 @@
 
 namespace plutobook {
 
-Box::Box(Node* node, const RefPtr<BoxStyle>& style)
-    : m_node(node), m_style(style)
+Box::Box(ClassKind type, Node* node, const RefPtr<BoxStyle>& style)
+    : m_type(type), m_node(node), m_style(style)
 {
     if(node) {
         node->setBox(this);
@@ -183,7 +185,7 @@ BlockFlowBox* Box::createAnonymousBlock(const BoxStyle* parentStyle)
 
 bool Box::canContainFixedPositionedBoxes() const
 {
-    return (hasTransform() && isBlockBox()) || !parentBox();
+    return (hasTransform() && is<BlockBox>(*this)) || !parentBox();
 }
 
 bool Box::canContainAbsolutePositionedBoxes() const
@@ -194,8 +196,8 @@ bool Box::canContainAbsolutePositionedBoxes() const
 BlockBox* Box::containingBlock() const
 {
     auto parent = parentBox();
-    if(style()->position() == Position::Static || style()->position() == Position::Relative || isTextBox()) {
-        while(parent && !parent->isBlockBox())
+    if (style()->position() == Position::Static || style()->position() == Position::Relative || is<TextBox>(*this)) {
+        while(parent && !is<BlockBox>(*parent))
             parent = parent->parentBox();
         return to<BlockBox>(parent);
     }
@@ -210,7 +212,7 @@ BlockBox* Box::containingBlock() const
         }
     }
 
-    if(parent && !parent->isBlockBox())
+    if(parent && !is<BlockBox>(*parent))
         parent = parent->containingBlock();
     while(parent && parent->isAnonymous())
         parent = parent->containingBlock();
@@ -220,7 +222,7 @@ BlockBox* Box::containingBlock() const
 BoxModel* Box::containingBox() const
 {
     auto parent = parentBox();
-    if(!isTextBox()) {
+    if(!is<TextBox>(*this)) {
         if(style()->position() == Position::Fixed) {
             while(parent && !parent->canContainFixedPositionedBoxes()) {
                 parent = parent->parentBox();
@@ -261,14 +263,18 @@ bool Box::isRootBox() const
     return m_node && m_node->isRootNode();
 }
 
+bool Box::isListMarkerBox() const {
+    return is<InsideListMarkerBox>(*this) || is<OutsideListMarkerBox>(*this);
+}
+
 bool Box::isFlexItem() const
 {
-    return m_parentBox && m_parentBox->isFlexibleBox();
+    return m_parentBox && is<FlexibleBox>(*m_parentBox);
 }
 
 void Box::paintAnnotation(GraphicsContext& context, const Rect& rect) const
 {
-    if(m_node == nullptr || !m_node->checkType(NodeType::Element))
+    if(m_node == nullptr || !m_node->isElementNode())
         return;
     const auto& element = to<Element>(*m_node);
     if(element.isLinkDestination())
@@ -339,7 +345,7 @@ void Box::serializeStart(std::ostream& o, int indent, bool selfClosing, const Bo
 
     if(box->isAnonymous())
         o << " anonymous";
-    if(box->isPositioned() && !box->isBoxView()) {
+    if (box->isPositioned() && !is<BoxView>(*box)) {
         o << " positioned";
     } else if(box->isFloating()) {
         o << " floating";
@@ -398,8 +404,8 @@ void Box::serializeChildren(std::ostream& o, int indent) const
     }
 }
 
-BoxModel::BoxModel(Node* node, const RefPtr<BoxStyle>& style)
-    : Box(node, style)
+BoxModel::BoxModel(ClassKind type, Node* node, const RefPtr<BoxStyle>& style)
+    : Box(type, node, style)
 {
     setIsInline(style->isDisplayInlineType());
 }
@@ -408,15 +414,15 @@ BoxModel::~BoxModel() = default;
 
 void BoxModel::addChild(Box* newChild)
 {
-    if(!newChild->isTableCellBox() && !newChild->isTableRowBox()
-        && !newChild->isTableCaptionBox() && !newChild->isTableColumnBox()
-        && !newChild->isTableSectionBox()) {
+    if (!is<TableCellBox>(*newChild) && !is<TableRowBox>(*newChild)
+        && !is<TableCaptionBox>(*newChild) && !is<TableColumnBox>(*newChild)
+        && !is<TableSectionBox>(*newChild)) {
         appendChild(newChild);
         return;
     }
 
     auto lastTable = lastChild();
-    if(lastTable && lastTable->isAnonymous() && lastTable->isTableBox()) {
+    if (lastTable && lastTable->isAnonymous() && is<TableBox>(*lastTable)) {
         lastTable->addChild(newChild);
         return;
     }
@@ -681,7 +687,7 @@ Point BoxModel::relativePositionOffset() const
 
 float BoxModel::containingBlockWidthForPositioned(const BoxModel* container) const
 {
-    if(container->isBoxView())
+    if (is<BoxView>(*container))
         return document()->containerWidth();
     if(auto box = to<BoxFrame>(container))
         return box->paddingBoxWidth();
@@ -690,7 +696,7 @@ float BoxModel::containingBlockWidthForPositioned(const BoxModel* container) con
 
 float BoxModel::containingBlockHeightForPositioned(const BoxModel* container) const
 {
-    if(container->isBoxView())
+    if (is<BoxView>(*container))
         return document()->containerHeight();
     if(auto box = to<BoxFrame>(container))
         return box->paddingBoxHeight();
@@ -802,8 +808,8 @@ void BoxModel::build()
     Box::build();
 }
 
-BoxFrame::BoxFrame(Node* node, const RefPtr<BoxStyle>& style)
-    : BoxModel(node, style)
+BoxFrame::BoxFrame(ClassKind type, Node* node, const RefPtr<BoxStyle>& style)
+    : BoxModel(type, node, style)
 {
     setHasTransform(style->hasTransform());
     switch(style->position()) {
@@ -906,7 +912,7 @@ void BoxFrame::computeHorizontalStaticDistance(Length& leftLength, Length& right
         leftLength = Length(Length::Type::Fixed, staticPosition);
     } else {
         auto staticPosition = layer()->staticLeft() + containerWidth + container->borderRight();
-        while(parent && !parent->isBoxFrame())
+        while (parent && !is<BoxFrame>(*parent))
             parent = parent->parentBox();
         if(auto box = to<BoxFrame>(parent))
             staticPosition -= box->width();
@@ -942,7 +948,7 @@ void BoxFrame::computeVerticalStaticDistance(Length& topLength, Length& bottomLe
 
 void BoxFrame::computeHorizontalMargins(float& marginLeft, float& marginRight, float childWidth, const BlockBox* container, float containerWidth) const
 {
-    if(isFlexItem() || isTableCellBox())
+    if (isFlexItem() || is<TableCellBox>(*this))
         return;
     auto marginLeftLength = style()->marginLeft();
     auto marginRightLength = style()->marginRight();
@@ -981,7 +987,7 @@ void BoxFrame::computeHorizontalMargins(float& marginLeft, float& marginRight, f
 
 void BoxFrame::computeVerticalMargins(float& marginTop, float& marginBottom) const
 {
-    if(isFlexItem() || isTableCellBox())
+    if (isFlexItem() || is<TableCellBox>(*this))
         return;
     auto containerWidth = containingBlockWidthForContent();
     marginTop = style()->marginTop().calcMin(containerWidth);

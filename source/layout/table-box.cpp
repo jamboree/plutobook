@@ -8,7 +8,7 @@
 namespace plutobook {
 
 TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BlockBox(node, style)
+    : BlockBox(classKind, node, style)
     , m_columns(style->heap())
     , m_captions(style->heap())
     , m_sections(style->heap())
@@ -23,14 +23,14 @@ TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void TableBox::addChild(Box* newChild)
 {
-    if(newChild->isTableCaptionBox() || newChild->isTableColumnBox()
-        || newChild->isTableSectionBox()) {
+    if (is<TableCaptionBox>(*newChild) || is<TableColumnBox>(*newChild)
+        || is<TableSectionBox>(*newChild)) {
         appendChild(newChild);
         return;
     }
 
     auto lastSection = lastChild();
-    if(lastSection && lastSection->isAnonymous() && lastSection->isTableSectionBox()) {
+    if (lastSection && lastSection->isAnonymous() && is<TableSectionBox>(*lastSection)) {
         lastSection->addChild(newChild);
         return;
     }
@@ -989,7 +989,7 @@ AutoTableLayoutAlgorithm::AutoTableLayoutAlgorithm(TableBox* table)
 }
 
 TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BoxFrame(node, style)
+    : BoxFrame(classKind, node, style)
     , m_rows(style->heap())
     , m_spanningCells(style->heap())
 {
@@ -997,13 +997,13 @@ TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void TableSectionBox::addChild(Box* newChild)
 {
-    if(newChild->isTableRowBox()) {
+    if (is<TableRowBox>(*newChild)) {
         appendChild(newChild);
         return;
     }
 
     auto lastRow = lastChild();
-    if(lastRow && lastRow->isAnonymous() && lastRow->isTableRowBox()) {
+    if (lastRow && lastRow->isAnonymous() && is<TableRowBox>(*lastRow)) {
         lastRow->addChild(newChild);
         return;
     }
@@ -1335,20 +1335,20 @@ void TableSectionBox::paint(const PaintInfo& info, const Point& offset, PaintPha
 }
 
 TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BoxFrame(node, style)
+    : BoxFrame(classKind, node, style)
     , m_cells(style->heap())
 {
 }
 
 void TableRowBox::addChild(Box* newChild)
 {
-    if(newChild->isTableCellBox()) {
+    if (is<TableCellBox>(*newChild)) {
         appendChild(newChild);
         return;
     }
 
     auto lastCell = lastChild();
-    if(lastCell && lastCell->isAnonymous() && lastCell->isTableCellBox()) {
+    if (lastCell && lastCell->isAnonymous() && is<TableCellBox>(*lastCell)) {
         lastCell->addChild(newChild);
         return;
     }
@@ -1382,7 +1382,7 @@ void TableRowBox::paint(const PaintInfo& info, const Point& offset, PaintPhase p
 }
 
 TableColumnBox::TableColumnBox(Node* node, const RefPtr<BoxStyle>& style)
-    : Box(node, style)
+    : Box(classKind, node, style)
 {
 }
 

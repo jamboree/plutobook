@@ -5,8 +5,8 @@
 
 namespace plutobook {
 
-ReplacedBox::ReplacedBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BoxFrame(node, style)
+ReplacedBox::ReplacedBox(ClassKind type, Node* node, const RefPtr<BoxStyle>& style)
+    : BoxFrame(type, node, style)
 {
     setIsReplaced(true);
 }
@@ -436,7 +436,7 @@ void ReplacedBox::paint(const PaintInfo& info, const Point& offset, PaintPhase p
 }
 
 ImageBox::ImageBox(Node* node, const RefPtr<BoxStyle>& style)
-    : ReplacedBox(node, style)
+    : ReplacedBox(classKind, node, style)
 {
 }
 

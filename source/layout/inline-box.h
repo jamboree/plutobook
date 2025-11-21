@@ -1,53 +1,52 @@
-#ifndef PLUTOBOOK_INLINEBOX_H
-#define PLUTOBOOK_INLINEBOX_H
+#pragma once
 
 #include "box.h"
 
 namespace plutobook {
 
-class FlowLineBox;
+    class FlowLineBox;
 
-using FlowLineBoxList = std::pmr::vector<std::unique_ptr<FlowLineBox>>;
+    using FlowLineBoxList = std::pmr::vector<std::unique_ptr<FlowLineBox>>;
 
-class InlineBox : public BoxModel {
-public:
-    InlineBox(Node* node, const RefPtr<BoxStyle>& style);
-    ~InlineBox() override;
+    class InlineBox : public BoxModel {
+    public:
+        static constexpr ClassKind classKind = ClassKind::Inline;
 
-    bool isInlineBox() const final { return true; }
-    bool requiresLayer() const override;
+        InlineBox(Node* node, const RefPtr<BoxStyle>& style)
+            : InlineBox(classKind, node, style) {}
+        InlineBox(ClassKind type, Node* node, const RefPtr<BoxStyle>& style);
+        ~InlineBox() override;
 
-    Rect visualOverflowRect() const override;
-    Rect borderBoundingBox() const override;
-    Rect paintBoundingBox() const override;
+        bool requiresLayer() const override;
 
-    Point relativePositionedInlineOffset(const BoxModel* child) const;
+        Rect visualOverflowRect() const override;
+        Rect borderBoundingBox() const override;
+        Rect paintBoundingBox() const override;
 
-    float innerPaddingBoxWidth() const;
-    float innerPaddingBoxHeight() const;
+        Point relativePositionedInlineOffset(const BoxModel* child) const;
 
-    void addChild(Box* newChild) override;
+        float innerPaddingBoxWidth() const;
+        float innerPaddingBoxHeight() const;
 
-    const FlowLineBoxList& lines() const { return m_lines; }
-    FlowLineBoxList& lines() { return m_lines; }
+        void addChild(Box* newChild) override;
 
-    InlineBox* continuation() const { return m_continuation; }
-    void setContinuation(InlineBox* continuation) { m_continuation = continuation; }
+        const FlowLineBoxList& lines() const { return m_lines; }
+        FlowLineBoxList& lines() { return m_lines; }
 
-    void paint(const PaintInfo& info, const Point& offset, PaintPhase phase) override;
+        InlineBox* continuation() const { return m_continuation; }
+        void setContinuation(InlineBox* continuation) {
+            m_continuation = continuation;
+        }
 
-    const char* name() const override { return "InlineBox"; }
+        void paint(const PaintInfo& info, const Point& offset,
+                   PaintPhase phase) override;
 
-private:
-    FlowLineBoxList m_lines;
-    InlineBox* m_continuation{nullptr};
-};
+        const char* name() const override { return "InlineBox"; }
 
-template<>
-struct is_a<InlineBox> {
-    static bool check(const Box& box) { return box.isInlineBox(); }
-};
+    private:
+        FlowLineBoxList m_lines;
+        InlineBox* m_continuation{nullptr};
+    };
 
+    extern template bool is<InlineBox>(const Box& value);
 } // namespace plutobook
-
-#endif // PLUTOBOOK_INLINEBOX_H
