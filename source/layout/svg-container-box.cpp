@@ -2,8 +2,8 @@
 
 namespace plutobook {
 
-SvgContainerBox::SvgContainerBox(SvgElement* element, const RefPtr<BoxStyle>& style)
-    : SvgBoxModel(element, style)
+SvgContainerBox::SvgContainerBox(ClassKind type, SvgElement* element, const RefPtr<BoxStyle>& style)
+    : SvgBoxModel(type, element, style)
 {
 }
 
@@ -61,8 +61,8 @@ void SvgContainerBox::renderChildren(const SvgRenderState& state) const
     }
 }
 
-SvgHiddenContainerBox::SvgHiddenContainerBox(SvgElement* element, const RefPtr<BoxStyle>& style)
-    : SvgContainerBox(element, style)
+SvgHiddenContainerBox::SvgHiddenContainerBox(ClassKind type, SvgElement* element, const RefPtr<BoxStyle>& style)
+    : SvgContainerBox(type, element, style)
 {
 }
 
@@ -71,7 +71,7 @@ void SvgHiddenContainerBox::render(const SvgRenderState& state) const
 }
 
 SvgTransformableContainerBox::SvgTransformableContainerBox(SvgGraphicsElement* element, const RefPtr<BoxStyle>& style)
-    : SvgContainerBox(element, style)
+    : SvgContainerBox(classKind, element, style)
 {
 }
 
@@ -106,7 +106,7 @@ void SvgTransformableContainerBox::layout()
 }
 
 SvgViewportContainerBox::SvgViewportContainerBox(SvgSvgElement* element, const RefPtr<BoxStyle>& style)
-    : SvgContainerBox(element, style)
+    : SvgContainerBox(classKind, element, style)
 {
     setIsOverflowHidden(style->isOverflowHidden());
 }
@@ -142,8 +142,8 @@ void SvgViewportContainerBox::layout()
     SvgContainerBox::layout();
 }
 
-SvgResourceContainerBox::SvgResourceContainerBox(SvgElement* element, const RefPtr<BoxStyle>& style)
-    : SvgHiddenContainerBox(element, style)
+SvgResourceContainerBox::SvgResourceContainerBox(ClassKind type, SvgElement* element, const RefPtr<BoxStyle>& style)
+    : SvgHiddenContainerBox(type, element, style)
 {
 }
 

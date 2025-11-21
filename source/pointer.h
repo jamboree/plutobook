@@ -224,17 +224,6 @@ namespace plutobook {
     }
 
     template<typename T>
-    struct is_a;
-
-    template<typename T>
-    concept HasIs = requires { is_a<T>{}; };
-
-    template<HasIs T, typename U>
-    inline bool is(const U& value) {
-        return is_a<T>::check(value);
-    }
-
-    template<typename T>
     inline bool is(const typename T::ClassRoot& value) {
         if constexpr (std::is_final_v<T>) {
             return T::classKind == value.type();

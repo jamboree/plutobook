@@ -1,4 +1,4 @@
-#include "form-controlbox.h"
+#include "form-control-box.h"
 #include "html-document.h"
 #include "box-layer.h"
 
@@ -34,7 +34,7 @@ void TextInputBox::computeHeight(float& y, float& height, float& marginTop, floa
 }
 
 SelectBox::SelectBox(HtmlSelectElement* element, const RefPtr<BoxStyle>& style)
-    : BlockBox(element, style)
+    : BlockBox(classKind, element, style)
     , m_size(element->size())
 {
 }

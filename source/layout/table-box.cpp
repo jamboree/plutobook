@@ -23,14 +23,14 @@ TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void TableBox::addChild(Box* newChild)
 {
-    if (is<TableCaptionBox>(*newChild) || is<TableColumnBox>(*newChild)
-        || is<TableSectionBox>(*newChild)) {
+    if(newChild->isTableCaptionBox() || newChild->isTableColumnBox()
+        || newChild->isTableSectionBox()) {
         appendChild(newChild);
         return;
     }
 
     auto lastSection = lastChild();
-    if (lastSection && lastSection->isAnonymous() && is<TableSectionBox>(*lastSection)) {
+    if(lastSection && lastSection->isAnonymous() && lastSection->isTableSectionBox()) {
         lastSection->addChild(newChild);
         return;
     }
@@ -997,13 +997,13 @@ TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void TableSectionBox::addChild(Box* newChild)
 {
-    if (is<TableRowBox>(*newChild)) {
+    if(newChild->isTableRowBox()) {
         appendChild(newChild);
         return;
     }
 
     auto lastRow = lastChild();
-    if (lastRow && lastRow->isAnonymous() && is<TableRowBox>(*lastRow)) {
+    if(lastRow && lastRow->isAnonymous() && lastRow->isTableRowBox()) {
         lastRow->addChild(newChild);
         return;
     }
@@ -1342,13 +1342,13 @@ TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void TableRowBox::addChild(Box* newChild)
 {
-    if (is<TableCellBox>(*newChild)) {
+    if(newChild->isTableCellBox()) {
         appendChild(newChild);
         return;
     }
 
     auto lastCell = lastChild();
-    if (lastCell && lastCell->isAnonymous() && is<TableCellBox>(*lastCell)) {
+    if(lastCell && lastCell->isAnonymous() && lastCell->isTableCellBox()) {
         lastCell->addChild(newChild);
         return;
     }

@@ -1,5 +1,4 @@
 #include "flex-box.h"
-#include "table-box.h"
 #include "box-layer.h"
 
 #include <span>
@@ -50,7 +49,7 @@ float FlexItem::constrainWidth(float width) const
         width = std::min(width, *maxWidth);
     if(auto minWidth = computeWidthUsing(m_box->style()->minWidth()))
         width = std::max(width, *minWidth);
-    if (is<TableBox>(*m_box))
+    if(m_box->isTableBox())
         width = std::max(width, m_box->minPreferredWidth());
     return std::max(0.f, width);
 }

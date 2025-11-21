@@ -74,8 +74,8 @@ void SvgPaintServer::applyPaint(const SvgRenderState& state) const
     }
 }
 
-SvgBoxModel::SvgBoxModel(SvgElement* element, const RefPtr<BoxStyle>& style)
-    : Box(element, style)
+SvgBoxModel::SvgBoxModel(ClassKind type, SvgElement* element, const RefPtr<BoxStyle>& style)
+    : Box(type, element, style)
 {
     setIsInline(false);
 }

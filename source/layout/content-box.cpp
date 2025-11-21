@@ -1,6 +1,5 @@
 #include "content-box.h"
 #include "replaced-box.h"
-#include "page-box.h"
 #include "image-resource.h"
 #include "html-document.h"
 #include "css-rule.h"
@@ -97,7 +96,7 @@ void ContentBoxBuilder::addLeader(const CssValue& value)
 
 void ContentBoxBuilder::addElement(const CssValue& value)
 {
-    if (!is<PageMarginBox>(*m_box))
+    if(!m_box->isPageMarginBox())
         return;
     const auto& name = to<CssCustomIdentValue>(value).value();
     auto style = m_style->document()->getRunningStyle(name);
@@ -143,7 +142,7 @@ void ContentBoxBuilder::addTargetCounter(const CssFunctionValue& function)
 
     assert(index == function.size());
 
-    if (is<PageMarginBox>(*m_box)) {
+    if(m_box->isPageMarginBox()) {
         addText(m_style->document()->getTargetCounterText(fragment, identifier, listStyle, seperator));
         return;
     }

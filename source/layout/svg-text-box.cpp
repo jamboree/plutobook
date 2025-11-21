@@ -3,13 +3,13 @@
 namespace plutobook {
 
 SvgInlineTextBox::SvgInlineTextBox(TextNode* node, const RefPtr<BoxStyle>& style)
-    : Box(node, style)
+    : Box(classKind, node, style)
 {
     setIsInline(true);
 }
 
 SvgTSpanBox::SvgTSpanBox(SvgTSpanElement* element, const RefPtr<BoxStyle>& style)
-    : Box(element, style)
+    : Box(classKind, element, style)
 {
     setIsInline(true);
 }
@@ -21,7 +21,7 @@ void SvgTSpanBox::build()
 }
 
 SvgTextBox::SvgTextBox(SvgTextElement* element, const RefPtr<BoxStyle>& style)
-    : SvgBoxModel(element, style)
+    : SvgBoxModel(classKind, element, style)
     , m_lineLayout(this)
 {
 }

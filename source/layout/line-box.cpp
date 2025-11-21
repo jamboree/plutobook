@@ -8,6 +8,18 @@
 #include <cmath>
 
 namespace plutobook {
+template<class F>
+decltype(auto) visit(LineBox* p, F&& f) {
+    switch (p->type()) {
+    case LineBox::ClassKind::Text: return f(static_cast<TextLineBox*>(p));
+    case LineBox::ClassKind::Replaced: return f(static_cast<ReplacedLineBox*>(p));
+    case LineBox::ClassKind::Flow: return f(static_cast<FlowLineBox*>(p));
+    case LineBox::ClassKind::Root: return f(static_cast<RootLineBox*>(p));
+    default: std::unreachable();
+    }
+}
+
+template bool is<FlowLineBox>(const LineBox& value);
 
 LineBox::~LineBox() = default;
 
@@ -23,7 +35,7 @@ BoxStyle* LineBox::style() const
 
 float LineBox::height() const
 {
-    if(isRootLineBox() || isTextLineBox())
+    if (is<RootLineBox>(*this) || is<TextLineBox>(*this))
         return style()->fontHeight();
     if(auto box = to<BoxFrame>(m_box))
         return box->height();
@@ -48,8 +60,8 @@ Rect LineBox::rect() const
 
 float LineBox::verticalAlignPosition() const
 {
-    if(isTextLineBox()) {
-        if(m_parentLine->isRootLineBox())
+    if(is<TextLineBox>(*this)) {
+        if (is<RootLineBox>(*m_parentLine))
             return 0.f;
         return m_parentLine->y();
     }
@@ -92,13 +104,13 @@ float LineBox::verticalAlignPosition() const
 
 VerticalAlignType LineBox::verticalAlignType() const
 {
-    if(isTextLineBox() && m_parentLine->isRootLineBox())
+    if (is<TextLineBox>(*this) && is<RootLineBox>(*m_parentLine))
         return VerticalAlignType::Baseline;
     return style()->verticalAlignType();
 }
 
-LineBox::LineBox(Box* box, float width)
-    : m_box(box), m_width(width)
+LineBox::LineBox(ClassKind type, Box* box, float width)
+    : m_type(type), m_box(box), m_width(width)
 {
 }
 
@@ -218,7 +230,7 @@ void TextLineBox::serialize(std::ostream& o, int indent) const
 TextLineBox::~TextLineBox() = default;
 
 TextLineBox::TextLineBox(TextBox* box, const TextShapeView& shape, float width, float expansion)
-    : LineBox(box, width)
+    : LineBox(classKind, box, width)
     , m_shape(shape)
     , m_shapeWidth(shape.width(expansion))
     , m_expansion(expansion)
@@ -265,7 +277,7 @@ void ReplacedLineBox::serialize(std::ostream& o, int indent) const
 }
 
 ReplacedLineBox::ReplacedLineBox(BoxFrame* box)
-    : LineBox(box, box->width())
+    : LineBox(classKind, box, box->width())
 {
 }
 
@@ -370,7 +382,7 @@ void FlowLineBox::adjustMaxAscentAndDescent(float& maxAscent, float& maxDescent,
 
 void FlowLineBox::computeMaxAscentAndDescent(float& maxAscent, float& maxDescent, float& maxPositionTop, float& maxPositionBottom)
 {
-    if(isRootLineBox()) {
+    if (is<RootLineBox>(*this)) {
         maxAscent = baselinePosition();
         maxDescent = lineHeight() - maxAscent;
     }
@@ -380,7 +392,7 @@ void FlowLineBox::computeMaxAscentAndDescent(float& maxAscent, float& maxDescent
             continue;
         float ascent = 0.f;
         float descent = 0.f;
-        if(child->isTextLineBox() && !style()->hasLineHeight()) {
+        if (is<TextLineBox>(*child) && !style()->hasLineHeight()) {
             const auto& line = to<TextLineBox>(*child);
             const auto& shape = line.shape();
             shape.maxAscentAndDescent(ascent, descent);
@@ -504,14 +516,14 @@ void FlowLineBox::placeInVerticalDirection(float y, float maxHeight, float maxAs
             child->setY(posAdjust + y + child->y());
         }
 
-        if(child->isReplacedLineBox()) {
+        if (is<ReplacedLineBox>(*child)) {
             auto& box = to<BoxFrame>(*child->box());
             child->setY(child->y() + box.marginTop());
             box.setY(child->y());
         } else {
             assert(child->isTextLineBox() || child->isFlowLineBox());
             auto top = child->baselinePosition() - child->style()->fontAscent();
-            if(child->isFlowLineBox()) {
+            if (is<FlowLineBox>(*child)) {
                 const auto& box = to<BoxModel>(*child->box());
                 top -= box.borderTop() + box.paddingTop();
             }
@@ -557,7 +569,7 @@ void FlowLineBox::addOverflowRect(const Rect& overflowRect)
 void FlowLineBox::updateOverflowRect(float lineTop, float lineBottom)
 {
     Rect borderRect(m_x, m_y, m_width, height());
-    if(!isRootLineBox()) {
+    if (!is<RootLineBox>(*this)) {
         auto outlineEdge = style()->getOutlineEdge();
         if(outlineEdge.isRenderable()) {
             borderRect.inflate(outlineEdge.width() + style()->outlineOffset());
@@ -591,7 +603,7 @@ void FlowLineBox::updateOverflowRect(float lineTop, float lineBottom)
 
 void FlowLineBox::paintOutlines(const PaintInfo& info, const Point& offset) const
 {
-    if(style()->visibility() != Visibility::Visible || isRootLineBox())
+    if (style()->visibility() != Visibility::Visible || is<RootLineBox>(*this))
         return;
     Point adjustedOffset(offset + location());
     Rect borderRect(adjustedOffset, size());
@@ -600,7 +612,7 @@ void FlowLineBox::paintOutlines(const PaintInfo& info, const Point& offset) cons
 
 void FlowLineBox::paintDecorations(const PaintInfo& info, const Point& offset) const
 {
-    if(style()->visibility() != Visibility::Visible || isRootLineBox())
+    if(style()->visibility() != Visibility::Visible || is<RootLineBox>(*this))
         return;
     Point adjustedOffset(offset + location());
     Rect borderRect(adjustedOffset, size());
@@ -638,8 +650,8 @@ void FlowLineBox::serialize(std::ostream& o, int indent) const
     Box::serializeEnd(o, indent, m_children.empty(), m_box, this);
 }
 
-FlowLineBox::FlowLineBox(BoxModel* box)
-    : LineBox(box, 0.f)
+FlowLineBox::FlowLineBox(ClassKind type, BoxModel* box)
+    : LineBox(type, box, 0.f)
     , m_children(box->heap())
 {
 }
@@ -703,7 +715,7 @@ float RootLineBox::adjustLineBoxInFragmentFlow(FragmentBuilder* fragmentainer, f
 }
 
 RootLineBox::RootLineBox(BlockFlowBox* box)
-    : FlowLineBox(box)
+    : FlowLineBox(classKind, box)
 {
 }
 

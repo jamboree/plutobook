@@ -1,11 +1,8 @@
 #include "block-box.h"
-#include "table-box.h"
-#include "page-box.h"
 #include "multi-column-box.h"
 #include "line-box.h"
 #include "line-layout.h"
 #include "box-layer.h"
-#include "box-view.h"
 #include "document.h"
 
 namespace plutobook {
@@ -22,7 +19,7 @@ void BlockBox::computePreferredWidths(float& minPreferredWidth, float& maxPrefer
     maxPreferredWidth = 0;
 
     auto widthLength = style()->width();
-    if (widthLength.isFixed() && !is<TableCellBox>(*this)) {
+    if(widthLength.isFixed() && !isTableCellBox()) {
         minPreferredWidth = maxPreferredWidth = adjustContentBoxWidth(widthLength.value());
     } else {
         computeIntrinsicWidths(minPreferredWidth, maxPreferredWidth);
@@ -70,11 +67,11 @@ void BlockBox::layoutPositionedBoxes()
 
 std::optional<float> BlockBox::availableHeight() const
 {
-    if (is<BoxView>(*this))
+    if(isBoxView())
         return document()->containerHeight();
     if(hasOverrideHeight())
         return overrideHeight() - borderAndPaddingHeight();
-    if (is<TableCellBox>(*this) || is<PageMarginBox>(*this))
+    if(isTableCellBox() || isPageMarginBox())
         return std::nullopt;
     if(isAnonymous())
         return containingBlockHeightForContent();
@@ -140,7 +137,7 @@ float BlockBox::computeWidthUsing(const Length& widthLength, const BlockBox* con
     auto width = containerWidth - marginLeft - marginRight;
     if(auto block = to<BlockFlowBox>(container); block && block->containsFloats() && shrinkToAvoidFloats())
         width = std::min(width, shrinkWidthToAvoidFloats(marginLeft, marginRight, block));
-    if (isFloating() || isInline() || isFlexItem() || is<TableBox>(*this)) {
+    if(isFloating() || isInline() || isFlexItem() || isTableBox()) {
         width = std::min(width, maxPreferredWidth());
         width = std::max(width, minPreferredWidth());
     }
@@ -334,7 +331,7 @@ void BlockBox::computePositionedHeightUsing(const Length& heightLength, const Bo
 
     float topLengthValue = 0;
     float heightLengthValue = 0;
-    if (is<TableBox>(*this)) {
+    if(isTableBox()) {
         heightLengthValue = contentHeight;
         heightLenghtIsAuto = false;
     } else {
@@ -441,16 +438,16 @@ void BlockBox::computeWidth(float& x, float& width, float& marginLeft, float& ma
 {
     if(hasOverrideWidth()) {
         width = overrideWidth();
-        if (is<TableBox>(*this))
+        if(isTableBox())
             width = std::max(width, minPreferredWidth());
         return;
     }
 
-    if (is<TableCellBox>(*this))
+    if(isTableCellBox())
         return;
     if(isPositioned()) {
         computePositionedWidth(x, width, marginLeft, marginRight);
-        if (is<TableBox>(*this))
+        if(isTableBox())
             width = std::max(width, minPreferredWidth());
         return;
     }
@@ -459,7 +456,7 @@ void BlockBox::computeWidth(float& x, float& width, float& marginLeft, float& ma
     auto containerWidth = std::max(0.f, containingBlockWidthForContent(container));
     width = computeWidthUsing(style()->width(), container, containerWidth);
     width = constrainWidth(width, container, containerWidth);
-    if (is<TableBox>(*this))
+    if(isTableBox())
         width = std::max(width, minPreferredWidth());
     computeHorizontalMargins(marginLeft, marginRight, width, container, containerWidth);
 }
@@ -467,14 +464,14 @@ void BlockBox::computeWidth(float& x, float& width, float& marginLeft, float& ma
 void BlockBox::computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const
 {
     if(hasOverrideHeight()) {
-        if (is<TableCellBox>(*this))
+        if(isTableCellBox())
             height = std::max(height, overrideHeight());
-        else if (!is<TableBox>(*this))
+        else if(!isTableBox())
             height = overrideHeight();
         return;
     }
 
-    if (is<TableCellBox>(*this) || is<PageMarginBox>(*this))
+    if(isTableCellBox() || isPageMarginBox())
         return;
     if(isPositioned()) {
         computePositionedHeight(y, height, marginTop, marginBottom);
@@ -482,7 +479,7 @@ void BlockBox::computeHeight(float& y, float& height, float& marginTop, float& m
     }
 
     computeVerticalMargins(marginTop, marginBottom);
-    if (is<TableBox>(*this))
+    if(isTableBox())
         return;
     if(auto computedHeight = computeHeightUsing(style()->height()))
         height = adjustBorderBoxHeight(computedHeight.value());
@@ -518,7 +515,7 @@ std::optional<float> BlockBox::lastLineBaseline() const
 std::optional<float> BlockBox::inlineBlockBaseline() const
 {
     for(auto child = lastBoxFrame(); child; child = child->prevBoxFrame()) {
-        if (child->isFloatingOrPositioned() || is<TableBox>(*child))
+        if(child->isFloatingOrPositioned() || child->isTableBox())
             continue;
         if(auto baseline = child->inlineBlockBaseline()) {
             return baseline.value() + child->y();
@@ -672,7 +669,7 @@ void BlockFlowBox::computeIntrinsicWidths(float& minWidth, float& maxWidth) cons
         auto width = childMinWidth + marginWidth;
 
         minWidth = std::max(width, minWidth);
-        if (nowrap && !is<TableBox>(*child))
+        if(nowrap && !child->isTableBox())
             maxWidth = std::max(width, maxWidth);
         width = childMaxWidth + marginWidth;
         if(child->isFloating()) {
@@ -1265,7 +1262,7 @@ float BlockFlowBox::collapseMargins(BoxFrame* child, FragmentBuilder* fragmentai
 
 void BlockFlowBox::updateMaxMargins()
 {
-    if (is<TableCellBox>(*this)) {
+    if(isTableCellBox()) {
         m_maxPositiveMarginTop = m_maxNegativeMarginTop = 0.f;
         m_maxPositiveMarginBottom = m_maxNegativeMarginBottom = 0.f;
         return;
@@ -1548,14 +1545,12 @@ void BlockFlowBox::layoutBlockChildren(FragmentBuilder* fragmentainer)
         } else if(child->isFloating()) {
             insertFloatingBox(child);
             adjustFloatingBox(fragmentainer, marginInfo);
-        }
-        else if (is<MultiColumnSpanBox>(*child)) {
+        } else if(child->isMultiColumnSpanBox()) {
             auto spanner = to<MultiColumnSpanBox>(child);
             setHeight(height() + marginInfo.margin());
             spanner->columnFlow()->skipColumnSpanner(spanner, height());
             marginInfo.clearMargin();
-        }
-        else if (is<MultiColumnFlowBox>(*child)) {
+        } else if(child->isMultiColumnFlowBox()) {
             assert(child == m_columnFlowBox);
             child->setY(height());
             child->updatePaddingWidths(this);

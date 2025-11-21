@@ -1,248 +1,249 @@
-#ifndef PLUTOBOOK_LINEBOX_H
-#define PLUTOBOOK_LINEBOX_H
+#pragma once
 
 #include "text-shape.h"
 
 namespace plutobook {
+    class Box;
+    class BoxModel;
+    class BoxFrame;
+    class BlockFlowBox;
+    class FlowLineBox;
+    class RootLineBox;
 
-class Box;
-class BoxModel;
-class BoxFrame;
-class BlockFlowBox;
-class FlowLineBox;
-class RootLineBox;
+    class Node;
+    class PaintInfo;
+    class Point;
+    class Size;
+    class Rect;
 
-class Node;
-class PaintInfo;
-class Point;
-class Size;
-class Rect;
+    enum class PaintPhase;
+    enum class VerticalAlignType : uint8_t;
 
-enum class PaintPhase;
-enum class VerticalAlignType : uint8_t;
+    enum class LineBoxType { Text, Replaced, Flow, Root };
 
-class LineBox : public HeapMember {
-public:
-    virtual ~LineBox();
-    virtual bool isTextLineBox() const { return false; }
-    virtual bool isReplacedLineBox() const { return false; }
-    virtual bool isFlowLineBox() const { return false; }
-    virtual bool isRootLineBox() const { return false; }
+    class LineBox : public HeapMember {
+    public:
+        using ClassRoot = LineBox;
+        using ClassKind = LineBoxType;
 
-    virtual float lineHeight() const = 0;
-    virtual float baselinePosition() const = 0;
+        virtual ~LineBox();
 
-    Box* box() const { return m_box; }
-    Node* node() const;
-    BoxStyle* style() const;
+        virtual float lineHeight() const = 0;
+        virtual float baselinePosition() const = 0;
 
-    FlowLineBox* parentLine() const { return m_parentLine; }
-    void setParentLine(FlowLineBox* parentLine) { m_parentLine = parentLine; }
+        ClassKind type() const noexcept { return m_type; }
 
-    uint32_t lineIndex() const { return m_lineIndex; }
-    void setLineIndex(uint32_t lineIndex) { m_lineIndex = lineIndex; }
+        Box* box() const { return m_box; }
+        Node* node() const;
+        BoxStyle* style() const;
 
-    float x() const { return m_x; }
-    float y() const { return m_y; }
-    float width() const { return m_width; }
-    float height() const;
+        FlowLineBox* parentLine() const { return m_parentLine; }
+        void setParentLine(FlowLineBox* parentLine) {
+            m_parentLine = parentLine;
+        }
 
-    void setX(float x) { m_x = x; }
-    void setY(float y) { m_y = y; }
-    void setWidth(float width) { m_width = width; }
+        uint32_t lineIndex() const { return m_lineIndex; }
+        void setLineIndex(uint32_t lineIndex) { m_lineIndex = lineIndex; }
 
-    float right() const { return m_x + m_width; }
-    float bottom() const { return m_y + height(); }
+        float x() const { return m_x; }
+        float y() const { return m_y; }
+        float width() const { return m_width; }
+        float height() const;
 
-    Point location() const;
-    Size size() const;
-    Rect rect() const;
+        void setX(float x) { m_x = x; }
+        void setY(float y) { m_y = y; }
+        void setWidth(float width) { m_width = width; }
 
-    float verticalAlignPosition() const;
-    VerticalAlignType verticalAlignType() const;
+        float right() const { return m_x + m_width; }
+        float bottom() const { return m_y + height(); }
 
-    virtual void paint(const PaintInfo& info, const Point& offset, PaintPhase phase) = 0;
-    virtual void serialize(std::ostream& o, int indent) const = 0;
+        Point location() const;
+        Size size() const;
+        Rect rect() const;
 
-    virtual const char* name() const { return "LineBox"; }
+        float verticalAlignPosition() const;
+        VerticalAlignType verticalAlignType() const;
 
-protected:
-    LineBox(Box* box, float width);
-    Box* m_box;
-    FlowLineBox* m_parentLine{nullptr};
-    uint32_t m_lineIndex{0};
-    float m_x{0};
-    float m_y{0};
-    float m_width;
-};
+        virtual void paint(const PaintInfo& info, const Point& offset,
+                           PaintPhase phase) = 0;
+        virtual void serialize(std::ostream& o, int indent) const = 0;
 
-class TextBox;
+        virtual const char* name() const { return "LineBox"; }
 
-class TextLineBox final : public LineBox {
-public:
-    static std::unique_ptr<TextLineBox> create(TextBox* box, const TextShapeView& shape, float width, float expansion);
+    protected:
+        LineBox(ClassKind type, Box* box, float width);
+        ClassKind m_type;
+        Box* m_box;
+        FlowLineBox* m_parentLine{nullptr};
+        uint32_t m_lineIndex{0};
+        float m_x{0};
+        float m_y{0};
+        float m_width;
+    };
 
-    bool isTextLineBox() const final { return true; }
+    class TextBox;
 
-    float lineHeight() const final;
-    float baselinePosition() const final;
+    class TextLineBox final : public LineBox {
+    public:
+        static constexpr ClassKind classKind = ClassKind::Text;
 
-    TextBox* box() const;
-    const TextShapeView& shape() const { return m_shape; }
-    float shapeWidth() const { return m_shapeWidth; }
-    float expansion() const { return m_expansion; }
+        static std::unique_ptr<TextLineBox> create(TextBox* box,
+                                                   const TextShapeView& shape,
+                                                   float width,
+                                                   float expansion);
 
-    void paint(const PaintInfo& info, const Point& offset, PaintPhase phase) final;
-    void serialize(std::ostream& o, int indent) const final;
+        float lineHeight() const final;
+        float baselinePosition() const final;
 
-    ~TextLineBox() final;
+        TextBox* box() const;
+        const TextShapeView& shape() const { return m_shape; }
+        float shapeWidth() const { return m_shapeWidth; }
+        float expansion() const { return m_expansion; }
 
-    const char* name() const final { return "TextLineBox"; }
+        void paint(const PaintInfo& info, const Point& offset,
+                   PaintPhase phase) final;
+        void serialize(std::ostream& o, int indent) const final;
 
-private:
-    TextLineBox(TextBox* box, const TextShapeView& shape, float width, float expansion);
-    TextShapeView m_shape;
-    float m_shapeWidth;
-    float m_expansion;
-};
+        ~TextLineBox() final;
 
-template<>
-struct is_a<TextLineBox> {
-    static bool check(const LineBox& line) { return line.isTextLineBox(); }
-};
+        const char* name() const final { return "TextLineBox"; }
 
-class ReplacedLineBox final : public LineBox {
-public:
-    static std::unique_ptr<ReplacedLineBox> create(BoxFrame* box);
+    private:
+        TextLineBox(TextBox* box, const TextShapeView& shape, float width,
+                    float expansion);
+        TextShapeView m_shape;
+        float m_shapeWidth;
+        float m_expansion;
+    };
 
-    bool isReplacedLineBox() const final { return true; }
-    float lineHeight() const final;
-    float baselinePosition() const final;
-    BoxFrame* box() const;
+    class ReplacedLineBox final : public LineBox {
+    public:
+        static constexpr ClassKind classKind = ClassKind::Replaced;
 
-    void paint(const PaintInfo& info, const Point& offset, PaintPhase phase) final;
-    void serialize(std::ostream& o, int indent) const final;
+        static std::unique_ptr<ReplacedLineBox> create(BoxFrame* box);
 
-    const char* name() const final { return "ReplacedLineBox"; }
+        float lineHeight() const final;
+        float baselinePosition() const final;
+        BoxFrame* box() const;
 
-private:
-    ReplacedLineBox(BoxFrame* box);
-};
+        void paint(const PaintInfo& info, const Point& offset,
+                   PaintPhase phase) final;
+        void serialize(std::ostream& o, int indent) const final;
 
-template<>
-struct is_a<ReplacedLineBox> {
-    static bool check(const LineBox& line) { return line.isReplacedLineBox(); }
-};
+        const char* name() const final { return "ReplacedLineBox"; }
 
-using LineBoxList = std::pmr::vector<LineBox*>;
+    private:
+        ReplacedLineBox(BoxFrame* box);
+    };
 
-class FlowLineBox : public LineBox {
-public:
-    static std::unique_ptr<FlowLineBox> create(BoxModel* box);
+    using LineBoxList = std::pmr::vector<LineBox*>;
 
-    bool isFlowLineBox() const final { return true; }
+    class FlowLineBox : public LineBox {
+    public:
+        static constexpr ClassKind classKind = ClassKind::Flow;
 
-    float lineHeight() const override;
-    float baselinePosition() const override;
+        static std::unique_ptr<FlowLineBox> create(BoxModel* box);
 
-    BoxModel* box() const;
-    const LineBoxList& children() const { return m_children; }
-    bool hasLeftEdge() const { return m_hasLeftEdge; }
-    bool hasRightEdge() const { return m_hasRightEdge; }
-    bool isEmptyLine() const { return m_isEmptyLine; }
-    bool isFirstLine() const { return m_isFirstLine; }
+        float lineHeight() const override;
+        float baselinePosition() const override;
 
-    void setHasLeftEdge(bool value) { m_hasLeftEdge = value; }
-    void setHasRightEdge(bool value) { m_hasRightEdge = value; }
-    void setIsEmptyLine(bool value) { m_isEmptyLine = value; }
-    void setIsFirstLine(bool value) { m_isFirstLine = value; }
+        BoxModel* box() const;
+        const LineBoxList& children() const { return m_children; }
+        bool hasLeftEdge() const { return m_hasLeftEdge; }
+        bool hasRightEdge() const { return m_hasRightEdge; }
+        bool isEmptyLine() const { return m_isEmptyLine; }
+        bool isFirstLine() const { return m_isFirstLine; }
 
-    void addChild(LineBox* child);
+        void setHasLeftEdge(bool value) { m_hasLeftEdge = value; }
+        void setHasRightEdge(bool value) { m_hasRightEdge = value; }
+        void setIsEmptyLine(bool value) { m_isEmptyLine = value; }
+        void setIsFirstLine(bool value) { m_isFirstLine = value; }
 
-    float marginLeft() const;
-    float marginRight() const;
+        void addChild(LineBox* child);
 
-    float paddingLeft() const;
-    float paddingRight() const;
+        float marginLeft() const;
+        float marginRight() const;
 
-    float borderLeft() const;
-    float borderRight() const;
+        float paddingLeft() const;
+        float paddingRight() const;
 
-    void computeMaxAscentAndDescent(float& maxAscent, float& maxDescent, float& maxPositionTop, float& maxPositionBottom);
-    void adjustMaxAscentAndDescent(float& maxAscent, float& maxDescent, float maxPositionTop, float maxPositionBottom) const;
+        float borderLeft() const;
+        float borderRight() const;
 
-    float placeInHorizontalDirection(float offsetX, const BlockFlowBox* block);
-    void placeInVerticalDirection(float y, float maxHeight, float maxAscent, RootLineBox* rootLine);
+        void computeMaxAscentAndDescent(float& maxAscent, float& maxDescent,
+                                        float& maxPositionTop,
+                                        float& maxPositionBottom);
+        void adjustMaxAscentAndDescent(float& maxAscent, float& maxDescent,
+                                       float maxPositionTop,
+                                       float maxPositionBottom) const;
 
-    float overflowTop() const { return m_overflowTop; }
-    float overflowBottom() const { return m_overflowBottom; }
-    float overflowLeft() const { return m_overflowLeft; }
-    float overflowRight() const { return m_overflowRight; }
+        float placeInHorizontalDirection(float offsetX,
+                                         const BlockFlowBox* block);
+        void placeInVerticalDirection(float y, float maxHeight, float maxAscent,
+                                      RootLineBox* rootLine);
 
-    Rect visualOverflowRect() const;
+        float overflowTop() const { return m_overflowTop; }
+        float overflowBottom() const { return m_overflowBottom; }
+        float overflowLeft() const { return m_overflowLeft; }
+        float overflowRight() const { return m_overflowRight; }
 
-    void addOverflowRect(const BoxFrame* child, float dx, float dy);
-    void addOverflowRect(float top, float bottom, float left, float right);
-    void addOverflowRect(const Rect& overflowRect);
+        Rect visualOverflowRect() const;
 
-    void updateOverflowRect(float lineTop, float lineBottom);
+        void addOverflowRect(const BoxFrame* child, float dx, float dy);
+        void addOverflowRect(float top, float bottom, float left, float right);
+        void addOverflowRect(const Rect& overflowRect);
 
-    void paintOutlines(const PaintInfo& info, const Point& offset) const;
-    void paintDecorations(const PaintInfo& info, const Point& offset) const;
-    void paint(const PaintInfo& info, const Point& offset, PaintPhase phase) override;
-    void serialize(std::ostream& o, int indent) const override;
+        void updateOverflowRect(float lineTop, float lineBottom);
 
-    const char* name() const override { return "FlowLineBox"; }
+        void paintOutlines(const PaintInfo& info, const Point& offset) const;
+        void paintDecorations(const PaintInfo& info, const Point& offset) const;
+        void paint(const PaintInfo& info, const Point& offset,
+                   PaintPhase phase) override;
+        void serialize(std::ostream& o, int indent) const override;
 
-protected:
-    FlowLineBox(BoxModel* box);
-    LineBoxList m_children;
-    bool m_hasLeftEdge{false};
-    bool m_hasRightEdge{false};
-    bool m_isEmptyLine{false};
-    bool m_isFirstLine{false};
+        const char* name() const override { return "FlowLineBox"; }
 
-    float m_overflowTop{0};
-    float m_overflowBottom{0};
-    float m_overflowLeft{0};
-    float m_overflowRight{0};
-};
+    protected:
+        FlowLineBox(BoxModel* box) : FlowLineBox(classKind, box) {}
+        FlowLineBox(ClassKind type, BoxModel* box);
+        LineBoxList m_children;
+        bool m_hasLeftEdge{false};
+        bool m_hasRightEdge{false};
+        bool m_isEmptyLine{false};
+        bool m_isFirstLine{false};
 
-template<>
-struct is_a<FlowLineBox> {
-    static bool check(const LineBox& line) { return line.isFlowLineBox(); }
-};
+        float m_overflowTop{0};
+        float m_overflowBottom{0};
+        float m_overflowLeft{0};
+        float m_overflowRight{0};
+    };
 
-class FragmentBuilder;
+    extern template bool is<FlowLineBox>(const LineBox& value);
 
-class RootLineBox final : public FlowLineBox {
-public:
-    static std::unique_ptr<RootLineBox> create(BlockFlowBox* box);
+    class FragmentBuilder;
 
-    bool isRootLineBox() const final { return true; }
+    class RootLineBox final : public FlowLineBox {
+    public:
+        static constexpr ClassKind classKind = ClassKind::Root;
 
-    BlockFlowBox* box() const;
-    float lineTop() const { return m_lineTop; }
-    float lineBottom() const { return m_lineBottom; }
-    void updateLineTopAndBottom(const LineBox* line);
+        static std::unique_ptr<RootLineBox> create(BlockFlowBox* box);
 
-    float alignInHorizontalDirection(float startOffset);
-    float alignInVerticalDirection(FragmentBuilder* fragmentainer, float blockHeight);
-    float adjustLineBoxInFragmentFlow(FragmentBuilder* fragmentainer, float offset, float lineHeight) const;
+        BlockFlowBox* box() const;
+        float lineTop() const { return m_lineTop; }
+        float lineBottom() const { return m_lineBottom; }
+        void updateLineTopAndBottom(const LineBox* line);
 
-    const char* name() const final { return "RootLineBox"; }
+        float alignInHorizontalDirection(float startOffset);
+        float alignInVerticalDirection(FragmentBuilder* fragmentainer,
+                                       float blockHeight);
+        float adjustLineBoxInFragmentFlow(FragmentBuilder* fragmentainer,
+                                          float offset, float lineHeight) const;
 
-private:
-    RootLineBox(BlockFlowBox* box);
-    float m_lineTop{0};
-    float m_lineBottom{0};
-};
+        const char* name() const final { return "RootLineBox"; }
 
-template<>
-struct is_a<RootLineBox> {
-    static bool check(const LineBox& line) { return line.isRootLineBox(); }
-};
-
+    private:
+        RootLineBox(BlockFlowBox* box);
+        float m_lineTop{0};
+        float m_lineBottom{0};
+    };
 } // namespace plutobook
-
-#endif // PLUTOBOOK_LINEBOX_H

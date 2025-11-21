@@ -5,7 +5,7 @@
 namespace plutobook {
 
 SvgRootBox::SvgRootBox(SvgSvgElement* element, const RefPtr<BoxStyle>& style)
-    : ReplacedBox(element, style)
+    : ReplacedBox(classKind, element, style)
 {
     setIntrinsicSize(Size(300, 150));
 }
@@ -157,7 +157,7 @@ void SvgRootBox::build()
 }
 
 SvgImageBox::SvgImageBox(SvgImageElement* element, const RefPtr<BoxStyle>& style)
-    : SvgBoxModel(element, style)
+    : SvgBoxModel(classKind, element, style)
 {
 }
 

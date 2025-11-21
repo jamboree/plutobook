@@ -15,8 +15,8 @@ void SvgMarkerPosition::renderMarker(const SvgRenderState& state, float strokeWi
     m_marker->renderMarker(state, m_origin, m_angle, strokeWidth);
 }
 
-SvgGeometryBox::SvgGeometryBox(SvgGeometryElement* element, const RefPtr<BoxStyle>& style)
-    : SvgBoxModel(element, style)
+SvgGeometryBox::SvgGeometryBox(ClassKind type, SvgGeometryElement* element, const RefPtr<BoxStyle>& style)
+    : SvgBoxModel(type, element, style)
 {
 }
 
@@ -183,12 +183,12 @@ void SvgGeometryBox::updateMarkerPositions()
 }
 
 SvgPathBox::SvgPathBox(SvgPathElement* element, const RefPtr<BoxStyle>& style)
-    : SvgGeometryBox(element, style)
+    : SvgGeometryBox(classKind, element, style)
 {
 }
 
 SvgShapeBox::SvgShapeBox(SvgShapeElement* element, const RefPtr<BoxStyle>& style)
-    : SvgGeometryBox(element, style)
+    : SvgGeometryBox(classKind, element, style)
 {
 }
 

@@ -1,11 +1,20 @@
 #include "box.h"
-#include "box-view.h"
 #include "box-layer.h"
+#include "box-view.h"
 #include "flex-box.h"
 #include "list-item-box.h"
-#include "text-box.h"
 #include "table-box.h"
 #include "line-box.h"
+#include "text-box.h"
+#include "content-box.h"
+#include "replaced-box.h"
+#include "multi-column-box.h"
+#include "page-box.h"
+#include "form-control-box.h"
+#include "svg-text-box.h"
+#include "svg-replaced-box.h"
+#include "svg-resource-box.h"
+#include "svg-geometry-box.h"
 #include "border-painter.h"
 #include "graphics-context.h"
 #include "image-resource.h"
@@ -14,6 +23,110 @@
 #include <cmath>
 
 namespace plutobook {
+template<class F>
+decltype(auto) visit(Box* p, F&& f) {
+    switch (p->type()) {
+    case Box::ClassKind::Flexible: return f(static_cast<FlexibleBox*>(p));
+    case Box::ClassKind::Inline: return f(static_cast<InlineBox*>(p));
+    case Box::ClassKind::ListItem: return f(static_cast<ListItemBox*>(p));
+    case Box::ClassKind::InsideListMarker: return f(static_cast<InsideListMarkerBox*>(p));
+    case Box::ClassKind::OutsideListMarker: return f(static_cast<OutsideListMarkerBox*>(p));
+    case Box::ClassKind::Text: return f(static_cast<TextBox*>(p));
+    case Box::ClassKind::LineBreak: return f(static_cast<LineBreakBox*>(p));
+    case Box::ClassKind::WordBreak: return f(static_cast<WordBreakBox*>(p));
+    case Box::ClassKind::Table: return f(static_cast<TableBox*>(p));
+    case Box::ClassKind::TableSection: return f(static_cast<TableSectionBox*>(p));
+    case Box::ClassKind::TableRow: return f(static_cast<TableRowBox*>(p));
+    case Box::ClassKind::TableColumn: return f(static_cast<TableColumnBox*>(p));
+    case Box::ClassKind::TableCell: return f(static_cast<TableCellBox*>(p));
+    case Box::ClassKind::TableCaption: return f(static_cast<TableCaptionBox*>(p));
+    case Box::ClassKind::BoxView: return f(static_cast<BoxView*>(p));
+    case Box::ClassKind::BlockFlow: return f(static_cast<BlockFlowBox*>(p));
+    case Box::ClassKind::Page: return f(static_cast<PageBox*>(p));
+    case Box::ClassKind::PageMargin: return f(static_cast<PageMarginBox*>(p));
+    case Box::ClassKind::Leader: return f(static_cast<LeaderBox*>(p));
+    case Box::ClassKind::TargetCounter: return f(static_cast<TargetCounterBox*>(p));
+    case Box::ClassKind::Image: return f(static_cast<ImageBox*>(p));
+    case Box::ClassKind::MultiColumnRow: return f(static_cast<MultiColumnRowBox*>(p));
+    case Box::ClassKind::MultiColumnSpan: return f(static_cast<MultiColumnSpanBox*>(p));
+    case Box::ClassKind::MultiColumnFlow: return f(static_cast<MultiColumnFlowBox*>(p));
+    case Box::ClassKind::TextInput: return f(static_cast<TextInputBox*>(p));
+    case Box::ClassKind::Select: return f(static_cast<SelectBox*>(p));
+    case Box::ClassKind::SvgHiddenContainer: return f(static_cast<SvgHiddenContainerBox*>(p));
+    case Box::ClassKind::SvgTransformableContainer: return f(static_cast<SvgTransformableContainerBox*>(p));
+    case Box::ClassKind::SvgViewportContainer: return f(static_cast<SvgViewportContainerBox*>(p));
+    case Box::ClassKind::SvgResourceMarker: return f(static_cast<SvgResourceMarkerBox*>(p));
+    case Box::ClassKind::SvgResourceClipper: return f(static_cast<SvgResourceClipperBox*>(p));
+    case Box::ClassKind::SvgResourceMasker: return f(static_cast<SvgResourceMaskerBox*>(p));
+    case Box::ClassKind::SvgResourcePattern: return f(static_cast<SvgResourcePatternBox*>(p));
+    case Box::ClassKind::SvgGradientStop: return f(static_cast<SvgGradientStopBox*>(p));
+    case Box::ClassKind::SvgResourceLinearGradient: return f(static_cast<SvgResourceLinearGradientBox*>(p));
+    case Box::ClassKind::SvgResourceRadialGradient: return f(static_cast<SvgResourceRadialGradientBox*>(p));
+    case Box::ClassKind::SvgInlineText: return f(static_cast<SvgInlineTextBox*>(p));
+    case Box::ClassKind::SvgTSpan: return f(static_cast<SvgTSpanBox*>(p));
+    case Box::ClassKind::SvgText: return f(static_cast<SvgTextBox*>(p));
+    case Box::ClassKind::SvgRoot: return f(static_cast<SvgRootBox*>(p));
+    case Box::ClassKind::SvgImage: return f(static_cast<SvgImageBox*>(p));
+    case Box::ClassKind::SvgPath: return f(static_cast<SvgPathBox*>(p));
+    case Box::ClassKind::SvgShape: return f(static_cast<SvgShapeBox*>(p));
+    default: std::unreachable();
+    }
+}
+
+template bool is<BoxModel>(const Box& value);
+template bool is<BoxFrame>(const Box& value);
+template bool is<BoxView>(const Box& value);
+template bool is<TextBox>(const Box& value);
+template bool is<LineBreakBox>(const Box& value);
+template bool is<WordBreakBox>(const Box& value);
+template bool is<ContentBox>(const Box& value);
+template bool is<LeaderBox>(const Box& value);
+template bool is<TargetCounterBox>(const Box& value);
+template bool is<InlineBox>(const Box& value);
+template bool is<BlockBox>(const Box& value);
+template bool is<BlockFlowBox>(const Box& value);
+template bool is<FlexibleBox>(const Box& value);
+template bool is<ReplacedBox>(const Box& value);
+template bool is<ImageBox>(const Box& value);
+template bool is<ListItemBox>(const Box& value);
+template bool is<InsideListMarkerBox>(const Box& value);
+template bool is<OutsideListMarkerBox>(const Box& value);
+template bool is<MultiColumnRowBox>(const Box& value);
+template bool is<MultiColumnSpanBox>(const Box& value);
+template bool is<MultiColumnFlowBox>(const Box& value);
+template bool is<PageBox>(const Box& value);
+template bool is<PageMarginBox>(const Box& value);
+template bool is<TableBox>(const Box& value);
+template bool is<TableCellBox>(const Box& value);
+template bool is<TableColumnBox>(const Box& value);
+template bool is<TableRowBox>(const Box& value);
+template bool is<TableCaptionBox>(const Box& value);
+template bool is<TableSectionBox>(const Box& value);
+template bool is<TextInputBox>(const Box& value);
+template bool is<SelectBox>(const Box& value);
+template bool is<SvgInlineTextBox>(const Box& value);
+template bool is<SvgTSpanBox>(const Box& value);
+template bool is<SvgTextBox>(const Box& value);
+template bool is<SvgBoxModel>(const Box& value);
+template bool is<SvgRootBox>(const Box& value);
+template bool is<SvgImageBox>(const Box& value);
+template bool is<SvgGeometryBox>(const Box& value);
+template bool is<SvgPathBox>(const Box& value);
+template bool is<SvgShapeBox>(const Box& value);
+template bool is<SvgContainerBox>(const Box& value);
+template bool is<SvgHiddenContainerBox>(const Box& value);
+template bool is<SvgTransformableContainerBox>(const Box& value);
+template bool is<SvgViewportContainerBox>(const Box& value);
+template bool is<SvgResourceContainerBox>(const Box& value);
+template bool is<SvgResourceMarkerBox>(const Box& value);
+template bool is<SvgResourceClipperBox>(const Box& value);
+template bool is<SvgResourceMaskerBox>(const Box& value);
+template bool is<SvgResourcePaintServerBox>(const Box& value);
+template bool is<SvgResourcePatternBox>(const Box& value);
+template bool is<SvgGradientStopBox>(const Box& value);
+template bool is<SvgResourceGradientBox>(const Box& value);
+template bool is<SvgResourceLinearGradientBox>(const Box& value);
+template bool is<SvgResourceRadialGradientBox>(const Box& value);
 
 Box::Box(ClassKind type, Node* node, const RefPtr<BoxStyle>& style)
     : m_type(type), m_node(node), m_style(style)
@@ -185,7 +298,7 @@ BlockFlowBox* Box::createAnonymousBlock(const BoxStyle* parentStyle)
 
 bool Box::canContainFixedPositionedBoxes() const
 {
-    return (hasTransform() && is<BlockBox>(*this)) || !parentBox();
+    return (hasTransform() && isBlockBox()) || !parentBox();
 }
 
 bool Box::canContainAbsolutePositionedBoxes() const
@@ -196,8 +309,8 @@ bool Box::canContainAbsolutePositionedBoxes() const
 BlockBox* Box::containingBlock() const
 {
     auto parent = parentBox();
-    if (style()->position() == Position::Static || style()->position() == Position::Relative || is<TextBox>(*this)) {
-        while(parent && !is<BlockBox>(*parent))
+    if(style()->position() == Position::Static || style()->position() == Position::Relative || isTextBox()) {
+        while(parent && !parent->isBlockBox())
             parent = parent->parentBox();
         return to<BlockBox>(parent);
     }
@@ -212,7 +325,7 @@ BlockBox* Box::containingBlock() const
         }
     }
 
-    if(parent && !is<BlockBox>(*parent))
+    if(parent && !parent->isBlockBox())
         parent = parent->containingBlock();
     while(parent && parent->isAnonymous())
         parent = parent->containingBlock();
@@ -222,7 +335,7 @@ BlockBox* Box::containingBlock() const
 BoxModel* Box::containingBox() const
 {
     auto parent = parentBox();
-    if(!is<TextBox>(*this)) {
+    if(!isTextBox()) {
         if(style()->position() == Position::Fixed) {
             while(parent && !parent->canContainFixedPositionedBoxes()) {
                 parent = parent->parentBox();
@@ -263,14 +376,65 @@ bool Box::isRootBox() const
     return m_node && m_node->isRootNode();
 }
 
-bool Box::isListMarkerBox() const {
-    return is<InsideListMarkerBox>(*this) || is<OutsideListMarkerBox>(*this);
-}
-
 bool Box::isFlexItem() const
 {
-    return m_parentBox && is<FlexibleBox>(*m_parentBox);
+    return m_parentBox && m_parentBox->isFlexibleBox();
 }
+
+bool Box::isBoxModel() const { return is<BoxModel>(*this); }
+bool Box::isBoxFrame() const { return is<BoxFrame>(*this); }
+bool Box::isBoxView() const { return is<BoxView>(*this); }
+bool Box::isTextBox() const { return is<TextBox>(*this); }
+bool Box::isLineBreakBox() const { return is<LineBreakBox>(*this); }
+bool Box::isWordBreakBox() const { return is<WordBreakBox>(*this); }
+bool Box::isContentBox() const { return is<ContentBox>(*this); }
+bool Box::isLeaderBox() const { return is<LeaderBox>(*this); }
+bool Box::isTargetCounterBox() const { return is<TargetCounterBox>(*this); }
+bool Box::isInlineBox() const { return is<InlineBox>(*this); }
+bool Box::isBlockBox() const { return is<BlockBox>(*this); }
+bool Box::isBlockFlowBox() const { return is<BlockFlowBox>(*this); }
+bool Box::isFlexibleBox() const { return is<FlexibleBox>(*this); }
+bool Box::isReplacedBox() const { return is<ReplacedBox>(*this); }
+bool Box::isImageBox() const { return is<ImageBox>(*this); }
+bool Box::isListItemBox() const { return is<ListItemBox>(*this); }
+bool Box::isInsideListMarkerBox() const { return is<InsideListMarkerBox>(*this); }
+bool Box::isOutsideListMarkerBox() const { return is<OutsideListMarkerBox>(*this); }
+bool Box::isMultiColumnRowBox() const { return is<MultiColumnRowBox>(*this); }
+bool Box::isMultiColumnSpanBox() const { return is<MultiColumnSpanBox>(*this); }
+bool Box::isMultiColumnFlowBox() const { return is<MultiColumnFlowBox>(*this); }
+bool Box::isPageBox() const { return is<PageBox>(*this); }
+bool Box::isPageMarginBox() const { return is<PageMarginBox>(*this); }
+bool Box::isTableBox() const { return is<TableBox>(*this); }
+bool Box::isTableCellBox() const { return is<TableCellBox>(*this); }
+bool Box::isTableColumnBox() const { return is<TableColumnBox>(*this); }
+bool Box::isTableRowBox() const { return is<TableRowBox>(*this); }
+bool Box::isTableCaptionBox() const { return is<TableCaptionBox>(*this); }
+bool Box::isTableSectionBox() const { return is<TableSectionBox>(*this); }
+bool Box::isTextInputBox() const { return is<TextInputBox>(*this); }
+bool Box::isSelectBox() const { return is<SelectBox>(*this); }
+bool Box::isSvgInlineTextBox() const { return is<SvgInlineTextBox>(*this); }
+bool Box::isSvgTSpanBox() const { return is<SvgTSpanBox>(*this); }
+bool Box::isSvgTextBox() const { return is<SvgTextBox>(*this); }
+bool Box::isSvgBoxModel() const { return is<SvgBoxModel>(*this); }
+bool Box::isSvgRootBox() const { return is<SvgRootBox>(*this); }
+bool Box::isSvgImageBox() const { return is<SvgImageBox>(*this); }
+bool Box::isSvgGeometryBox() const { return is<SvgGeometryBox>(*this); }
+bool Box::isSvgPathBox() const { return is<SvgPathBox>(*this); }
+bool Box::isSvgShapeBox() const { return is<SvgShapeBox>(*this); }
+bool Box::isSvgContainerBox() const { return is<SvgContainerBox>(*this); }
+bool Box::isSvgHiddenContainerBox() const { return is<SvgHiddenContainerBox>(*this); }
+bool Box::isSvgTransformableContainerBox() const { return is<SvgTransformableContainerBox>(*this); }
+bool Box::isSvgViewportContainerBox() const { return is<SvgViewportContainerBox>(*this); }
+bool Box::isSvgResourceContainerBox() const { return is<SvgResourceContainerBox>(*this); }
+bool Box::isSvgResourceMarkerBox() const { return is<SvgResourceMarkerBox>(*this); }
+bool Box::isSvgResourceClipperBox() const { return is<SvgResourceClipperBox>(*this); }
+bool Box::isSvgResourceMaskerBox() const { return is<SvgResourceMaskerBox>(*this); }
+bool Box::isSvgResourcePaintServerBox() const { return is<SvgResourcePaintServerBox>(*this); }
+bool Box::isSvgResourcePatternBox() const { return is<SvgResourcePatternBox>(*this); }
+bool Box::isSvgGradientStopBox() const { return is<SvgGradientStopBox>(*this); }
+bool Box::isSvgResourceGradientBox() const { return is<SvgResourceGradientBox>(*this); }
+bool Box::isSvgResourceLinearGradientBox() const { return is<SvgResourceLinearGradientBox>(*this); }
+bool Box::isSvgResourceRadialGradientBox() const { return is<SvgResourceRadialGradientBox>(*this); }
 
 void Box::paintAnnotation(GraphicsContext& context, const Rect& rect) const
 {
@@ -345,7 +509,7 @@ void Box::serializeStart(std::ostream& o, int indent, bool selfClosing, const Bo
 
     if(box->isAnonymous())
         o << " anonymous";
-    if (box->isPositioned() && !is<BoxView>(*box)) {
+    if(box->isPositioned() && !box->isBoxView()) {
         o << " positioned";
     } else if(box->isFloating()) {
         o << " floating";
@@ -368,7 +532,7 @@ void Box::serializeStart(std::ostream& o, int indent, bool selfClosing, const Bo
         o << "/>";
     } else {
         o << '>';
-        if(!line || !line->isTextLineBox()) {
+        if (!line || !is<TextLineBox>(*line)) {
             writeNewline(o);
         }
     }
@@ -380,7 +544,7 @@ void Box::serializeEnd(std::ostream& o, int indent, bool selfClosing, const Box*
         writeNewline(o);
     } else {
         auto name = line ? line->name() : box->name();
-        if(!line || !line->isTextLineBox()) {
+        if(!line || !is<TextLineBox>(*line)) {
             writeIndent(o, indent);
         }
 
@@ -414,15 +578,15 @@ BoxModel::~BoxModel() = default;
 
 void BoxModel::addChild(Box* newChild)
 {
-    if (!is<TableCellBox>(*newChild) && !is<TableRowBox>(*newChild)
-        && !is<TableCaptionBox>(*newChild) && !is<TableColumnBox>(*newChild)
-        && !is<TableSectionBox>(*newChild)) {
+    if(!newChild->isTableCellBox() && !newChild->isTableRowBox()
+        && !newChild->isTableCaptionBox() && !newChild->isTableColumnBox()
+        && !newChild->isTableSectionBox()) {
         appendChild(newChild);
         return;
     }
 
     auto lastTable = lastChild();
-    if (lastTable && lastTable->isAnonymous() && is<TableBox>(*lastTable)) {
+    if(lastTable && lastTable->isAnonymous() && lastTable->isTableBox()) {
         lastTable->addChild(newChild);
         return;
     }
@@ -687,7 +851,7 @@ Point BoxModel::relativePositionOffset() const
 
 float BoxModel::containingBlockWidthForPositioned(const BoxModel* container) const
 {
-    if (is<BoxView>(*container))
+    if(container->isBoxView())
         return document()->containerWidth();
     if(auto box = to<BoxFrame>(container))
         return box->paddingBoxWidth();
@@ -696,7 +860,7 @@ float BoxModel::containingBlockWidthForPositioned(const BoxModel* container) con
 
 float BoxModel::containingBlockHeightForPositioned(const BoxModel* container) const
 {
-    if (is<BoxView>(*container))
+    if(container->isBoxView())
         return document()->containerHeight();
     if(auto box = to<BoxFrame>(container))
         return box->paddingBoxHeight();
@@ -912,7 +1076,7 @@ void BoxFrame::computeHorizontalStaticDistance(Length& leftLength, Length& right
         leftLength = Length(Length::Type::Fixed, staticPosition);
     } else {
         auto staticPosition = layer()->staticLeft() + containerWidth + container->borderRight();
-        while (parent && !is<BoxFrame>(*parent))
+        while(parent && !parent->isBoxFrame())
             parent = parent->parentBox();
         if(auto box = to<BoxFrame>(parent))
             staticPosition -= box->width();
@@ -948,7 +1112,7 @@ void BoxFrame::computeVerticalStaticDistance(Length& topLength, Length& bottomLe
 
 void BoxFrame::computeHorizontalMargins(float& marginLeft, float& marginRight, float childWidth, const BlockBox* container, float containerWidth) const
 {
-    if (isFlexItem() || is<TableCellBox>(*this))
+    if(isFlexItem() || isTableCellBox())
         return;
     auto marginLeftLength = style()->marginLeft();
     auto marginRightLength = style()->marginRight();
@@ -987,7 +1151,7 @@ void BoxFrame::computeHorizontalMargins(float& marginLeft, float& marginRight, f
 
 void BoxFrame::computeVerticalMargins(float& marginTop, float& marginBottom) const
 {
-    if (isFlexItem() || is<TableCellBox>(*this))
+    if(isFlexItem() || isTableCellBox())
         return;
     auto containerWidth = containingBlockWidthForContent();
     marginTop = style()->marginTop().calcMin(containerWidth);

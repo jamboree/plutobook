@@ -1,118 +1,103 @@
-#ifndef PLUTOBOOK_SvgCONTAINERBOX_H
-#define PLUTOBOOK_SvgCONTAINERBOX_H
+#pragma once
 
 #include "svg-box-model.h"
 
 namespace plutobook {
+    class SvgContainerBox : public SvgBoxModel {
+    public:
+        SvgContainerBox(ClassKind type, SvgElement* element,
+                        const RefPtr<BoxStyle>& style);
 
-class SvgContainerBox : public SvgBoxModel {
-public:
-    SvgContainerBox(SvgElement* element, const RefPtr<BoxStyle>& style);
+        Rect fillBoundingBox() const override;
+        Rect strokeBoundingBox() const override;
+        void layout() override;
 
-    bool isSvgContainerBox() const final { return true; }
+        void renderChildren(const SvgRenderState& state) const;
 
-    Rect fillBoundingBox() const override;
-    Rect strokeBoundingBox() const override;
-    void layout() override;
+        const char* name() const override { return "SvgContainerBox"; }
 
-    void renderChildren(const SvgRenderState& state) const;
+    private:
+        mutable Rect m_fillBoundingBox = Rect::Invalid;
+        mutable Rect m_strokeBoundingBox = Rect::Invalid;
+    };
 
-    const char* name() const override { return "SvgContainerBox"; }
+    extern template bool is<SvgContainerBox>(const Box& value);
 
-private:
-    mutable Rect m_fillBoundingBox = Rect::Invalid;
-    mutable Rect m_strokeBoundingBox = Rect::Invalid;
-};
+    class SvgHiddenContainerBox : public SvgContainerBox {
+    public:
+        static constexpr ClassKind classKind = ClassKind::SvgHiddenContainer;
 
-template<>
-struct is_a<SvgContainerBox> {
-    static bool check(const Box& box) { return box.isSvgContainerBox(); }
-};
+        SvgHiddenContainerBox(SvgElement* element,
+                              const RefPtr<BoxStyle>& style)
+            : SvgContainerBox(classKind, element, style) {}
+        SvgHiddenContainerBox(ClassKind type, SvgElement* element,
+                              const RefPtr<BoxStyle>& style);
 
-class SvgHiddenContainerBox : public SvgContainerBox {
-public:
-    SvgHiddenContainerBox(SvgElement* element, const RefPtr<BoxStyle>& style);
+        void render(const SvgRenderState& state) const override;
 
-    bool isSvgHiddenContainerBox() const final { return true; }
+        const char* name() const override { return "SvgHiddenContainerBox"; }
+    };
 
-    void render(const SvgRenderState& state) const override;
+    extern template bool is<SvgHiddenContainerBox>(const Box& value);
 
-    const char* name() const override { return "SvgHiddenContainerBox"; }
-};
+    class SvgTransformableContainerBox final : public SvgContainerBox {
+    public:
+        static constexpr ClassKind classKind =
+            ClassKind::SvgTransformableContainer;
 
-template<>
-struct is_a<SvgHiddenContainerBox> {
-    static bool check(const Box& box) { return box.isSvgHiddenContainerBox(); }
-};
+        SvgTransformableContainerBox(SvgGraphicsElement* element,
+                                     const RefPtr<BoxStyle>& style);
 
-class SvgTransformableContainerBox final : public SvgContainerBox {
-public:
-    SvgTransformableContainerBox(SvgGraphicsElement* element, const RefPtr<BoxStyle>& style);
+        SvgGraphicsElement* element() const;
+        Transform localTransform() const final { return m_localTransform; }
+        void render(const SvgRenderState& state) const final;
+        void layout() final;
 
-    bool isSvgTransformableContainerBox() const final { return true; }
+        const char* name() const final {
+            return "SvgTransformableContainerBox";
+        }
 
-    SvgGraphicsElement* element() const;
-    Transform localTransform() const final { return m_localTransform; }
-    void render(const SvgRenderState& state) const final;
-    void layout() final;
+    private:
+        Transform m_localTransform;
+    };
 
-    const char* name() const final { return "SvgTransformableContainerBox"; }
+    inline SvgGraphicsElement* SvgTransformableContainerBox::element() const {
+        return static_cast<SvgGraphicsElement*>(node());
+    }
 
-private:
-    Transform m_localTransform;
-};
+    extern template bool is<SvgTransformableContainerBox>(const Box& value);
 
-inline SvgGraphicsElement* SvgTransformableContainerBox::element() const
-{
-    return static_cast<SvgGraphicsElement*>(node());
-}
+    class SvgViewportContainerBox final : public SvgContainerBox {
+    public:
+        static constexpr ClassKind classKind = ClassKind::SvgViewportContainer;
 
-template<>
-struct is_a<SvgTransformableContainerBox> {
-    static bool check(const Box& box) { return box.isSvgTransformableContainerBox(); }
-};
+        SvgViewportContainerBox(SvgSvgElement* element,
+                                const RefPtr<BoxStyle>& style);
 
-class SvgViewportContainerBox final : public SvgContainerBox {
-public:
-    SvgViewportContainerBox(SvgSvgElement* element, const RefPtr<BoxStyle>& style);
+        SvgSvgElement* element() const;
+        Transform localTransform() const final { return m_localTransform; }
+        void render(const SvgRenderState& state) const final;
+        void layout() final;
 
-    bool isSvgViewportContainerBox() const final { return true; }
+        const char* name() const final { return "SvgViewportContainerBox"; }
 
-    SvgSvgElement* element() const;
-    Transform localTransform() const final { return m_localTransform; }
-    void render(const SvgRenderState& state) const final;
-    void layout() final;
+    private:
+        Transform m_localTransform;
+    };
 
-    const char* name() const final { return "SvgViewportContainerBox"; }
+    inline SvgSvgElement* SvgViewportContainerBox::element() const {
+        return static_cast<SvgSvgElement*>(node());
+    }
 
-private:
-    Transform m_localTransform;
-};
+    extern template bool is<SvgViewportContainerBox>(const Box& value);
 
-inline SvgSvgElement* SvgViewportContainerBox::element() const
-{
-    return static_cast<SvgSvgElement*>(node());
-}
+    class SvgResourceContainerBox : public SvgHiddenContainerBox {
+    public:
+        SvgResourceContainerBox(ClassKind type, SvgElement* element,
+                                const RefPtr<BoxStyle>& style);
 
-template<>
-struct is_a<SvgViewportContainerBox> {
-    static bool check(const Box& box) { return box.isSvgViewportContainerBox(); }
-};
+        const char* name() const override { return "SvgResourceContainerBox"; }
+    };
 
-class SvgResourceContainerBox : public SvgHiddenContainerBox {
-public:
-    SvgResourceContainerBox(SvgElement* element, const RefPtr<BoxStyle>& style);
-
-    bool isSvgResourceContainerBox() const final { return true; }
-
-    const char* name() const override { return "SvgResourceContainerBox"; }
-};
-
-template<>
-struct is_a<SvgResourceContainerBox> {
-    static bool check(const Box& box) { return box.isSvgResourceContainerBox(); }
-};
-
+    extern template bool is<SvgResourceContainerBox>(const Box& value);
 } // namespace plutobook
-
-#endif // PLUTOBOOK_SvgCONTAINERBOX_H

@@ -158,6 +158,10 @@ namespace plutobook {
 
     class BlockFlowBox : public BlockBox {
     public:
+        static constexpr ClassKind classKind = ClassKind::BlockFlow;
+
+        BlockFlowBox(Node* node, const RefPtr<BoxStyle>& style)
+            : BlockFlowBox(classKind, node, style) {}
         BlockFlowBox(ClassKind type, Node* node, const RefPtr<BoxStyle>& style);
         ~BlockFlowBox() override;
 

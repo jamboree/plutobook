@@ -289,7 +289,7 @@ BitmapImage::~BitmapImage()
 }
 
 BitmapImage::BitmapImage(cairo_surface_t* surface)
-    : m_surface(surface), m_intrinsicSize(cairo_image_surface_get_width(m_surface), cairo_image_surface_get_height(m_surface))
+    : Image(classKind), m_surface(surface), m_intrinsicSize(cairo_image_surface_get_width(m_surface), cairo_image_surface_get_height(m_surface))
 {
 }
 
@@ -410,7 +410,7 @@ Size SvgImage::size() const
 }
 
 SvgImage::SvgImage(std::unique_ptr<Heap> heap, std::unique_ptr<SvgDocument> document)
-    : m_heap(std::move(heap)), m_document(std::move(document))
+    : Image(classKind), m_heap(std::move(heap)), m_document(std::move(document))
 {
     m_document->build();
 }

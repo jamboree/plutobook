@@ -6,7 +6,7 @@
 namespace plutobook {
 
 SvgResourceMarkerBox::SvgResourceMarkerBox(SvgMarkerElement* element, const RefPtr<BoxStyle>& style)
-    : SvgResourceContainerBox(element, style)
+    : SvgResourceContainerBox(classKind, element, style)
 {
     setIsOverflowHidden(style->isOverflowHidden());
 }
@@ -73,7 +73,7 @@ void SvgResourceMarkerBox::layout()
 }
 
 SvgResourceClipperBox::SvgResourceClipperBox(SvgClipPathElement* element, const RefPtr<BoxStyle>& style)
-    : SvgResourceContainerBox(element, style)
+    : SvgResourceContainerBox(classKind, element, style)
 {
 }
 
@@ -178,7 +178,7 @@ void SvgResourceClipperBox::applyClipMask(const SvgRenderState& state) const
 }
 
 SvgResourceMaskerBox::SvgResourceMaskerBox(SvgMaskElement* element, const RefPtr<BoxStyle>& style)
-    : SvgResourceContainerBox(element, style)
+    : SvgResourceContainerBox(classKind, element, style)
 {
 }
 
@@ -252,13 +252,13 @@ void SvgResourceMaskerBox::applyMask(const SvgRenderState& state) const
     state->applyMask(*maskImage);
 }
 
-SvgResourcePaintServerBox::SvgResourcePaintServerBox(SvgElement* element, const RefPtr<BoxStyle>& style)
-    : SvgResourceContainerBox(element, style)
+SvgResourcePaintServerBox::SvgResourcePaintServerBox(ClassKind type, SvgElement* element, const RefPtr<BoxStyle>& style)
+    : SvgResourceContainerBox(type, element, style)
 {
 }
 
 SvgResourcePatternBox::SvgResourcePatternBox(SvgPatternElement* element, const RefPtr<BoxStyle>& style)
-    : SvgResourcePaintServerBox(element, style)
+    : SvgResourcePaintServerBox(classKind, element, style)
 {
 }
 
@@ -317,17 +317,17 @@ void SvgResourcePatternBox::applyPaint(const SvgRenderState& state, float opacit
 }
 
 SvgGradientStopBox::SvgGradientStopBox(SvgStopElement* element, const RefPtr<BoxStyle>& style)
-    : Box(element, style)
+    : Box(classKind, element, style)
 {
 }
 
-SvgResourceGradientBox::SvgResourceGradientBox(SvgGradientElement* element, const RefPtr<BoxStyle>& style)
-    : SvgResourcePaintServerBox(element, style)
+SvgResourceGradientBox::SvgResourceGradientBox(ClassKind type, SvgGradientElement* element, const RefPtr<BoxStyle>& style)
+    : SvgResourcePaintServerBox(type, element, style)
 {
 }
 
 SvgResourceLinearGradientBox::SvgResourceLinearGradientBox(SvgLinearGradientElement* element, const RefPtr<BoxStyle>& style)
-    : SvgResourceGradientBox(element, style)
+    : SvgResourceGradientBox(classKind, element, style)
 {
 }
 
@@ -402,7 +402,7 @@ void SvgResourceLinearGradientBox::applyPaint(const SvgRenderState& state, float
 }
 
 SvgResourceRadialGradientBox::SvgResourceRadialGradientBox(SvgRadialGradientElement* element, const RefPtr<BoxStyle>& style)
-    : SvgResourceGradientBox(element, style)
+    : SvgResourceGradientBox(classKind, element, style)
 {
 }
 

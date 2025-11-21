@@ -6,7 +6,7 @@
 #include "content-box.h"
 #include "replaced-box.h"
 #include "table-box.h"
-#include "form-controlbox.h"
+#include "form-control-box.h"
 #include "text-resource.h"
 #include "image-resource.h"
 #include "string-utils.h"

@@ -535,7 +535,7 @@ void MultiColumnFlowBox::layoutContents(FragmentBuilder* fragmentainer)
 
 static bool isValidColumnSpanner(const Box* box)
 {
-    return is<BoxFrame>(*box) && !box->isInline() && !box->isFloatingOrPositioned() && box->style()->columnSpan() == ColumnSpan::All;
+    return box->isBoxFrame() && !box->isInline() && !box->isFloatingOrPositioned() && box->style()->columnSpan() == ColumnSpan::All;
 }
 
 void MultiColumnFlowBox::build()
@@ -569,7 +569,7 @@ void MultiColumnFlowBox::build()
                 currentRow = newRow;
             }
 
-            if (child->firstChild() && is<BlockFlowBox>(*child) && !child->isChildrenInline()
+            if(child->firstChild() && child->isBlockFlowBox() && !child->isChildrenInline()
                 && !child->style()->hasColumns()) {
                 child = child->firstChild();
                 continue;

@@ -50,6 +50,7 @@ namespace plutobook {
         TableCell,
         TableCaption,
         BoxView,
+        BlockFlow,
         Page,
         PageMargin,
         Leader,
@@ -58,6 +59,25 @@ namespace plutobook {
         MultiColumnRow,
         MultiColumnSpan,
         MultiColumnFlow,
+        TextInput,
+        Select,
+        SvgHiddenContainer,
+        SvgTransformableContainer,
+        SvgViewportContainer,
+        SvgResourceMarker,
+        SvgResourceClipper,
+        SvgResourceMasker,
+        SvgResourcePattern,
+        SvgGradientStop,
+        SvgResourceLinearGradient,
+        SvgResourceRadialGradient,
+        SvgInlineText,
+        SvgTSpan,
+        SvgText,
+        SvgRoot,
+        SvgImage,
+        SvgPath,
+        SvgShape,
     };
 
     class Box : public HeapMember {
@@ -106,8 +126,65 @@ namespace plutobook {
 
         bool isBodyBox() const;
         bool isRootBox() const;
-        bool isListMarkerBox() const;
+        bool isListMarkerBox() const {
+            return isInsideListMarkerBox() || isOutsideListMarkerBox();
+        }
         bool isFlexItem() const;
+
+        bool isBoxModel() const;
+        bool isBoxFrame() const;
+        bool isBoxView() const;
+        bool isTextBox() const;
+        bool isLineBreakBox() const;
+        bool isWordBreakBox() const;
+        bool isContentBox() const;
+        bool isLeaderBox() const;
+        bool isTargetCounterBox() const;
+        bool isInlineBox() const;
+        bool isBlockBox() const;
+        bool isBlockFlowBox() const;
+        bool isFlexibleBox() const;
+        bool isReplacedBox() const;
+        bool isImageBox() const;
+        bool isListItemBox() const;
+        bool isInsideListMarkerBox() const;
+        bool isOutsideListMarkerBox() const;
+        bool isMultiColumnRowBox() const;
+        bool isMultiColumnSpanBox() const;
+        bool isMultiColumnFlowBox() const;
+        bool isPageBox() const;
+        bool isPageMarginBox() const;
+        bool isTableBox() const;
+        bool isTableCellBox() const;
+        bool isTableColumnBox() const;
+        bool isTableRowBox() const;
+        bool isTableCaptionBox() const;
+        bool isTableSectionBox() const;
+        bool isTextInputBox() const;
+        bool isSelectBox() const;
+        bool isSvgInlineTextBox() const;
+        bool isSvgTSpanBox() const;
+        bool isSvgTextBox() const;
+        bool isSvgBoxModel() const;
+        bool isSvgRootBox() const;
+        bool isSvgImageBox() const;
+        bool isSvgGeometryBox() const;
+        bool isSvgPathBox() const;
+        bool isSvgShapeBox() const;
+        bool isSvgContainerBox() const;
+        bool isSvgHiddenContainerBox() const;
+        bool isSvgTransformableContainerBox() const;
+        bool isSvgViewportContainerBox() const;
+        bool isSvgResourceContainerBox() const;
+        bool isSvgResourceMarkerBox() const;
+        bool isSvgResourceClipperBox() const;
+        bool isSvgResourceMaskerBox() const;
+        bool isSvgResourcePaintServerBox() const;
+        bool isSvgResourcePatternBox() const;
+        bool isSvgGradientStopBox() const;
+        bool isSvgResourceGradientBox() const;
+        bool isSvgResourceLinearGradientBox() const;
+        bool isSvgResourceRadialGradientBox() const;
 
         bool isRelativePositioned() const {
             return m_style->position() == Position::Relative;

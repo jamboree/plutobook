@@ -1,123 +1,107 @@
-#ifndef PLUTOBOOK_SvgGEOMETRYBOX_H
-#define PLUTOBOOK_SvgGEOMETRYBOX_H
+#pragma once
 
 #include "svg-box-model.h"
 
 namespace plutobook {
+    class SvgMarkerPosition {
+    public:
+        SvgMarkerPosition(const SvgResourceMarkerBox* marker,
+                          const Point& origin, float angle)
+            : m_marker(marker), m_origin(origin), m_angle(angle) {}
 
-class SvgMarkerPosition {
-public:
-    SvgMarkerPosition(const SvgResourceMarkerBox* marker, const Point& origin, float angle)
-        : m_marker(marker), m_origin(origin), m_angle(angle)
-    {}
+        const SvgResourceMarkerBox* marker() const { return m_marker; }
+        const Point& origin() const { return m_origin; }
+        float angle() const { return m_angle; }
 
-    const SvgResourceMarkerBox* marker() const { return m_marker; }
-    const Point& origin() const { return m_origin; }
-    float angle() const { return m_angle; }
+        Rect markerBoundingBox(float strokeWidth) const;
+        void renderMarker(const SvgRenderState& state, float strokeWidth) const;
 
-    Rect markerBoundingBox(float strokeWidth) const;
-    void renderMarker(const SvgRenderState& state, float strokeWidth) const;
+    private:
+        const SvgResourceMarkerBox* m_marker;
+        Point m_origin;
+        float m_angle;
+    };
 
-private:
-    const SvgResourceMarkerBox* m_marker;
-    Point m_origin;
-    float m_angle;
-};
+    using SvgMarkerPositionList = std::vector<SvgMarkerPosition>;
 
-using SvgMarkerPositionList = std::vector<SvgMarkerPosition>;
+    class SvgGeometryBox : public SvgBoxModel {
+    public:
+        SvgGeometryBox(ClassKind type, SvgGeometryElement* element,
+                       const RefPtr<BoxStyle>& style);
 
-class SvgGeometryBox : public SvgBoxModel {
-public:
-    SvgGeometryBox(SvgGeometryElement* element, const RefPtr<BoxStyle>& style);
+        virtual const Path& path() const = 0;
 
-    bool isSvgGeometryBox() const final { return true; }
+        SvgGeometryElement* element() const;
+        Transform localTransform() const override {
+            return element()->transform();
+        }
+        Rect fillBoundingBox() const override;
+        Rect strokeBoundingBox() const override;
 
-    virtual const Path& path() const = 0;
+        void render(const SvgRenderState& state) const override;
+        void layout() override;
+        void build() override;
 
-    SvgGeometryElement* element() const;
-    Transform localTransform() const override { return element()->transform(); }
-    Rect fillBoundingBox() const override;
-    Rect strokeBoundingBox() const override;
+        const char* name() const override { return "SvgGeometryBox"; }
 
-    void render(const SvgRenderState& state) const override;
-    void layout() override;
-    void build() override;
+    protected:
+        void updateMarkerPositions();
 
-    const char* name() const override { return "SvgGeometryBox"; }
+        SvgPaintServer m_fill;
+        SvgPaintServer m_stroke;
+        SvgMarkerPositionList m_markerPositions;
 
-protected:
-    void updateMarkerPositions();
+        const SvgResourceMarkerBox* m_markerStart = nullptr;
+        const SvgResourceMarkerBox* m_markerMid = nullptr;
+        const SvgResourceMarkerBox* m_markerEnd = nullptr;
 
-    SvgPaintServer m_fill;
-    SvgPaintServer m_stroke;
-    SvgMarkerPositionList m_markerPositions;
+        mutable Rect m_fillBoundingBox = Rect::Invalid;
+        mutable Rect m_strokeBoundingBox = Rect::Invalid;
+    };
 
-    const SvgResourceMarkerBox* m_markerStart = nullptr;
-    const SvgResourceMarkerBox* m_markerMid = nullptr;
-    const SvgResourceMarkerBox* m_markerEnd = nullptr;
+    extern template bool is<SvgGeometryBox>(const Box& value);
 
-    mutable Rect m_fillBoundingBox = Rect::Invalid;
-    mutable Rect m_strokeBoundingBox = Rect::Invalid;
-};
+    inline SvgGeometryElement* SvgGeometryBox::element() const {
+        return static_cast<SvgGeometryElement*>(node());
+    }
 
-template<>
-struct is_a<SvgGeometryBox> {
-    static bool check(const Box& box) { return box.isSvgGeometryBox(); }
-};
+    class SvgPathBox final : public SvgGeometryBox {
+    public:
+        static constexpr ClassKind classKind = ClassKind::SvgPath;
 
-inline SvgGeometryElement* SvgGeometryBox::element() const
-{
-    return static_cast<SvgGeometryElement*>(node());
-}
+        SvgPathBox(SvgPathElement* element, const RefPtr<BoxStyle>& style);
 
-class SvgPathBox final : public SvgGeometryBox {
-public:
-    SvgPathBox(SvgPathElement* element, const RefPtr<BoxStyle>& style);
+        SvgPathElement* element() const;
+        const Path& path() const final { return element()->path(); }
 
-    bool isSvgPathBox() const final { return true; }
+        const char* name() const final { return "SvgPathBox"; }
+    };
 
-    SvgPathElement* element() const;
-    const Path& path() const final { return element()->path(); }
+    extern template bool is<SvgPathBox>(const Box& value);
 
-    const char* name() const final { return "SvgPathBox"; }
-};
+    inline SvgPathElement* SvgPathBox::element() const {
+        return static_cast<SvgPathElement*>(node());
+    }
 
-template<>
-struct is_a<SvgPathBox> {
-    static bool check(const Box& box) { return box.isSvgPathBox(); }
-};
+    class SvgShapeBox final : public SvgGeometryBox {
+    public:
+        static constexpr ClassKind classKind = ClassKind::SvgShape;
 
-inline SvgPathElement* SvgPathBox::element() const
-{
-    return static_cast<SvgPathElement*>(node());
-}
+        SvgShapeBox(SvgShapeElement* element, const RefPtr<BoxStyle>& style);
 
-class SvgShapeBox final : public SvgGeometryBox {
-public:
-    SvgShapeBox(SvgShapeElement* element, const RefPtr<BoxStyle>& style);
+        SvgShapeElement* element() const;
+        const Path& path() const final { return m_path; }
+        void layout() final;
 
-    bool isSvgShapeBox() const final { return true; }
+        const char* name() const final { return "SvgShapeBox"; }
 
-    SvgShapeElement* element() const;
-    const Path& path() const final { return m_path; }
-    void layout() final;
+    private:
+        Path m_path;
+    };
 
-    const char* name() const final { return "SvgShapeBox"; }
+    extern template bool is<SvgShapeBox>(const Box& value);
 
-private:
-    Path m_path;
-};
-
-template<>
-struct is_a<SvgShapeBox> {
-    static bool check(const Box& box) { return box.isSvgShapeBox(); }
-};
-
-inline SvgShapeElement* SvgShapeBox::element() const
-{
-    return static_cast<SvgShapeElement*>(node());
-}
-
+    inline SvgShapeElement* SvgShapeBox::element() const {
+        return static_cast<SvgShapeElement*>(node());
+    }
 } // namespace plutobook
-
-#endif // PLUTOBOOK_SvgGEOMETRYBOX_H
