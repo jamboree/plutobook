@@ -18,9 +18,37 @@
 #include <iostream>
 
 namespace plutobook {
+template<class F>
+decltype(auto) visit(Node* p, F&& f) {
+    switch (p->type()) {
+    case Node::ClassKind::Text: return f(static_cast<TextNode*>(p));
+    case Node::ClassKind::Element: return f(static_cast<Element*>(p));
+    case Node::ClassKind::HtmlElement:
+        return f(static_cast<HtmlElement*>(p));
+    case Node::ClassKind::SvgElement:
+        return f(static_cast<SvgElement*>(p));
+    case Node::ClassKind::HtmlDocument:
+        return f(static_cast<HtmlDocument*>(p));
+    case Node::ClassKind::SvgDocument:
+        return f(static_cast<SvgDocument*>(p));
+    case Node::ClassKind::XmlDocument:
+        return f(static_cast<XmlDocument*>(p));
+    default: std::unreachable();
+    }
+}
 
-Node::Node(Document* document)
-    : m_document(document)
+template bool is<TextNode>(const Node& value);
+template bool is<ContainerNode>(const Node& value);
+template bool is<Element>(const Node& value);
+template bool is<Document>(const Node& value);
+template bool is<HtmlElement>(const Node& value);
+template bool is<HtmlDocument>(const Node& value);
+template bool is<SvgElement>(const Node& value);
+template bool is<SvgDocument>(const Node& value);
+template bool is<XmlDocument>(const Node& value);
+
+Node::Node(ClassKind type, Document* document)
+    : m_type(type), m_document(document)
 {
 }
 
@@ -76,8 +104,35 @@ BoxStyle* Node::style() const
     return nullptr;
 }
 
+bool Node::checkType(ClassKind type) const noexcept {
+    switch (type)
+    {
+    case ClassKind::Text: return is<TextNode>(*this);
+    case ClassKind::Element: return is<ContainerNode>(*this);
+    case ClassKind::HtmlElement: return is<HtmlElement>(*this);
+    case ClassKind::SvgElement: return is<SvgElement>(*this);
+    case ClassKind::HtmlDocument: return is<HtmlDocument>(*this);
+    case ClassKind::SvgDocument: return is<SvgDocument>(*this);
+    case ClassKind::XmlDocument: return is<XmlDocument>(*this);
+    default:
+        std::unreachable();
+    }
+}
+
+bool Node::inHtmlDocument() const {
+    return is<HtmlDocument>(*m_document);
+}
+
+bool Node::inSvgDocument() const {
+    return is<SvgDocument>(*m_document);
+}
+
+bool Node::inXmlDocument() const {
+    return is<XmlDocument>(*m_document);
+}
+
 TextNode::TextNode(Document* document, const HeapString& data)
-    : Node(document)
+    : Node(classKind,document)
     , m_data(data)
 {
 }
@@ -117,7 +172,7 @@ Node* TextNode::cloneNode(bool deep)
 
 Box* TextNode::createBox(const RefPtr<BoxStyle>& style)
 {
-    if(parentNode()->isSvgElement())
+    if(is<SvgElement>(*parentNode()))
         return new (heap()) SvgInlineTextBox(this, style);
     auto box = new (heap()) TextBox(this, style);
     box->setText(m_data);
@@ -133,8 +188,8 @@ void TextNode::buildBox(Counters& counters, Box* parent)
     }
 }
 
-ContainerNode::ContainerNode(Document* document)
-    : Node(document)
+ContainerNode::ContainerNode(ClassKind type, Document* document)
+    : Node(type, document)
 {
 }
 
@@ -265,8 +320,8 @@ void ContainerNode::finishParsingDocument()
     }
 }
 
-Element::Element(Document* document, const GlobalString& namespaceURI, const GlobalString& tagName)
-    : ContainerNode(document)
+Element::Element(ClassKind type, Document* document, const GlobalString& namespaceURI, const GlobalString& tagName)
+    : ContainerNode(type, document)
     , m_namespaceURI(namespaceURI)
     , m_tagName(tagName)
     , m_classNames(document->heap())
@@ -515,8 +570,8 @@ void Element::finishParsingDocument()
     ContainerNode::finishParsingDocument();
 }
 
-Document::Document(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl)
-    : ContainerNode(this)
+Document::Document(ClassKind type, Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl)
+    : ContainerNode(type, this)
     , m_book(book)
     , m_heap(heap)
     , m_customResourceFetcher(fetcher)
@@ -532,6 +587,10 @@ Document::Document(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl
 }
 
 Document::~Document() = default;
+
+bool Document::isSvgImageDocument() const {
+    return !m_book && is<SvgDocument>(*this);
+}
 
 BoxView* Document::box() const
 {
@@ -674,7 +733,7 @@ Element* Document::createElement(const GlobalString& namespaceURI, const GlobalS
         return new (m_heap) SvgElement(this, tagName);
     }
 
-    return new (m_heap) Element(this, namespaceURI, tagName);
+    return new (m_heap) Element(ClassKind::Element, this, namespaceURI, tagName);
 }
 
 Element* Document::bodyElement() const
@@ -874,7 +933,7 @@ bool Document::supportsMedia(const std::string_view& type, const std::string_vie
 {
     if(m_book == nullptr || media.empty())
         return true;
-    if(type.empty() || equals(type, "text/css", isXMLDocument())) {
+    if(type.empty() || equals(type, "text/css", is<XmlDocument>(*this))) {
         CssParserContext context(this, CssStyleOrigin::Author, m_baseUrl);
         CssParser parser(context, m_heap);
         CssMediaQueryList queries(parser.parseMediaQueries(media));

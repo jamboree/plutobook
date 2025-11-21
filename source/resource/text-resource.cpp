@@ -31,7 +31,7 @@ std::string_view TextResource::decode(const char* data, size_t length, const std
     return output;
 }
 
-bool TextResource::isXMLMIMEType(const std::string_view& mimeType)
+bool TextResource::isXmlMIMEType(const std::string_view& mimeType)
 {
     if(equals(mimeType, "text/xml", false)
         || equals(mimeType, "application/xml", false)

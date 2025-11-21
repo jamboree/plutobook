@@ -1,26 +1,19 @@
-#ifndef PLUTOBOOK_XMLDOCUMENT_H
-#define PLUTOBOOK_XMLDOCUMENT_H
+#pragma once
 
 #include "document.h"
 
 namespace plutobook {
+    class XmlDocument : public Document {
+    public:
+        static std::unique_ptr<XmlDocument>
+        create(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl);
 
-class XMLDocument : public Document {
-public:
-    static std::unique_ptr<XMLDocument> create(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl);
+        bool parse(const std::string_view& content) override;
 
-    bool isXMLDocument() const final { return true; }
-    bool parse(const std::string_view& content) override;
+    protected:
+        XmlDocument(ClassKind type, Book* book, Heap* heap, ResourceFetcher* fetcher,
+                    Url baseUrl);
+    };
 
-protected:
-    XMLDocument(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl);
-};
-
-template<>
-struct is_a<XMLDocument> {
-    static bool check(const Node& value) { return value.isXMLDocument(); }
-};
-
+    extern template bool is<XmlDocument>(const Node& value);
 } // namespace plutobook
-
-#endif // PLUTOBOOK_XMLDOCUMENT_H

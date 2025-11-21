@@ -310,11 +310,6 @@ namespace plutobook {
         ClassKind m_type;
     };
 
-    // template<class F>
-    // decltype(auto) visit(CssValue* p, F&& f) {
-    //     switch (p->type()) {}
-    // }
-
     using CssValueList = std::pmr::vector<RefPtr<CssValue>>;
 
     enum class CssPropertyID : uint16_t {
@@ -1734,7 +1729,7 @@ namespace plutobook {
 
     using CssPageMarginRuleList = std::pmr::vector<RefPtr<CssPageMarginRule>>;
 
-    class CssPageRule : public CssRule {
+    class CssPageRule final : public CssRule {
     public:
         static constexpr ClassKind classKind = ClassKind::Page;
 

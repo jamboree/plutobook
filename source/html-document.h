@@ -1,271 +1,278 @@
-#ifndef PLUTOBOOK_HtmlDOCUMENT_H
-#define PLUTOBOOK_HtmlDOCUMENT_H
+#pragma once
 
 #include "document.h"
 
 #include <optional>
 
 namespace plutobook {
+    class HtmlDocument;
 
-class HtmlDocument;
+    class HtmlElement : public Element {
+    public:
+        static constexpr ClassKind classKind = ClassKind::HtmlElement;
 
-class HtmlElement : public Element {
-public:
-    HtmlElement(Document* document, const GlobalString& tagName);
+        HtmlElement(Document* document, const GlobalString& tagName);
 
-    bool isHtmlElement() const final { return true; }
+        void buildFirstLetterPseudoBox(Box* parent);
+        void buildPseudoBox(Counters& counters, Box* parent,
+                            PseudoType pseudoType);
+        void buildElementBox(Counters& counters, Box* box);
+        void buildBox(Counters& counters, Box* parent) override;
 
-    void buildFirstLetterPseudoBox(Box* parent);
-    void buildPseudoBox(Counters& counters, Box* parent, PseudoType pseudoType);
-    void buildElementBox(Counters& counters, Box* box);
-    void buildBox(Counters& counters, Box* parent) override;
+        void collectAttributeStyle(std::string& output,
+                                   const GlobalString& name,
+                                   const HeapString& value) const override;
 
-    void collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const override;
-
-protected:
-    template<typename T = int>
-    std::optional<T> parseIntegerAttribute(const GlobalString& name) const;
-    std::optional<unsigned> parseNonNegativeIntegerAttribute(const GlobalString& name) const;
-};
-
-template<>
-struct is_a<HtmlElement> {
-    static bool check(const Node& value) { return value.isHtmlElement(); }
-};
-
-class HtmlBodyElement final : public HtmlElement {
-public:
-    HtmlBodyElement(Document* document);
-
-    void collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const final;
-};
-
-class HtmlFontElement final : public HtmlElement {
-public:
-    HtmlFontElement(Document* document);
-
-    void collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const final;
-};
-
-class Image;
-
-class HtmlImageElement final : public HtmlElement {
-public:
-    HtmlImageElement(Document* document);
-
-    void collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const final;
-    const HeapString& altText() const;
-    RefPtr<Image> srcImage() const;
-
-    Box* createBox(const RefPtr<BoxStyle>& style) final;
-};
-
-class HtmlHrElement final : public HtmlElement {
-public:
-    HtmlHrElement(Document* document);
-
-    void collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const final;
-};
-
-class HtmlBrElement final : public HtmlElement {
-public:
-    HtmlBrElement(Document* document);
-
-    Box* createBox(const RefPtr<BoxStyle>& style) final;
-};
-
-class HtmlWbrElement final : public HtmlElement {
-public:
-    HtmlWbrElement(Document* document);
-
-    Box* createBox(const RefPtr<BoxStyle>& style) final;
-};
-
-class HtmlLiElement final : public HtmlElement {
-public:
-    HtmlLiElement(Document* document);
-
-    std::optional<int> value() const;
-
-    void collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const final;
-};
-
-class HtmlOlElement final : public HtmlElement {
-public:
-    HtmlOlElement(Document* document);
-
-    int start() const;
-
-    void collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const final;
-};
-
-class HtmlTableElement final : public HtmlElement {
-public:
-    HtmlTableElement(Document* document);
-
-    void parseAttribute(const GlobalString& name, const HeapString& value) final;
-
-    void collectAdditionalCellAttributeStyle(std::string& output) const;
-    void collectAdditionalRowGroupAttributeStyle(std::string& output) const;
-    void collectAdditionalColGroupAttributeStyle(std::string& output) const;
-    void collectAdditionalAttributeStyle(std::string& output) const final;
-
-    void collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const final;
-
-private:
-    enum class Rules : uint16_t {
-        Unset,
-        None,
-        Groups,
-        Rows,
-        Cols,
-        All
+    protected:
+        template<typename T = int>
+        std::optional<T> parseIntegerAttribute(const GlobalString& name) const;
+        std::optional<unsigned>
+        parseNonNegativeIntegerAttribute(const GlobalString& name) const;
     };
 
-    static Rules parseRulesAttribute(std::string_view  value);
+    extern template bool is<HtmlElement>(const Node& value);
 
-    enum class Frame : uint16_t {
-        Unset,
-        Void,
-        Above,
-        Below,
-        Hsides,
-        Lhs,
-        Rhs,
-        Vsides,
-        Box,
-        Border
+    class HtmlBodyElement final : public HtmlElement {
+    public:
+        HtmlBodyElement(Document* document);
+
+        void collectAttributeStyle(std::string& output,
+                                   const GlobalString& name,
+                                   const HeapString& value) const final;
     };
 
-    static Frame parseFrameAttribute(std::string_view  value);
+    class HtmlFontElement final : public HtmlElement {
+    public:
+        HtmlFontElement(Document* document);
 
-    uint16_t m_padding = 0;
-    uint16_t m_border = 0;
-    Rules m_rules = Rules::Unset;
-    Frame m_frame = Frame::Unset;
-};
+        void collectAttributeStyle(std::string& output,
+                                   const GlobalString& name,
+                                   const HeapString& value) const final;
+    };
 
-class HtmlTablePartElement : public HtmlElement {
-public:
-    HtmlTablePartElement(Document* document, const GlobalString& tagName);
+    class Image;
 
-    HtmlTableElement* findParentTable() const;
+    class HtmlImageElement final : public HtmlElement {
+    public:
+        HtmlImageElement(Document* document);
 
-    void collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const override;
-};
+        void collectAttributeStyle(std::string& output,
+                                   const GlobalString& name,
+                                   const HeapString& value) const final;
+        const HeapString& altText() const;
+        RefPtr<Image> srcImage() const;
 
-class HtmlTableSectionElement final : public HtmlTablePartElement {
-public:
-    HtmlTableSectionElement(Document* document, const GlobalString& tagName);
+        Box* createBox(const RefPtr<BoxStyle>& style) final;
+    };
 
-    void collectAdditionalAttributeStyle(std::string& output) const final;
-};
+    class HtmlHrElement final : public HtmlElement {
+    public:
+        HtmlHrElement(Document* document);
 
-class HtmlTableRowElement final : public HtmlTablePartElement {
-public:
-    HtmlTableRowElement(Document* document);
-};
+        void collectAttributeStyle(std::string& output,
+                                   const GlobalString& name,
+                                   const HeapString& value) const final;
+    };
 
-class HtmlTableColElement final : public HtmlTablePartElement {
-public:
-    HtmlTableColElement(Document* document, const GlobalString& tagName);
+    class HtmlBrElement final : public HtmlElement {
+    public:
+        HtmlBrElement(Document* document);
 
-    unsigned span() const;
+        Box* createBox(const RefPtr<BoxStyle>& style) final;
+    };
 
-    void collectAdditionalAttributeStyle(std::string& output) const final;
-    Box* createBox(const RefPtr<BoxStyle>& style) final;
-};
+    class HtmlWbrElement final : public HtmlElement {
+    public:
+        HtmlWbrElement(Document* document);
 
-class HtmlTableCellElement final : public HtmlTablePartElement {
-public:
-    HtmlTableCellElement(Document* document, const GlobalString& tagName);
+        Box* createBox(const RefPtr<BoxStyle>& style) final;
+    };
 
-    unsigned colSpan() const;
-    unsigned rowSpan() const;
+    class HtmlLiElement final : public HtmlElement {
+    public:
+        HtmlLiElement(Document* document);
 
-    void collectAdditionalAttributeStyle(std::string& output) const final;
-    Box* createBox(const RefPtr<BoxStyle>& style) final;
-};
+        std::optional<int> value() const;
 
-class HtmlInputElement final : public HtmlElement {
-public:
-    HtmlInputElement(Document* document);
+        void collectAttributeStyle(std::string& output,
+                                   const GlobalString& name,
+                                   const HeapString& value) const final;
+    };
 
-    unsigned size() const;
+    class HtmlOlElement final : public HtmlElement {
+    public:
+        HtmlOlElement(Document* document);
 
-    Box* createBox(const RefPtr<BoxStyle>& style) final;
-};
+        int start() const;
 
-class HtmlTextAreaElement final : public HtmlElement {
-public:
-    HtmlTextAreaElement(Document* document);
+        void collectAttributeStyle(std::string& output,
+                                   const GlobalString& name,
+                                   const HeapString& value) const final;
+    };
 
-    unsigned rows() const;
-    unsigned cols() const;
+    class HtmlTableElement final : public HtmlElement {
+    public:
+        HtmlTableElement(Document* document);
 
-    Box* createBox(const RefPtr<BoxStyle>& style) final;
-};
+        void parseAttribute(const GlobalString& name,
+                            const HeapString& value) final;
 
-class HtmlSelectElement final : public HtmlElement {
-public:
-    HtmlSelectElement(Document* document);
+        void collectAdditionalCellAttributeStyle(std::string& output) const;
+        void collectAdditionalRowGroupAttributeStyle(std::string& output) const;
+        void collectAdditionalColGroupAttributeStyle(std::string& output) const;
+        void collectAdditionalAttributeStyle(std::string& output) const final;
 
-    unsigned size() const;
+        void collectAttributeStyle(std::string& output,
+                                   const GlobalString& name,
+                                   const HeapString& value) const final;
 
-    Box* createBox(const RefPtr<BoxStyle>& style) final;
-};
+    private:
+        enum class Rules : uint16_t { Unset, None, Groups, Rows, Cols, All };
 
-class HtmlStyleElement final : public HtmlElement {
-public:
-    HtmlStyleElement(Document* document);
+        static Rules parseRulesAttribute(std::string_view value);
 
-    const HeapString& type() const;
-    const HeapString& media() const;
+        enum class Frame : uint16_t {
+            Unset,
+            Void,
+            Above,
+            Below,
+            Hsides,
+            Lhs,
+            Rhs,
+            Vsides,
+            Box,
+            Border
+        };
 
-    void finishParsingDocument() final;
-};
+        static Frame parseFrameAttribute(std::string_view value);
 
-class HtmlLinkElement final : public HtmlElement {
-public:
-    HtmlLinkElement(Document* document);
+        uint16_t m_padding = 0;
+        uint16_t m_border = 0;
+        Rules m_rules = Rules::Unset;
+        Frame m_frame = Frame::Unset;
+    };
 
-    const HeapString& rel() const;
-    const HeapString& type() const;
-    const HeapString& media() const;
+    class HtmlTablePartElement : public HtmlElement {
+    public:
+        HtmlTablePartElement(Document* document, const GlobalString& tagName);
 
-    void finishParsingDocument() final;
-};
+        HtmlTableElement* findParentTable() const;
 
-class HtmlTitleElement final : public HtmlElement {
-public:
-    HtmlTitleElement(Document* document);
+        void collectAttributeStyle(std::string& output,
+                                   const GlobalString& name,
+                                   const HeapString& value) const override;
+    };
 
-    void finishParsingDocument() final;
-};
+    class HtmlTableSectionElement final : public HtmlTablePartElement {
+    public:
+        HtmlTableSectionElement(Document* document,
+                                const GlobalString& tagName);
 
-class HtmlBaseElement final : public HtmlElement {
-public:
-    HtmlBaseElement(Document* document);
+        void collectAdditionalAttributeStyle(std::string& output) const final;
+    };
 
-    void finishParsingDocument() final;
-};
+    class HtmlTableRowElement final : public HtmlTablePartElement {
+    public:
+        HtmlTableRowElement(Document* document);
+    };
 
-class HtmlDocument final : public Document {
-public:
-    static std::unique_ptr<HtmlDocument> create(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl);
+    class HtmlTableColElement final : public HtmlTablePartElement {
+    public:
+        HtmlTableColElement(Document* document, const GlobalString& tagName);
 
-    bool isHtmlDocument() const final { return true; }
-    bool parse(const std::string_view& content) final;
+        unsigned span() const;
 
-private:
-    HtmlDocument(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl);
-};
+        void collectAdditionalAttributeStyle(std::string& output) const final;
+        Box* createBox(const RefPtr<BoxStyle>& style) final;
+    };
 
-template<>
-struct is_a<HtmlDocument> {
-    static bool check(const Node& value) { return value.isHtmlDocument(); }
-};
+    class HtmlTableCellElement final : public HtmlTablePartElement {
+    public:
+        HtmlTableCellElement(Document* document, const GlobalString& tagName);
 
+        unsigned colSpan() const;
+        unsigned rowSpan() const;
+
+        void collectAdditionalAttributeStyle(std::string& output) const final;
+        Box* createBox(const RefPtr<BoxStyle>& style) final;
+    };
+
+    class HtmlInputElement final : public HtmlElement {
+    public:
+        HtmlInputElement(Document* document);
+
+        unsigned size() const;
+
+        Box* createBox(const RefPtr<BoxStyle>& style) final;
+    };
+
+    class HtmlTextAreaElement final : public HtmlElement {
+    public:
+        HtmlTextAreaElement(Document* document);
+
+        unsigned rows() const;
+        unsigned cols() const;
+
+        Box* createBox(const RefPtr<BoxStyle>& style) final;
+    };
+
+    class HtmlSelectElement final : public HtmlElement {
+    public:
+        HtmlSelectElement(Document* document);
+
+        unsigned size() const;
+
+        Box* createBox(const RefPtr<BoxStyle>& style) final;
+    };
+
+    class HtmlStyleElement final : public HtmlElement {
+    public:
+        HtmlStyleElement(Document* document);
+
+        const HeapString& type() const;
+        const HeapString& media() const;
+
+        void finishParsingDocument() final;
+    };
+
+    class HtmlLinkElement final : public HtmlElement {
+    public:
+        HtmlLinkElement(Document* document);
+
+        const HeapString& rel() const;
+        const HeapString& type() const;
+        const HeapString& media() const;
+
+        void finishParsingDocument() final;
+    };
+
+    class HtmlTitleElement final : public HtmlElement {
+    public:
+        HtmlTitleElement(Document* document);
+
+        void finishParsingDocument() final;
+    };
+
+    class HtmlBaseElement final : public HtmlElement {
+    public:
+        HtmlBaseElement(Document* document);
+
+        void finishParsingDocument() final;
+    };
+
+    class HtmlDocument final : public Document {
+    public:
+        static constexpr ClassKind classKind = ClassKind::HtmlDocument;
+
+        static std::unique_ptr<HtmlDocument>
+        create(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl);
+
+        bool parse(const std::string_view& content) final;
+
+    private:
+        HtmlDocument(Book* book, Heap* heap, ResourceFetcher* fetcher,
+                     Url baseUrl);
+    };
+
+    extern template bool is<HtmlDocument>(const Node& value);
 } // namespace plutobook
-
-#endif // PLUTOBOOK_HtmlDOCUMENT_H

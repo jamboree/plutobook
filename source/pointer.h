@@ -226,62 +226,72 @@ namespace plutobook {
     template<typename T>
     struct is_a;
 
-    template<typename T, typename U>
-    constexpr bool is(const U& value) {
+    template<typename T>
+    concept HasIs = requires { is_a<T>{}; };
+
+    template<HasIs T, typename U>
+    inline bool is(const U& value) {
         return is_a<T>::check(value);
     }
 
     template<typename T>
-    constexpr bool is(const typename T::ClassRoot& value) {
-        static_assert(std::is_final_v<T>);
-        return T::classKind == value.type();
+    inline bool is(const typename T::ClassRoot& value) {
+        if constexpr (std::is_final_v<T>) {
+            return T::classKind == value.type();
+        } else {
+            struct Checker {
+                bool operator()(T* p) const noexcept { return true; }
+                bool operator()(void*) const noexcept { return false; }
+            };
+            return visit(const_cast<typename T::ClassRoot*>(&value), Checker{});
+        }
     }
 
     template<typename T, typename U>
-    constexpr bool is(U* value) {
+    inline bool is(U* value) {
         return value && is<T>(*value);
     }
 
     template<typename T, typename U>
-    constexpr bool is(const RefPtr<U>& value) {
+    inline bool is(const RefPtr<U>& value) {
         return value && is<T>(*value);
     }
 
     template<typename T, typename U>
-    constexpr T& to(U& value) {
+    inline T& to(U& value) {
         assert(is<T>(value));
         return static_cast<T&>(value);
     }
 
     template<typename T, typename U>
-    constexpr const T& to(const U& value) {
+    inline const T& to(const U& value) {
         assert(is<T>(value));
         return static_cast<const T&>(value);
     }
 
     template<typename T, typename U>
-    constexpr T* to(U* value) {
+    inline T* to(U* value) {
         if (!is<T>(value))
             return nullptr;
         return static_cast<T*>(value);
     }
 
     template<typename T, typename U>
-    constexpr const T* to(const U* value) {
+    inline const T* to(const U* value) {
         if (!is<T>(value))
             return nullptr;
         return static_cast<const T*>(value);
     }
 
     template<typename T, typename U>
-    constexpr RefPtr<T> to(const RefPtr<U>& value) {
+    inline RefPtr<T> to(const RefPtr<U>& value) {
         if (!is<T>(value))
             return nullptr;
         return static_cast<T&>(*value);
     }
 
     template<typename T, typename U>
-    constexpr RefPtr<T> to(RefPtr<U>& value) {
+    inline RefPtr<T> to(RefPtr<U>& value) {
         if (!is<T>(value))
             return nullptr;
         return static_cast<T&>(*value);

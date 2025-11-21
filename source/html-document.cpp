@@ -19,7 +19,7 @@
 namespace plutobook {
 
 HtmlElement::HtmlElement(Document* document, const GlobalString& tagName)
-    : Element(document, xhtmlNs, tagName)
+    : Element(classKind, document, xhtmlNs, tagName)
 {
 }
 
@@ -1013,7 +1013,7 @@ bool HtmlDocument::parse(const std::string_view& content)
 }
 
 HtmlDocument::HtmlDocument(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl)
-    : Document(book, heap, fetcher, std::move(baseUrl))
+    : Document(classKind, book, heap, fetcher, std::move(baseUrl))
 {
 }
 

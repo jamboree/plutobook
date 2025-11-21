@@ -359,7 +359,7 @@ bool Book::loadUrl(const std::string_view& url, const std::string_view& userStyl
 
 bool Book::loadData(const char* data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding, const std::string_view& userStyle, const std::string_view& userScript, const std::string_view& baseUrl)
 {
-    if(TextResource::isXMLMIMEType(mimeType))
+    if(TextResource::isXmlMIMEType(mimeType))
         return loadXml(TextResource::decode(data, length, mimeType, textEncoding), userStyle, userScript, baseUrl);
     if(ImageResource::supportsMimeType(mimeType))
         return loadImage(data, length, mimeType, textEncoding, userStyle, userScript, baseUrl);
@@ -376,7 +376,7 @@ bool Book::loadImage(const char* data, size_t length, const std::string_view& mi
     loadHtml("<img>", userStyle, userScript, baseUrl);
 
     auto document = buildIfNeeded();
-    assert(document && document->isHtmlDocument());
+    assert(document && document->checkType(NodeType::HtmlDocument));
     auto htmlElement = to<HtmlElement>(document->firstChild());
     assert(htmlElement && htmlElement->tagName() == htmlTag);
     auto headElement = to<HtmlElement>(htmlElement->firstChild());
@@ -400,7 +400,7 @@ bool Book::loadImage(const char* data, size_t length, const std::string_view& mi
 bool Book::loadXml(const std::string_view& content, const std::string_view& userStyle, const std::string_view& userScript, const std::string_view& baseUrl)
 {
     clearContent();
-    m_document = XMLDocument::create(this, m_heap.get(), m_customResourceFetcher, ResourceLoader::completeUrl(baseUrl));
+    m_document = XmlDocument::create(this, m_heap.get(), m_customResourceFetcher, ResourceLoader::completeUrl(baseUrl));
     if(!m_document->parse(content)) {
         clearContent();
         return false;

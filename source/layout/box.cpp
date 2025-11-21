@@ -268,7 +268,7 @@ bool Box::isFlexItem() const
 
 void Box::paintAnnotation(GraphicsContext& context, const Rect& rect) const
 {
-    if(m_node == nullptr || !m_node->isElementNode())
+    if(m_node == nullptr || !m_node->checkType(NodeType::Element))
         return;
     const auto& element = to<Element>(*m_node);
     if(element.isLinkDestination())

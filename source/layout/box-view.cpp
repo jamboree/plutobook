@@ -51,7 +51,7 @@ void BoxView::build()
 
     if(m_backgroundStyle) {
         auto node = m_backgroundStyle->node();
-        assert(node && node->isElementNode());
+        assert(node && node->checkType(NodeType::Element));
         if(auto box = node->box()) {
             box->setIsBackgroundStolen(true);
         }

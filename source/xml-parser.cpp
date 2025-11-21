@@ -6,15 +6,15 @@
 
 namespace plutobook {
 
-XMLParser::XMLParser(XMLDocument* document)
+XmlParser::XmlParser(XmlDocument* document)
     : m_document(document)
     , m_currentNode(document)
 {
 }
 
-inline XMLParser* getParser(void* userData)
+inline XmlParser* getParser(void* userData)
 {
-    return (XMLParser*)(userData);
+    return (XmlParser*)(userData);
 }
 
 static void startElementCallback(void* userData, const XML_Char* name, const XML_Char** attrs)
@@ -34,7 +34,7 @@ static void characterDataCallback(void* userData, const XML_Char* data, int leng
 
 constexpr XML_Char kXmlNamespaceSep = '|';
 
-bool XMLParser::parse(const std::string_view& content)
+bool XmlParser::parse(const std::string_view& content)
 {
     auto parser = XML_ParserCreateNS(NULL, kXmlNamespaceSep);
     XML_SetUserData(parser, this);
@@ -81,7 +81,7 @@ QualifiedName QualifiedName::parse(const std::string_view& name)
     return QualifiedName(namespaceURI, localName);
 }
 
-void XMLParser::handleStartElement(const char* name, const char** attrs)
+void XmlParser::handleStartElement(const char* name, const char** attrs)
 {
     auto tagName = QualifiedName::parse(name);
     auto element = m_document->createElement(tagName.namespaceURI(), tagName.localName());
@@ -97,12 +97,12 @@ void XMLParser::handleStartElement(const char* name, const char** attrs)
     m_currentNode = element;
 }
 
-void XMLParser::handleEndElement(const char* name)
+void XmlParser::handleEndElement(const char* name)
 {
     m_currentNode = m_currentNode->parentNode();
 }
 
-void XMLParser::handleCharacterData(const char* data, size_t length)
+void XmlParser::handleCharacterData(const char* data, size_t length)
 {
     std::string_view content(data, length);
     if(auto lastTextNode = to<TextNode>(m_currentNode->lastChild())) {

@@ -11,7 +11,7 @@
 namespace plutobook {
 
 SvgElement::SvgElement(Document* document, const GlobalString& tagName)
-    : Element(document, svgNs, tagName)
+    : Element(classKind, document, svgNs, tagName)
     , m_properties(document->heap())
 {
 }
@@ -357,7 +357,7 @@ Element* SvgUseElement::cloneTargetElement(SvgElement* targetElement)
         return nullptr;
     auto parent = parentNode();
     const auto& id = targetElement->id();
-    while(parent && parent->isSvgElement()) {
+    while(parent && is<SvgElement>(*parent)) {
         const auto& element = to<SvgElement>(*parent);
         if(!id.empty() && id == element.id())
             return nullptr;
@@ -765,7 +765,7 @@ SvgPatternAttributes SvgPatternElement::collectPatternAttributes() const
             attributes.setPreserveAspectRatio(current);
         if(!attributes.hasPatternContentElement() && current->box()) {
             for(auto child = current->firstChild(); child; child = child->nextSibling()) {
-                if(child->isSvgElement()) {
+                if(is<SvgElement>(*child)) {
                     attributes.setPatternContentElement(current);
                     break;
                 }
@@ -974,7 +974,7 @@ std::unique_ptr<SvgDocument> SvgDocument::create(Book* book, Heap* heap, Resourc
 }
 
 SvgDocument::SvgDocument(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl)
-    : XMLDocument(book, heap, fetcher, std::move(baseUrl))
+    : XmlDocument(classKind, book, heap, fetcher, std::move(baseUrl))
 {
 }
 

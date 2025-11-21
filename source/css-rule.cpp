@@ -333,8 +333,8 @@ CssCustomPropertyValue::CssCustomPropertyValue(const GlobalString& name, RefPtr<
 }
 
 CssParserContext::CssParserContext(const Node* node, CssStyleOrigin origin, Url baseUrl)
-    : m_inHtmlDocument(node && node->isHtmlDocument())
-    , m_inSvgElement(node && node->isSvgElement())
+    : m_inHtmlDocument(node && node->checkType(NodeType::HtmlDocument))
+    , m_inSvgElement(node && node->checkType(NodeType::SvgElement))
     , m_origin(origin)
     , m_baseUrl(std::move(baseUrl))
 {
