@@ -22,8 +22,6 @@ namespace plutobook {
         const char* name() const final { return "LeaderBox"; }
     };
 
-    extern template bool is<LeaderBox>(const Box& value);
-
     class TargetCounterBox final : public ContentBox {
     public:
         static constexpr ClassKind classKind = ClassKind::TargetCounter;
@@ -44,8 +42,6 @@ namespace plutobook {
         HeapString m_seperator;
         GlobalString m_listStyle;
     };
-
-    extern template bool is<TargetCounterBox>(const Box& value);
 
     class CssCounterValue;
     class CssFunctionValue;

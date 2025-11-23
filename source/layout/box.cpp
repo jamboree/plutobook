@@ -26,7 +26,7 @@ namespace plutobook {
 template<class F>
 decltype(auto) visit(Box* p, F&& f) {
     switch (p->type()) {
-    case Box::ClassKind::Flexible: return f(static_cast<FlexibleBox*>(p));
+    case Box::ClassKind::Flex: return f(static_cast<FlexBox*>(p));
     case Box::ClassKind::Inline: return f(static_cast<InlineBox*>(p));
     case Box::ClassKind::ListItem: return f(static_cast<ListItemBox*>(p));
     case Box::ClassKind::InsideListMarker: return f(static_cast<InsideListMarkerBox*>(p));
@@ -75,58 +75,19 @@ decltype(auto) visit(Box* p, F&& f) {
 
 template bool is<BoxModel>(const Box& value);
 template bool is<BoxFrame>(const Box& value);
-template bool is<BoxView>(const Box& value);
 template bool is<TextBox>(const Box& value);
-template bool is<LineBreakBox>(const Box& value);
-template bool is<WordBreakBox>(const Box& value);
 template bool is<ContentBox>(const Box& value);
-template bool is<LeaderBox>(const Box& value);
-template bool is<TargetCounterBox>(const Box& value);
 template bool is<InlineBox>(const Box& value);
 template bool is<BlockBox>(const Box& value);
 template bool is<BlockFlowBox>(const Box& value);
-template bool is<FlexibleBox>(const Box& value);
 template bool is<ReplacedBox>(const Box& value);
-template bool is<ImageBox>(const Box& value);
-template bool is<ListItemBox>(const Box& value);
-template bool is<InsideListMarkerBox>(const Box& value);
-template bool is<OutsideListMarkerBox>(const Box& value);
-template bool is<MultiColumnRowBox>(const Box& value);
-template bool is<MultiColumnSpanBox>(const Box& value);
-template bool is<MultiColumnFlowBox>(const Box& value);
-template bool is<PageBox>(const Box& value);
-template bool is<PageMarginBox>(const Box& value);
-template bool is<TableBox>(const Box& value);
-template bool is<TableCellBox>(const Box& value);
-template bool is<TableColumnBox>(const Box& value);
-template bool is<TableRowBox>(const Box& value);
-template bool is<TableCaptionBox>(const Box& value);
-template bool is<TableSectionBox>(const Box& value);
-template bool is<TextInputBox>(const Box& value);
-template bool is<SelectBox>(const Box& value);
-template bool is<SvgInlineTextBox>(const Box& value);
-template bool is<SvgTSpanBox>(const Box& value);
-template bool is<SvgTextBox>(const Box& value);
 template bool is<SvgBoxModel>(const Box& value);
-template bool is<SvgRootBox>(const Box& value);
-template bool is<SvgImageBox>(const Box& value);
 template bool is<SvgGeometryBox>(const Box& value);
-template bool is<SvgPathBox>(const Box& value);
-template bool is<SvgShapeBox>(const Box& value);
 template bool is<SvgContainerBox>(const Box& value);
 template bool is<SvgHiddenContainerBox>(const Box& value);
-template bool is<SvgTransformableContainerBox>(const Box& value);
-template bool is<SvgViewportContainerBox>(const Box& value);
 template bool is<SvgResourceContainerBox>(const Box& value);
-template bool is<SvgResourceMarkerBox>(const Box& value);
-template bool is<SvgResourceClipperBox>(const Box& value);
-template bool is<SvgResourceMaskerBox>(const Box& value);
 template bool is<SvgResourcePaintServerBox>(const Box& value);
-template bool is<SvgResourcePatternBox>(const Box& value);
-template bool is<SvgGradientStopBox>(const Box& value);
 template bool is<SvgResourceGradientBox>(const Box& value);
-template bool is<SvgResourceLinearGradientBox>(const Box& value);
-template bool is<SvgResourceRadialGradientBox>(const Box& value);
 
 Box::Box(ClassKind type, Node* node, const RefPtr<BoxStyle>& style)
     : m_type(type), m_node(node), m_style(style)
@@ -254,7 +215,7 @@ Box* Box::create(Node* node, const RefPtr<BoxStyle>& style)
         return new (style->heap()) BlockFlowBox(node, style);
     case Display::Flex:
     case Display::InlineFlex:
-        return new (style->heap()) FlexibleBox(node, style);
+        return new (style->heap()) FlexBox(node, style);
     case Display::Table:
     case Display::InlineTable:
         return new (style->heap()) TableBox(node, style);
@@ -378,7 +339,7 @@ bool Box::isRootBox() const
 
 bool Box::isFlexItem() const
 {
-    return m_parentBox && m_parentBox->isFlexibleBox();
+    return m_parentBox && m_parentBox->isFlexBox();
 }
 
 bool Box::isBoxModel() const { return is<BoxModel>(*this); }
@@ -393,7 +354,7 @@ bool Box::isTargetCounterBox() const { return is<TargetCounterBox>(*this); }
 bool Box::isInlineBox() const { return is<InlineBox>(*this); }
 bool Box::isBlockBox() const { return is<BlockBox>(*this); }
 bool Box::isBlockFlowBox() const { return is<BlockFlowBox>(*this); }
-bool Box::isFlexibleBox() const { return is<FlexibleBox>(*this); }
+bool Box::isFlexBox() const { return is<FlexBox>(*this); }
 bool Box::isReplacedBox() const { return is<ReplacedBox>(*this); }
 bool Box::isImageBox() const { return is<ImageBox>(*this); }
 bool Box::isListItemBox() const { return is<ListItemBox>(*this); }

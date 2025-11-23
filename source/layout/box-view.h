@@ -33,6 +33,4 @@ namespace plutobook {
         BoxStyle* m_backgroundStyle{nullptr};
         PageBox* m_currentPage{nullptr};
     };
-
-    extern template bool is<BoxView>(const Box& value);
 } // namespace plutobook

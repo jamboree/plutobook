@@ -53,8 +53,8 @@ namespace plutobook {
         RefPtr(std::nullptr_t) : m_ptr(nullptr) {}
         RefPtr(T* ptr) : m_ptr(ptr) { refIfNotNull(m_ptr); }
         RefPtr(T& ref) : m_ptr(&ref) { m_ptr->ref(); }
-        RefPtr(const RefPtr<T>& p) : m_ptr(p.get()) { refIfNotNull(m_ptr); }
-        RefPtr(RefPtr<T>&& p) : m_ptr(p.release()) {}
+        RefPtr(const RefPtr& p) : m_ptr(p.get()) { refIfNotNull(m_ptr); }
+        RefPtr(RefPtr&& p) : m_ptr(p.release()) {}
 
         template<typename U>
         RefPtr(const RefPtr<U>& p) : m_ptr(p.get()) {
@@ -80,50 +80,50 @@ namespace plutobook {
         operator T*() const { return m_ptr; }
         operator bool() const { return !!m_ptr; }
 
-        RefPtr<T>& operator=(std::nullptr_t) {
+        RefPtr& operator=(std::nullptr_t) {
             clear();
             return *this;
         }
 
-        RefPtr<T>& operator=(T* o) {
-            RefPtr<T> p = o;
+        RefPtr& operator=(T* o) {
+            RefPtr p = o;
             swap(p);
             return *this;
         }
 
-        RefPtr<T>& operator=(T& o) {
-            RefPtr<T> p = o;
+        RefPtr& operator=(T& o) {
+            RefPtr p = o;
             swap(p);
             return *this;
         }
 
-        RefPtr<T>& operator=(const RefPtr<T>& o) {
-            RefPtr<T> p = o;
+        RefPtr& operator=(const RefPtr& o) {
+            RefPtr p = o;
             swap(p);
             return *this;
         }
 
-        RefPtr<T>& operator=(RefPtr<T>&& o) {
-            RefPtr<T> p = std::move(o);
-            swap(p);
-            return *this;
-        }
-
-        template<typename U>
-        RefPtr<T>& operator=(const RefPtr<U>& o) {
-            RefPtr<T> p = o;
+        RefPtr& operator=(RefPtr&& o) {
+            RefPtr p = std::move(o);
             swap(p);
             return *this;
         }
 
         template<typename U>
-        RefPtr<T>& operator=(RefPtr<U>&& o) {
-            RefPtr<T> p = std::move(o);
+        RefPtr& operator=(const RefPtr<U>& o) {
+            RefPtr p = o;
             swap(p);
             return *this;
         }
 
-        void swap(RefPtr<T>& o) { std::swap(m_ptr, o.m_ptr); }
+        template<typename U>
+        RefPtr& operator=(RefPtr<U>&& o) {
+            RefPtr p = std::move(o);
+            swap(p);
+            return *this;
+        }
+
+        void swap(RefPtr& o) { std::swap(m_ptr, o.m_ptr); }
 
         T* release() {
             T* ptr = m_ptr;
@@ -166,7 +166,7 @@ namespace plutobook {
             return m_ptr >= o.get();
         }
 
-        friend RefPtr<T> adoptPtr<T>(T*);
+        friend RefPtr adoptPtr<T>(T*);
 
     private:
         RefPtr(T* ptr, std::nullptr_t) : m_ptr(ptr) {}
@@ -273,14 +273,14 @@ namespace plutobook {
     }
 
     template<typename T, typename U>
-    inline RefPtr<T> to(const RefPtr<U>& value) {
+    inline RefPtr<T> to(RefPtr<U>& value) {
         if (!is<T>(value))
             return nullptr;
         return static_cast<T&>(*value);
     }
 
     template<typename T, typename U>
-    inline RefPtr<T> to(RefPtr<U>& value) {
+    inline RefPtr<T> to(const RefPtr<U>& value) {
         if (!is<T>(value))
             return nullptr;
         return static_cast<T&>(*value);

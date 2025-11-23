@@ -784,6 +784,4 @@ namespace plutobook {
         SvgDocument(Book* book, Heap* heap, ResourceFetcher* fetcher,
                     Url baseUrl);
     };
-
-    extern template bool is<SvgDocument>(const Node& value);
 } // namespace plutobook

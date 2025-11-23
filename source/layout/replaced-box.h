@@ -90,6 +90,4 @@ namespace plutobook {
     private:
         RefPtr<Image> m_image;
     };
-
-    extern template bool is<ImageBox>(const Box& value);
 } // namespace plutobook

@@ -29,8 +29,6 @@ namespace plutobook {
         Transform m_localTransform;
     };
 
-    extern template bool is<SvgResourceMarkerBox>(const Box& value);
-
     inline SvgMarkerElement* SvgResourceMarkerBox::element() const {
         return static_cast<SvgMarkerElement*>(node());
     }
@@ -52,8 +50,6 @@ namespace plutobook {
         const char* name() const final { return "SvgResourceClipperBox"; }
     };
 
-    extern template bool is<SvgResourceClipperBox>(const Box& value);
-
     inline SvgClipPathElement* SvgResourceClipperBox::element() const {
         return static_cast<SvgClipPathElement*>(node());
     }
@@ -71,8 +67,6 @@ namespace plutobook {
 
         const char* name() const final { return "SvgResourceMaskerBox"; }
     };
-
-    extern template bool is<SvgResourceMaskerBox>(const Box& value);
 
     inline SvgMaskElement* SvgResourceMaskerBox::element() const {
         return static_cast<SvgMaskElement*>(node());
@@ -110,8 +104,6 @@ namespace plutobook {
         SvgPatternAttributes m_attributes;
     };
 
-    extern template bool is<SvgResourcePatternBox>(const Box& value);
-
     inline SvgPatternElement* SvgResourcePatternBox::element() const {
         return static_cast<SvgPatternElement*>(node());
     }
@@ -127,8 +119,6 @@ namespace plutobook {
 
         const char* name() const final { return "SvgGradientStopBox"; }
     };
-
-    extern template bool is<SvgGradientStopBox>(const Box& value);
 
     inline SvgStopElement* SvgGradientStopBox::element() const {
         return static_cast<SvgStopElement*>(node());
@@ -170,8 +160,6 @@ namespace plutobook {
         SvgLinearGradientAttributes m_attributes;
     };
 
-    extern template bool is<SvgResourceLinearGradientBox>(const Box& value);
-
     inline SvgLinearGradientElement*
     SvgResourceLinearGradientBox::element() const {
         return static_cast<SvgLinearGradientElement*>(node());
@@ -196,8 +184,6 @@ namespace plutobook {
     private:
         SvgRadialGradientAttributes m_attributes;
     };
-
-    extern template bool is<SvgResourceRadialGradientBox>(const Box& value);
 
     inline SvgRadialGradientElement*
     SvgResourceRadialGradientBox::element() const {

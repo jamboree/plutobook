@@ -7,7 +7,7 @@ namespace plutobook {
 
     enum class FlexViolation : uint8_t { None, Min, Max };
 
-    class FlexibleBox;
+    class FlexBox;
 
     class FlexItem {
     public:
@@ -46,7 +46,7 @@ namespace plutobook {
         float constrainCrossSize(float size) const;
         float computeFlexBaseSize() const;
 
-        FlexibleBox* flexBox() const;
+        FlexBox* flexBox() const;
         FlexDirection flexDirection() const;
         Direction direction() const;
 
@@ -84,11 +84,11 @@ namespace plutobook {
 
     using FlexItemList = std::pmr::vector<FlexItem>;
 
-    class FlexibleBox final : public BlockBox {
+    class FlexBox final : public BlockBox {
     public:
-        static constexpr ClassKind classKind = ClassKind::Flexible;
+        static constexpr ClassKind classKind = ClassKind::Flex;
 
-        FlexibleBox(Node* node, const RefPtr<BoxStyle>& style);
+        FlexBox(Node* node, const RefPtr<BoxStyle>& style);
 
         void addChild(Box* newChild) final;
 
@@ -134,7 +134,7 @@ namespace plutobook {
         void paintContents(const PaintInfo& info, const Point& offset,
                            PaintPhase phase) final;
 
-        const char* name() const final { return "FlexibleBox"; }
+        const char* name() const final { return "FlexBox"; }
 
     private:
         FlexDirection m_flexDirection;
@@ -147,10 +147,8 @@ namespace plutobook {
         float m_gapBetweenLines = 0;
     };
 
-    extern template bool is<FlexibleBox>(const Box& value);
-
-    inline FlexibleBox* FlexItem::flexBox() const {
-        return static_cast<FlexibleBox*>(m_box->parentBox());
+    inline FlexBox* FlexItem::flexBox() const {
+        return static_cast<FlexBox*>(m_box->parentBox());
     }
 
     inline FlexDirection FlexItem::flexDirection() const {

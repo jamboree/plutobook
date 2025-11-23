@@ -37,14 +37,11 @@ decltype(auto) visit(Node* p, F&& f) {
     }
 }
 
-template bool is<TextNode>(const Node& value);
 template bool is<ContainerNode>(const Node& value);
 template bool is<Element>(const Node& value);
 template bool is<Document>(const Node& value);
 template bool is<HtmlElement>(const Node& value);
-template bool is<HtmlDocument>(const Node& value);
 template bool is<SvgElement>(const Node& value);
-template bool is<SvgDocument>(const Node& value);
 template bool is<XmlDocument>(const Node& value);
 
 Node::Node(ClassKind type, Document* document)
@@ -149,7 +146,7 @@ bool TextNode::isHidden(const Box* parent) const
         }
     }
 
-    if(parent->isFlexibleBox() || parent->isTableBox()
+    if(parent->isFlexBox() || parent->isTableBox()
         || parent->isTableSectionBox() || parent->isTableRowBox()
         || parent->isTableColumnBox()) {
         return true;

@@ -210,7 +210,7 @@ float FlexItem::marginAfter() const
     return m_box->marginEnd(direction());
 }
 
-FlexibleBox::FlexibleBox(Node* node, const RefPtr<BoxStyle>& style)
+FlexBox::FlexBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(classKind, node, style)
     , m_flexDirection(style->flexDirection())
     , m_flexWrap(style->flexWrap())
@@ -220,7 +220,7 @@ FlexibleBox::FlexibleBox(Node* node, const RefPtr<BoxStyle>& style)
 {
 }
 
-void FlexibleBox::addChild(Box* newChild)
+void FlexBox::addChild(Box* newChild)
 {
     if(newChild->isPositioned() || !newChild->isInline()) {
         BlockBox::addChild(newChild);
@@ -238,7 +238,7 @@ void FlexibleBox::addChild(Box* newChild)
     newBlock->addChild(newChild);
 }
 
-void FlexibleBox::updateOverflowRect()
+void FlexBox::updateOverflowRect()
 {
     BlockBox::updateOverflowRect();
     for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {
@@ -248,7 +248,7 @@ void FlexibleBox::updateOverflowRect()
     }
 }
 
-void FlexibleBox::computeIntrinsicWidths(float& minWidth, float& maxWidth) const
+void FlexBox::computeIntrinsicWidths(float& minWidth, float& maxWidth) const
 {
     for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {
         if(child->isPositioned()) {
@@ -286,7 +286,7 @@ void FlexibleBox::computeIntrinsicWidths(float& minWidth, float& maxWidth) const
     maxWidth = std::max(minWidth, maxWidth);
 }
 
-std::optional<float> FlexibleBox::firstLineBaseline() const
+std::optional<float> FlexBox::firstLineBaseline() const
 {
     const BoxFrame* baselineChild = nullptr;
     for(const auto& item : m_items) {
@@ -306,7 +306,7 @@ std::optional<float> FlexibleBox::firstLineBaseline() const
     return height() + baselineChild->y();
 }
 
-std::optional<float> FlexibleBox::lastLineBaseline() const
+std::optional<float> FlexBox::lastLineBaseline() const
 {
     const BoxFrame* baselineChild = nullptr;
     for(const auto& item : m_items | std::views::reverse) {
@@ -326,12 +326,12 @@ std::optional<float> FlexibleBox::lastLineBaseline() const
     return height() + baselineChild->y();
 }
 
-std::optional<float> FlexibleBox::inlineBlockBaseline() const
+std::optional<float> FlexBox::inlineBlockBaseline() const
 {
     return firstLineBaseline();
 }
 
-float FlexibleBox::computeMainContentSize(float hypotheticalMainSize) const
+float FlexBox::computeMainContentSize(float hypotheticalMainSize) const
 {
     if(isHorizontalFlow())
         return contentBoxWidth();
@@ -343,14 +343,14 @@ float FlexibleBox::computeMainContentSize(float hypotheticalMainSize) const
     return height - borderAndPaddingHeight();
 }
 
-float FlexibleBox::availableCrossSize() const
+float FlexBox::availableCrossSize() const
 {
     if(isHorizontalFlow())
         return contentBoxHeight();
     return contentBoxWidth();
 }
 
-float FlexibleBox::borderAndPaddingStart() const
+float FlexBox::borderAndPaddingStart() const
 {
     switch(m_flexDirection) {
     case FlexDirection::Row:
@@ -368,7 +368,7 @@ float FlexibleBox::borderAndPaddingStart() const
     return borderStart() + paddingStart();
 }
 
-float FlexibleBox::borderAndPaddingEnd() const
+float FlexBox::borderAndPaddingEnd() const
 {
     switch(m_flexDirection) {
     case FlexDirection::Row:
@@ -386,14 +386,14 @@ float FlexibleBox::borderAndPaddingEnd() const
     return borderEnd() + paddingEnd();
 }
 
-float FlexibleBox::borderAndPaddingBefore() const
+float FlexBox::borderAndPaddingBefore() const
 {
     if(isHorizontalFlow())
         return borderTop() + paddingTop();
     return borderStart() + paddingStart();
 }
 
-float FlexibleBox::borderAndPaddingAfter() const
+float FlexBox::borderAndPaddingAfter() const
 {
     if(isHorizontalFlow())
         return borderBottom() + paddingBottom();
@@ -427,7 +427,7 @@ private:
 
 using FlexLineList = std::vector<FlexLine>;
 
-void FlexibleBox::layout(FragmentBuilder* fragmentainer)
+void FlexBox::layout(FragmentBuilder* fragmentainer)
 {
     updateWidth();
     setHeight(borderAndPaddingHeight());
@@ -902,7 +902,7 @@ void FlexibleBox::layout(FragmentBuilder* fragmentainer)
     updateOverflowRect();
 }
 
-void FlexibleBox::build()
+void FlexBox::build()
 {
     auto alignItems = style()->alignItems();
     for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {
@@ -929,7 +929,7 @@ void FlexibleBox::build()
     BlockBox::build();
 }
 
-void FlexibleBox::paintContents(const PaintInfo& info, const Point& offset, PaintPhase phase)
+void FlexBox::paintContents(const PaintInfo& info, const Point& offset, PaintPhase phase)
 {
     if(phase == PaintPhase::Contents) {
         for(const auto& item : m_items) {

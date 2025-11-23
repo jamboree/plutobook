@@ -65,8 +65,6 @@ namespace plutobook {
         return static_cast<SvgGraphicsElement*>(node());
     }
 
-    extern template bool is<SvgTransformableContainerBox>(const Box& value);
-
     class SvgViewportContainerBox final : public SvgContainerBox {
     public:
         static constexpr ClassKind classKind = ClassKind::SvgViewportContainer;
@@ -88,8 +86,6 @@ namespace plutobook {
     inline SvgSvgElement* SvgViewportContainerBox::element() const {
         return static_cast<SvgSvgElement*>(node());
     }
-
-    extern template bool is<SvgViewportContainerBox>(const Box& value);
 
     class SvgResourceContainerBox : public SvgHiddenContainerBox {
     public:

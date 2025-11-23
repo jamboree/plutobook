@@ -17,8 +17,6 @@ namespace plutobook {
         const char* name() const final { return "SvgInlineTextBox"; }
     };
 
-    extern template bool is<SvgInlineTextBox>(const Box& value);
-
     inline TextNode* SvgInlineTextBox::node() const {
         return static_cast<TextNode*>(Box::node());
     }
@@ -38,8 +36,6 @@ namespace plutobook {
     private:
         SvgPaintServer m_fill;
     };
-
-    extern template bool is<SvgTSpanBox>(const Box& value);
 
     inline SvgTSpanElement* SvgTSpanBox::element() const {
         return static_cast<SvgTSpanElement*>(node());
@@ -68,8 +64,6 @@ namespace plutobook {
         SvgLineLayout m_lineLayout;
         mutable Rect m_fillBoundingBox = Rect::Invalid;
     };
-
-    extern template bool is<SvgTextBox>(const Box& value);
 
     inline SvgTextElement* SvgTextBox::element() const {
         return static_cast<SvgTextElement*>(node());

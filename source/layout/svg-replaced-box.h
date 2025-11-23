@@ -43,8 +43,6 @@ namespace plutobook {
         const SvgResourceMaskerBox* m_masker = nullptr;
     };
 
-    extern template bool is<SvgRootBox>(const Box& value);
-
     inline SvgSvgElement* SvgRootBox::element() const {
         return static_cast<SvgSvgElement*>(node());
     }
@@ -76,8 +74,6 @@ namespace plutobook {
         RefPtr<Image> m_image;
         mutable Rect m_fillBoundingBox;
     };
-
-    extern template bool is<SvgImageBox>(const Box& value);
 
     inline SvgImageElement* SvgImageBox::element() const {
         return static_cast<SvgImageElement*>(node());

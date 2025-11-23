@@ -359,7 +359,7 @@ bool Book::loadUrl(const std::string_view& url, const std::string_view& userStyl
 
 bool Book::loadData(const char* data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding, const std::string_view& userStyle, const std::string_view& userScript, const std::string_view& baseUrl)
 {
-    if(TextResource::isXmlMIMEType(mimeType))
+    if(TextResource::isXmlMimeType(mimeType))
         return loadXml(TextResource::decode(data, length, mimeType, textEncoding), userStyle, userScript, baseUrl);
     if(ImageResource::supportsMimeType(mimeType))
         return loadImage(data, length, mimeType, textEncoding, userStyle, userScript, baseUrl);

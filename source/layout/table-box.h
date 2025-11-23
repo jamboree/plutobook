@@ -90,8 +90,6 @@ namespace plutobook {
         std::unique_ptr<TableCollapsedBorderEdgeList> m_collapsedBorderEdges;
     };
 
-    extern template bool is<TableBox>(const Box& value);
-
     class TableLayoutAlgorithm : public HeapMember {
     public:
         static std::unique_ptr<TableLayoutAlgorithm> create(TableBox* table);
@@ -188,8 +186,6 @@ namespace plutobook {
         TableCellBoxList m_spanningCells;
     };
 
-    extern template bool is<TableSectionBox>(const Box& value);
-
     inline TableBox* TableSectionBox::table() const {
         return static_cast<TableBox*>(parentBox());
     }
@@ -261,8 +257,6 @@ namespace plutobook {
         float m_maxPercentHeight{0};
     };
 
-    extern template bool is<TableRowBox>(const Box& value);
-
     inline TableRowBox* TableSectionBox::firstRow() const {
         return static_cast<TableRowBox*>(firstChild());
     }
@@ -321,8 +315,6 @@ namespace plutobook {
     private:
         uint32_t m_span{1};
     };
-
-    extern template bool is<TableColumnBox>(const Box& value);
 
     enum class TableCollapsedBorderSource : uint8_t {
         None,
@@ -474,8 +466,6 @@ namespace plutobook {
         uint32_t m_columnIndex{0};
     };
 
-    extern template bool is<TableCellBox>(const Box& value);
-
     inline TableCellBox* TableCellBox::prevCell() const {
         return static_cast<TableCellBox*>(prevSibling());
     }
@@ -513,6 +503,4 @@ namespace plutobook {
 
         const char* name() const final { return "TableCaptionBox"; }
     };
-
-    extern template bool is<TableCaptionBox>(const Box& value);
 } // namespace plutobook

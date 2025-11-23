@@ -112,8 +112,6 @@ namespace plutobook {
         HeapString m_data;
     };
 
-    extern template bool is<TextNode>(const Node& value);
-
     class ContainerNode : public Node {
     public:
         ContainerNode(ClassKind type, Document* document);

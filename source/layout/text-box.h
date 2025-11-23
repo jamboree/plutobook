@@ -41,8 +41,6 @@ namespace plutobook {
         const char* name() const final { return "LineBreakBox"; }
     };
 
-    extern template bool is<LineBreakBox>(const Box& value);
-
     class WordBreakBox final : public TextBox {
     public:
         static constexpr ClassKind classKind = ClassKind::WordBreak;
@@ -51,6 +49,4 @@ namespace plutobook {
 
         const char* name() const final { return "WordBreakBox"; }
     };
-
-    extern template bool is<WordBreakBox>(const Box& value);
 } // namespace plutobook

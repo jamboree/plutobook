@@ -15,7 +15,7 @@ namespace plutobook {
         static std::string_view decode(const char* data, size_t length,
                                        const std::string_view& mimeType,
                                        const std::string_view& textEncoding);
-        static bool isXmlMIMEType(const std::string_view& mimeType);
+        static bool isXmlMimeType(const std::string_view& mimeType);
         const std::string& text() const { return m_text; }
 
     private:

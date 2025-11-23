@@ -35,7 +35,7 @@ namespace plutobook {
     class LineBox;
 
     enum class BoxType {
-        Flexible,
+        Flex,
         Inline,
         ListItem,
         InsideListMarker,
@@ -143,7 +143,7 @@ namespace plutobook {
         bool isInlineBox() const;
         bool isBlockBox() const;
         bool isBlockFlowBox() const;
-        bool isFlexibleBox() const;
+        bool isFlexBox() const;
         bool isReplacedBox() const;
         bool isImageBox() const;
         bool isListItemBox() const;
@@ -251,13 +251,6 @@ namespace plutobook {
 
     private:
         ClassKind m_type;
-        Node* m_node;
-        RefPtr<BoxStyle> m_style;
-        Box* m_parentBox{nullptr};
-        Box* m_nextSibling{nullptr};
-        Box* m_prevSibling{nullptr};
-        Box* m_firstChild{nullptr};
-        Box* m_lastChild{nullptr};
         bool m_isAnonymous : 1 {false};
         bool m_isAnonymousBlock : 1 {false};
         bool m_isChildrenInline : 1 {false};
@@ -271,6 +264,13 @@ namespace plutobook {
         bool m_hasColumnFlowBox : 1 {false};
         bool m_hasTransform : 1 {false};
         bool m_hasLayer : 1 {false};
+        Node* m_node;
+        RefPtr<BoxStyle> m_style;
+        Box* m_parentBox{nullptr};
+        Box* m_nextSibling{nullptr};
+        Box* m_prevSibling{nullptr};
+        Box* m_firstChild{nullptr};
+        Box* m_lastChild{nullptr};
     };
 
     class BoxModel : public Box {

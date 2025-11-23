@@ -77,8 +77,6 @@ namespace plutobook {
         const char* name() const final { return "SvgPathBox"; }
     };
 
-    extern template bool is<SvgPathBox>(const Box& value);
-
     inline SvgPathElement* SvgPathBox::element() const {
         return static_cast<SvgPathElement*>(node());
     }
@@ -98,8 +96,6 @@ namespace plutobook {
     private:
         Path m_path;
     };
-
-    extern template bool is<SvgShapeBox>(const Box& value);
 
     inline SvgShapeElement* SvgShapeBox::element() const {
         return static_cast<SvgShapeElement*>(node());

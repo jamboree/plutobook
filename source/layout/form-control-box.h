@@ -31,8 +31,6 @@ namespace plutobook {
         uint32_t m_cols{1};
     };
 
-    extern template bool is<TextInputBox>(const Box& value);
-
     class HtmlSelectElement;
 
     class SelectBox final : public BlockBox {
@@ -60,6 +58,4 @@ namespace plutobook {
     private:
         const uint32_t m_size;
     };
-
-    extern template bool is<SelectBox>(const Box& value);
 } // namespace plutobook

@@ -273,6 +273,4 @@ namespace plutobook {
         HtmlDocument(Book* book, Heap* heap, ResourceFetcher* fetcher,
                      Url baseUrl);
     };
-
-    extern template bool is<HtmlDocument>(const Node& value);
 } // namespace plutobook

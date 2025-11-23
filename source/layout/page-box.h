@@ -62,8 +62,6 @@ namespace plutobook {
         return Rect(0, 0, m_pageWidth, m_pageHeight);
     }
 
-    extern template bool is<PageBox>(const Box& value);
-
     enum class PageMarginType : uint8_t;
 
     class PageMarginBox final : public BlockFlowBox {
@@ -113,8 +111,6 @@ namespace plutobook {
     inline PageMarginBox* PageMarginBox::prevMarginBox() const {
         return static_cast<PageMarginBox*>(prevSibling());
     }
-
-    extern template bool is<PageMarginBox>(const Box& value);
 
     class Counters;
 

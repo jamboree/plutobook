@@ -112,8 +112,6 @@ namespace plutobook {
         float m_minSpaceShortage{0};
     };
 
-    extern template bool is<MultiColumnRowBox>(const Box& value);
-
     class MultiColumnSpanBox final : public BoxFrame {
     public:
         static constexpr ClassKind classKind = ClassKind::MultiColumnSpan;
@@ -157,8 +155,6 @@ namespace plutobook {
     inline MultiColumnRowBox* MultiColumnSpanBox::prevRow() const {
         return to<MultiColumnRowBox>(m_box->prevSibling());
     }
-
-    extern template bool is<MultiColumnSpanBox>(const Box& value);
 
     class MultiColumnFlowBox final : public BlockFlowBox,
                                      public FragmentBuilder {
@@ -212,6 +208,4 @@ namespace plutobook {
     inline BlockFlowBox* MultiColumnFlowBox::columnBlockFlow() const {
         return static_cast<BlockFlowBox*>(parentBox());
     }
-
-    extern template bool is<MultiColumnFlowBox>(const Box& value);
 } // namespace plutobook
