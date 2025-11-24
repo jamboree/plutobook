@@ -923,8 +923,7 @@ void FlexBox::build()
     m_gapBetweenItems = isVerticalFlow() ? rowGap : columnGap;
     m_gapBetweenLines = isVerticalFlow() ? columnGap : rowGap;
 
-    auto compare_func = [](const auto& a, const auto& b) { return a.order() < b.order(); };
-    std::stable_sort(m_items.begin(), m_items.end(), compare_func);
+    std::ranges::stable_sort(m_items, std::ranges::less{}, [](const FlexItem& item) { return item.order(); });
     BlockBox::build();
 }
 
