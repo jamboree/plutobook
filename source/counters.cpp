@@ -33,8 +33,7 @@ void Counters::reset(const GlobalString& name, int value)
 {
     auto& scopes = m_scopes.back();
     auto& values = m_values[name];
-    if(!scopes.contains(name)) {
-        scopes.insert(name);
+    if(scopes.insert(name).second) {
         values.push_back(value);
     } else {
         values.back() = value;

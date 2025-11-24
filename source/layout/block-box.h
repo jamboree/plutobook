@@ -2,10 +2,10 @@
 
 #include "box.h"
 
-#include <set>
+#include <boost/unordered/unordered_flat_set.hpp>
 
 namespace plutobook {
-    using PositionedBoxList = std::pmr::set<BoxFrame*>;
+    using PositionedBoxList = boost::unordered_flat_set<BoxFrame*>;
 
     class BlockBox : public BoxFrame {
     public:
@@ -16,11 +16,8 @@ namespace plutobook {
         void computePreferredWidths(float& minPreferredWidth,
                                     float& maxPreferredWidth) const override;
 
-        const PositionedBoxList* positionedBoxes() const {
-            return m_positionedBoxes.get();
-        }
         bool containsPositonedBoxes() const {
-            return m_positionedBoxes && !m_positionedBoxes->empty();
+            return !m_positionedBoxes.empty();
         }
 
         void insertPositonedBox(BoxFrame* box);
@@ -105,7 +102,7 @@ namespace plutobook {
         const char* name() const override { return "BlockBox"; }
 
     private:
-        std::unique_ptr<PositionedBoxList> m_positionedBoxes;
+        PositionedBoxList m_positionedBoxes;
     };
 
     extern template bool is<BlockBox>(const Box& value);

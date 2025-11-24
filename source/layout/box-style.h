@@ -7,9 +7,8 @@
 
 #include <optional>
 #include <forward_list>
-#include <unordered_map>
 #include <vector>
-#include <map>
+#include <boost/unordered/unordered_flat_map.hpp>
 
 namespace plutobook {
 
@@ -657,8 +656,8 @@ using FontFamilyList = std::forward_list<GlobalString>;
 class CssValue;
 class CssVariableData;
 
-using CssPropertyMap = std::pmr::unordered_map<CssPropertyID, RefPtr<CssValue>>;
-using CssCustomPropertyMap = std::pmr::map<GlobalString, RefPtr<CssVariableData>, std::less<>>;
+using CssPropertyMap = boost::unordered_flat_map<CssPropertyID, RefPtr<CssValue>>;
+using CssCustomPropertyMap = boost::unordered_flat_map<GlobalString, RefPtr<CssVariableData>, StrHash, StrEqual>;
 
 enum class PseudoType : uint8_t {
     None,

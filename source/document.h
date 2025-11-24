@@ -7,6 +7,7 @@
 #include "url.h"
 
 #include <forward_list>
+#include <boost/unordered/unordered_flat_map.hpp>
 
 namespace plutobook {
     class CssProperty;
@@ -168,17 +169,12 @@ namespace plutobook {
 
         bool empty() const { return m_value.empty(); }
 
+        bool operator==(const Attribute&) const = default;
+
     private:
         GlobalString m_name;
         HeapString m_value;
     };
-
-    inline bool operator==(const Attribute& a, const Attribute& b) {
-        return a.name() == b.name() && a.value() == b.value();
-    }
-    inline bool operator!=(const Attribute& a, const Attribute& b) {
-        return a.name() != b.name() || a.value() != b.value();
-    }
 
     using AttributeList = std::pmr::forward_list<Attribute>;
     using ClassNameList = std::pmr::forward_list<HeapString>;
@@ -302,7 +298,8 @@ namespace plutobook {
     struct FontDescription;
     struct FontDataDescription;
 
-    using CounterMap = std::map<GlobalString, std::vector<int>>;
+    using CounterMap =
+        boost::unordered_flat_map<GlobalString, std::vector<int>>;
 
     using DocumentElementMap =
         std::pmr::multimap<HeapString, Element*, std::less<>>;

@@ -13,7 +13,7 @@
 #include <filesystem>
 #include <cstring>
 #include <vector>
-#include <map>
+#include <boost/unordered/unordered_flat_map.hpp>
 
 namespace plutobook {
 
@@ -194,7 +194,7 @@ static bool mimeTypeFromPath(std::string& mimeType, const std::string_view& path
     auto index = path.rfind('.');
     if(index == std::string_view::npos)
         return false;
-    static std::map<std::string_view, std::string_view> table = {
+    static boost::unordered_flat_map<std::string_view, std::string_view> table = {
         {"xhtml", "application/xhtml+xml"},
         {"html", "text/html"},
         {"htm", "text/html"},

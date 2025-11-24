@@ -6,7 +6,7 @@
 #include "image-resource.h"
 #include "string-utils.h"
 
-#include <set>
+#include <boost/unordered/unordered_flat_set.hpp>
 
 namespace plutobook {
 
@@ -37,7 +37,7 @@ static void addSvgAttributeStyle(std::string& output, const std::string_view& na
 
 void SvgElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
 {
-    static const std::set<GlobalString> presentationAttrs = {
+    static const boost::unordered_flat_set<GlobalString> presentationAttrs = {
         "alignment-baseline"_glo,
         "baseline-shift"_glo,
         "clip"_glo,
@@ -325,7 +325,7 @@ void SvgUseElement::finishParsingDocument()
 
 static bool isDisallowedElement(const SvgElement* element)
 {
-    static const std::set<GlobalString> allowedElementTags = {
+    static const boost::unordered_flat_set<GlobalString> allowedElementTags = {
         aTag,
         circleTag,
         descTag,
@@ -742,7 +742,7 @@ SvgPatternElement::SvgPatternElement(Document* document)
 SvgPatternAttributes SvgPatternElement::collectPatternAttributes() const
 {
     SvgPatternAttributes attributes;
-    std::set<const SvgPatternElement*> processedPatterns;
+    boost::unordered_flat_set<const SvgPatternElement*> processedPatterns;
     const SvgPatternElement* current = this;
     while(true) {
         if(!attributes.hasX() && current->hasAttribute(xAttr))
@@ -854,7 +854,7 @@ SvgLinearGradientElement::SvgLinearGradientElement(Document* document)
 SvgLinearGradientAttributes SvgLinearGradientElement::collectGradientAttributes() const
 {
     SvgLinearGradientAttributes attributes;
-    std::set<const SvgGradientElement*> processedGradients;
+    boost::unordered_flat_set<const SvgGradientElement*> processedGradients;
     const SvgGradientElement* current = this;
     while(true) {
         current->collectGradientAttributes(attributes);
@@ -908,7 +908,7 @@ SvgRadialGradientElement::SvgRadialGradientElement(Document* document)
 SvgRadialGradientAttributes SvgRadialGradientElement::collectGradientAttributes() const
 {
     SvgRadialGradientAttributes attributes;
-    std::set<const SvgGradientElement*> processedGradients;
+    boost::unordered_flat_set<const SvgGradientElement*> processedGradients;
     const SvgGradientElement* current = this;
     while(true) {
         current->collectGradientAttributes(attributes);

@@ -5,7 +5,8 @@
 
 #include <vector>
 #include <forward_list>
-#include <map>
+#include <boost/unordered/unordered_flat_map.hpp>
+#include <boost/unordered/unordered_node_map.hpp>
 #include <mutex>
 
 typedef struct hb_font_t hb_font_t;
@@ -70,31 +71,18 @@ namespace plutobook {
         FontSelectionValue weight = kNormalFontWeight;
         FontSelectionValue width = kNormalFontWidth;
         FontSelectionValue slope = kNormalFontSlope;
+
+        bool operator==(const FontSelectionRequest& other) const = default;
+        auto operator<=>(const FontSelectionRequest& other) const = default;
+
+        friend std::size_t hash_value(const FontSelectionRequest& self) {
+            std::size_t seed = 0;
+            boost::hash_combine(seed, self.weight);
+            boost::hash_combine(seed, self.width);
+            boost::hash_combine(seed, self.slope);
+            return seed;
+        }
     };
-
-    constexpr bool operator==(const FontSelectionRequest& a,
-                              const FontSelectionRequest& b) {
-        return std::tie(a.weight, a.width, a.slope) ==
-               std::tie(b.weight, b.width, b.slope);
-    }
-
-    constexpr bool operator!=(const FontSelectionRequest& a,
-                              const FontSelectionRequest& b) {
-        return std::tie(a.weight, a.width, a.slope) !=
-               std::tie(b.weight, b.width, b.slope);
-    }
-
-    constexpr bool operator<(const FontSelectionRequest& a,
-                             const FontSelectionRequest& b) {
-        return std::tie(a.weight, a.width, a.slope) <
-               std::tie(b.weight, b.width, b.slope);
-    }
-
-    constexpr bool operator>(const FontSelectionRequest& a,
-                             const FontSelectionRequest& b) {
-        return std::tie(a.weight, a.width, a.slope) >
-               std::tie(b.weight, b.width, b.slope);
-    }
 
     struct FontSelectionRange {
         constexpr FontSelectionRange() = default;
@@ -109,30 +97,13 @@ namespace plutobook {
 
         FontSelectionValue minimum = FontSelectionValue(0);
         FontSelectionValue maximum = FontSelectionValue(0);
+
+        bool operator==(const FontSelectionRange& other) const = default;
+        auto operator<=>(const FontSelectionRange& other) const = default;
     };
 
     constexpr FontSelectionRange kInvalidFontSelectionRange =
         FontSelectionRange(1, 0);
-
-    constexpr bool operator==(const FontSelectionRange& a,
-                              const FontSelectionRange& b) {
-        return std::tie(a.minimum, a.maximum) == std::tie(b.minimum, b.maximum);
-    }
-
-    constexpr bool operator!=(const FontSelectionRange& a,
-                              const FontSelectionRange& b) {
-        return std::tie(a.minimum, a.maximum) != std::tie(b.minimum, b.maximum);
-    }
-
-    constexpr bool operator<(const FontSelectionRange& a,
-                             const FontSelectionRange& b) {
-        return std::tie(a.minimum, a.maximum) < std::tie(b.minimum, b.maximum);
-    }
-
-    constexpr bool operator>(const FontSelectionRange& a,
-                             const FontSelectionRange& b) {
-        return std::tie(a.minimum, a.maximum) > std::tie(b.minimum, b.maximum);
-    }
 
     struct FontSelectionDescription {
         constexpr FontSelectionDescription() = default;
@@ -149,31 +120,10 @@ namespace plutobook {
         FontSelectionRange weight = kInvalidFontSelectionRange;
         FontSelectionRange width = kInvalidFontSelectionRange;
         FontSelectionRange slope = kInvalidFontSelectionRange;
+
+        bool operator==(const FontSelectionDescription& other) const = default;
+        auto operator<=>(const FontSelectionDescription& other) const = default;
     };
-
-    constexpr bool operator==(const FontSelectionDescription& a,
-                              const FontSelectionDescription& b) {
-        return std::tie(a.weight, a.width, a.slope) ==
-               std::tie(b.weight, b.width, b.slope);
-    }
-
-    constexpr bool operator!=(const FontSelectionDescription& a,
-                              const FontSelectionDescription& b) {
-        return std::tie(a.weight, a.width, a.slope) !=
-               std::tie(b.weight, b.width, b.slope);
-    }
-
-    constexpr bool operator<(const FontSelectionDescription& a,
-                             const FontSelectionDescription& b) {
-        return std::tie(a.weight, a.width, a.slope) <
-               std::tie(b.weight, b.width, b.slope);
-    }
-
-    constexpr bool operator>(const FontSelectionDescription& a,
-                             const FontSelectionDescription& b) {
-        return std::tie(a.weight, a.width, a.slope) >
-               std::tie(b.weight, b.width, b.slope);
-    }
 
     class FontSelectionAlgorithm {
     public:
@@ -208,22 +158,16 @@ namespace plutobook {
 
         constexpr uint32_t value() const { return m_value; }
 
+        bool operator==(const FontTag& other) const = default;
+        auto operator<=>(const FontTag& other) const = default;
+
+        friend std::size_t hash_value(FontTag self) {
+            return boost::hash<uint32_t>{}(self.m_value);
+        }
+
     private:
         uint32_t m_value;
     };
-
-    constexpr bool operator==(const FontTag& a, const FontTag& b) {
-        return a.value() == b.value();
-    }
-    constexpr bool operator!=(const FontTag& a, const FontTag& b) {
-        return a.value() != b.value();
-    }
-    constexpr bool operator<(const FontTag& a, const FontTag& b) {
-        return a.value() < b.value();
-    }
-    constexpr bool operator>(const FontTag& a, const FontTag& b) {
-        return a.value() > b.value();
-    }
 
     using FontFeature = std::pair<FontTag, int>;
     using FontVariation = std::pair<FontTag, float>;
@@ -237,58 +181,28 @@ namespace plutobook {
         FontSelectionValue size = kMediumFontSize;
         FontSelectionRequest request;
         FontVariationList variations;
+
+        bool operator==(const FontDataDescription& other) const = default;
+        auto operator<=>(const FontDataDescription& other) const = default;
+
+        friend std::size_t hash_value(const FontDataDescription& self) {
+            std::size_t seed = 0;
+            boost::hash_combine(seed, self.size);
+            boost::hash_combine(seed, self.request);
+            boost::hash_combine(seed, self.variations);
+            return seed;
+        }
     };
-
-    constexpr bool operator==(const FontDataDescription& a,
-                              const FontDataDescription& b) {
-        return std::tie(a.size, a.request, a.variations) ==
-               std::tie(b.size, b.request, b.variations);
-    }
-
-    constexpr bool operator!=(const FontDataDescription& a,
-                              const FontDataDescription& b) {
-        return std::tie(a.size, a.request, a.variations) !=
-               std::tie(b.size, b.request, b.variations);
-    }
-
-    constexpr bool operator<(const FontDataDescription& a,
-                             const FontDataDescription& b) {
-        return std::tie(a.size, a.request, a.variations) <
-               std::tie(b.size, b.request, b.variations);
-    }
-
-    constexpr bool operator>(const FontDataDescription& a,
-                             const FontDataDescription& b) {
-        return std::tie(a.size, a.request, a.variations) >
-               std::tie(b.size, b.request, b.variations);
-    }
 
     using FontFamilyList = std::forward_list<GlobalString>;
 
     struct FontDescription {
         FontFamilyList families;
         FontDataDescription data;
+
+        bool operator==(const FontDescription& other) const = default;
+        auto operator<=>(const FontDescription& other) const = default;
     };
-
-    constexpr bool operator==(const FontDescription& a,
-                              const FontDescription& b) {
-        return std::tie(a.families, a.data) == std::tie(b.families, b.data);
-    }
-
-    constexpr bool operator!=(const FontDescription& a,
-                              const FontDescription& b) {
-        return std::tie(a.families, a.data) != std::tie(b.families, b.data);
-    }
-
-    constexpr bool operator<(const FontDescription& a,
-                             const FontDescription& b) {
-        return std::tie(a.families, a.data) < std::tie(b.families, b.data);
-    }
-
-    constexpr bool operator>(const FontDescription& a,
-                             const FontDescription& b) {
-        return std::tie(a.families, a.data) > std::tie(b.families, b.data);
-    }
 
     using UnicodeRange = std::pair<uint32_t, uint32_t>;
     using UnicodeRangeList = std::forward_list<UnicodeRange>;
@@ -392,7 +306,9 @@ namespace plutobook {
             : m_description(description) {}
         FontSelectionDescription m_description;
         std::vector<RefPtr<FontFace>> m_faces;
-        std::map<FontDataDescription, RefPtr<SegmentedFontData>> m_table;
+        boost::unordered_flat_map<FontDataDescription,
+                                  RefPtr<SegmentedFontData>>
+            m_table;
     };
 
     inline RefPtr<SegmentedFontFace>
@@ -522,8 +438,9 @@ namespace plutobook {
         FontDataCache();
         FcConfig* m_config;
         std::mutex m_mutex;
-        std::map<GlobalString,
-                 std::map<FontDataDescription, RefPtr<SimpleFontData>>>
+        boost::unordered_node_map<
+            GlobalString, boost::unordered_flat_map<FontDataDescription,
+                                                    RefPtr<SimpleFontData>>>
             m_table;
         friend FontDataCache* fontDataCache();
     };

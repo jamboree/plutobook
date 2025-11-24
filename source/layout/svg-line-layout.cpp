@@ -303,8 +303,8 @@ void SvgTextFragmentsBuilder::handleTextItem(const LineItem& item)
     auto lastAngle = 0.f;
     while(textOffset < item.endOffset()) {
         SvgCharacterPosition position;
-        if(m_positions.contains(m_characterOffset)) {
-            position = m_positions.at(m_characterOffset);
+        if (const auto it = m_positions.find(m_characterOffset); it != m_positions.end()) {
+            position = it->second;
         }
 
         auto currentCharacter = m_data.text.char32At(textOffset);
@@ -366,8 +366,8 @@ void SvgTextFragmentsBuilder::handleTextItem(const LineItem& item)
 void SvgTextFragmentsBuilder::handleBidiControl(const LineItem& item)
 {
     assert(item.length() == 1);
-    if(m_positions.contains(m_characterOffset)) {
-        const auto& position = m_positions.at(m_characterOffset);
+    if (const auto it = m_positions.find(m_characterOffset); it != m_positions.end()) {
+        const auto& position = it->second;
         m_x = position.x.value_or(m_x) + position.dx.value_or(0);
         m_y = position.y.value_or(m_y) + position.dy.value_or(0);
         if(position.x || position.y) {

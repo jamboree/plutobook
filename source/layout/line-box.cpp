@@ -521,7 +521,7 @@ void FlowLineBox::placeInVerticalDirection(float y, float maxHeight, float maxAs
             child->setY(child->y() + box.marginTop());
             box.setY(child->y());
         } else {
-            assert(child->isTextLineBox() || child->isFlowLineBox());
+            assert(is<TextLineBox>(*child) || is<FlowLineBox>(*child));
             auto top = child->baselinePosition() - child->style()->fontAscent();
             if (is<FlowLineBox>(*child)) {
                 const auto& box = to<BoxModel>(*child->box());

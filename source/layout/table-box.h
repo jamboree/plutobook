@@ -2,7 +2,8 @@
 
 #include "block-box.h"
 
-#include <list>
+#include <boost/container/flat_set.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
 
 namespace plutobook {
 
@@ -13,11 +14,9 @@ namespace plutobook {
     class TableColumn;
     class TableCollapsedBorderEdge;
 
-    using TableCaptionBoxList = std::pmr::list<TableCaptionBox*>;
-    using TableSectionBoxList = std::pmr::list<TableSectionBox*>;
+    using TableCaptionBoxList = std::pmr::vector<TableCaptionBox*>;
+    using TableSectionBoxList = std::pmr::vector<TableSectionBox*>;
     using TableColumnList = std::pmr::vector<TableColumn>;
-    using TableCollapsedBorderEdgeList =
-        std::pmr::set<TableCollapsedBorderEdge>;
 
     class TableLayoutAlgorithm;
 
@@ -87,7 +86,8 @@ namespace plutobook {
         float m_borderHorizontalSpacing;
         float m_borderVerticalSpacing;
         std::unique_ptr<TableLayoutAlgorithm> m_tableLayout;
-        std::unique_ptr<TableCollapsedBorderEdgeList> m_collapsedBorderEdges;
+        boost::container::flat_set<TableCollapsedBorderEdge>
+            m_collapsedBorderEdges;
     };
 
     class TableLayoutAlgorithm : public HeapMember {
@@ -209,7 +209,7 @@ namespace plutobook {
         bool m_inRowSpan;
     };
 
-    using TableCellMap = std::pmr::map<uint32_t, TableCell>;
+    using TableCellMap = boost::unordered_flat_map<uint32_t, TableCell>;
 
     class TableRowBox final : public BoxFrame {
     public:

@@ -191,7 +191,7 @@ private:
 
     Heap* m_heap;
     const CssParserContext& m_context;
-    std::map<GlobalString, GlobalString> m_namespaces;
+    boost::unordered_flat_map<GlobalString, GlobalString> m_namespaces;
     GlobalString m_defaultNamespace = starGlo;
 };
 

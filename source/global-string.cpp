@@ -2,7 +2,6 @@
 #include "string-utils.h"
 
 #include <mutex>
-#include <set>
 #include <boost/unordered/unordered_node_set.hpp>
 
 namespace plutobook {
@@ -14,15 +13,7 @@ public:
     const HeapString* add(const std::string_view& value);
 
 private:
-    struct Equal : std::equal_to<std::string_view> {
-        using is_transparent = void;
-    };
-
-    struct Hash : boost::hash<std::string_view> {
-        using is_transparent = void;
-    };
-
-    using StringSet = boost::unordered_node_set<HeapString, Hash, Equal, std::pmr::polymorphic_allocator<HeapString>>;
+    using StringSet = boost::unordered_node_set<HeapString, StrHash, StrEqual, std::pmr::polymorphic_allocator<HeapString>>;
     Heap m_heap;
     StringSet m_table;
     std::mutex m_mutex;

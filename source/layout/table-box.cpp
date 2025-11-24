@@ -433,7 +433,7 @@ void TableBox::build()
     }
 
     if(headerSection)
-        m_sections.push_front(headerSection);
+        m_sections.insert(m_sections.begin(), headerSection);
     if(footerSection) {
         m_sections.push_back(footerSection);
     }
@@ -451,12 +451,10 @@ void TableBox::build()
                     if(cell.inColOrRowSpan())
                         continue;
                     const auto& edges = cell->collapsedBorderEdges();
-                    if(m_collapsedBorderEdges == nullptr)
-                        m_collapsedBorderEdges = std::make_unique<TableCollapsedBorderEdgeList>(heap());
-                    m_collapsedBorderEdges->insert(edges.topEdge());
-                    m_collapsedBorderEdges->insert(edges.bottomEdge());
-                    m_collapsedBorderEdges->insert(edges.leftEdge());
-                    m_collapsedBorderEdges->insert(edges.rightEdge());
+                    m_collapsedBorderEdges.insert(edges.topEdge());
+                    m_collapsedBorderEdges.insert(edges.bottomEdge());
+                    m_collapsedBorderEdges.insert(edges.leftEdge());
+                    m_collapsedBorderEdges.insert(edges.rightEdge());
                 }
             }
         }
@@ -493,8 +491,8 @@ void TableBox::paintContents(const PaintInfo& info, const Point& offset, PaintPh
         }
     }
 
-    if(phase == PaintPhase::Decorations && m_collapsedBorderEdges && style()->borderCollapse() == BorderCollapse::Collapse) {
-        for(const auto& edge : *m_collapsedBorderEdges) {
+    if(phase == PaintPhase::Decorations && style()->borderCollapse() == BorderCollapse::Collapse) {
+        for(const auto& edge : m_collapsedBorderEdges) {
             for(auto section : m_sections | std::views::reverse) {
                 for(auto row : section->rows() | std::views::reverse) {
                     Point adjustedOffset(offset + section->location() + row->location());
@@ -1336,7 +1334,6 @@ void TableSectionBox::paint(const PaintInfo& info, const Point& offset, PaintPha
 
 TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
     : BoxFrame(classKind, node, style)
-    , m_cells(style->heap())
 {
 }
 

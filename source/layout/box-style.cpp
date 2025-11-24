@@ -3206,9 +3206,7 @@ HeapString BoxStyle::convertLocalUrlOrNone(const CssValue& value)
 BoxStyle::~BoxStyle() = default;
 
 BoxStyle::BoxStyle(Node* node, PseudoType pseudoType, Display display)
-    : m_node(node), m_properties(node->heap())
-    , m_customProperties(node->heap())
-    , m_pseudoType(pseudoType), m_display(display)
+    : m_node(node), m_pseudoType(pseudoType), m_display(display)
 {
 }
 

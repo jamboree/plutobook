@@ -6,12 +6,12 @@
 #include "color.h"
 #include "url.h"
 
-#include <map>
+#include <boost/unordered/unordered_flat_map.hpp>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <forward_list>
 #include <memory>
 #include <numbers>
 #include <vector>
-#include <set>
 
 namespace plutobook {
     enum class CssValueID : uint16_t {
@@ -639,17 +639,19 @@ namespace plutobook {
         static RefPtr<CssVariableData> create(Heap* heap,
                                               const CssTokenStream& value);
 
-        bool resolve(const BoxStyle* style, CssTokenList& tokens,
-                     std::set<CssVariableData*>& references) const;
+        bool
+        resolve(const BoxStyle* style, CssTokenList& tokens,
+                boost::unordered_flat_set<CssVariableData*>& references) const;
 
     private:
         CssVariableData(Heap* heap, const CssTokenStream& value);
-        bool resolve(CssTokenStream input, const BoxStyle* style,
-                     CssTokenList& tokens,
-                     std::set<CssVariableData*>& references) const;
-        bool resolveVar(CssTokenStream input, const BoxStyle* style,
-                        CssTokenList& tokens,
-                        std::set<CssVariableData*>& references) const;
+        bool
+        resolve(CssTokenStream input, const BoxStyle* style,
+                CssTokenList& tokens,
+                boost::unordered_flat_set<CssVariableData*>& references) const;
+        bool resolveVar(
+            CssTokenStream input, const BoxStyle* style, CssTokenList& tokens,
+            boost::unordered_flat_set<CssVariableData*>& references) const;
         std::pmr::vector<CssToken> m_tokens;
     };
 
@@ -1989,7 +1991,8 @@ namespace plutobook {
         CssCounterStyleMap(Heap* heap, const CssRuleList& rules,
                            const CssCounterStyleMap* parent);
         const CssCounterStyleMap* m_parent;
-        std::pmr::map<GlobalString, RefPtr<CssCounterStyle>> m_counterStyles;
+        boost::unordered_flat_map<GlobalString, RefPtr<CssCounterStyle>>
+            m_counterStyles;
     };
 
     const CssCounterStyleMap* userAgentCounterStyleMap();

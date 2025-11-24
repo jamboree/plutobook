@@ -43,25 +43,19 @@ void BlockBox::computePreferredWidths(float& minPreferredWidth, float& maxPrefer
 
 void BlockBox::insertPositonedBox(BoxFrame* box)
 {
-    if(m_positionedBoxes == nullptr)
-        m_positionedBoxes = std::make_unique<PositionedBoxList>(heap());
-    m_positionedBoxes->insert(box);
+    m_positionedBoxes.insert(box);
 }
 
 void BlockBox::removePositonedBox(BoxFrame* box)
 {
-    if(m_positionedBoxes) {
-        m_positionedBoxes->erase(box);
-    }
+    m_positionedBoxes.erase(box);
 }
 
 void BlockBox::layoutPositionedBoxes()
 {
-    if(m_positionedBoxes) {
-        for(auto box : *m_positionedBoxes) {
-            box->updatePaddingWidths(this);
-            box->layout(nullptr);
-        }
+    for (auto box : m_positionedBoxes) {
+        box->updatePaddingWidths(this);
+        box->layout(nullptr);
     }
 }
 

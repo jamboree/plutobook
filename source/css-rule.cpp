@@ -278,13 +278,13 @@ CssVariableData::CssVariableData(Heap* heap, const CssTokenStream& value)
     }
 }
 
-bool CssVariableData::resolve(const BoxStyle* style, CssTokenList& tokens, std::set<CssVariableData*>& references) const
+bool CssVariableData::resolve(const BoxStyle* style, CssTokenList& tokens, boost::unordered_flat_set<CssVariableData*>& references) const
 {
     CssTokenStream input(m_tokens.data(), m_tokens.size());
     return resolve(input, style, tokens, references);
 }
 
-bool CssVariableData::resolve(CssTokenStream input, const BoxStyle* style, CssTokenList& tokens, std::set<CssVariableData*>& references) const
+bool CssVariableData::resolve(CssTokenStream input, const BoxStyle* style, CssTokenList& tokens, boost::unordered_flat_set<CssVariableData*>& references) const
 {
     while(!input.empty()) {
         if(input->type() == CssToken::Type::Function && equalsIgnoringCase("var", input->data())) {
@@ -301,7 +301,7 @@ bool CssVariableData::resolve(CssTokenStream input, const BoxStyle* style, CssTo
     return true;
 }
 
-bool CssVariableData::resolveVar(CssTokenStream input, const BoxStyle* style, CssTokenList& tokens, std::set<CssVariableData*>& references) const
+bool CssVariableData::resolveVar(CssTokenStream input, const BoxStyle* style, CssTokenList& tokens, boost::unordered_flat_set<CssVariableData*>& references) const
 {
     input.consumeWhitespace();
     if(input->type() != CssToken::Type::Ident)
@@ -348,7 +348,7 @@ RefPtr<CssVariableReferenceValue> CssVariableReferenceValue::create(Heap* heap, 
 CssPropertyList CssVariableReferenceValue::resolve(const BoxStyle* style) const
 {
     CssTokenList tokens;
-    std::set<CssVariableData*> references;
+    boost::unordered_flat_set<CssVariableData*> references;
     if(!m_value->resolve(style, tokens, references))
         return CssPropertyList();
     CssTokenStream input(tokens.data(), tokens.size());
@@ -1364,7 +1364,7 @@ CssCounterStyle* CssCounterStyleMap::findCounterStyle(const GlobalString& name) 
 }
 
 CssCounterStyleMap::CssCounterStyleMap(Heap* heap, const CssRuleList& rules, const CssCounterStyleMap* parent)
-    : m_parent(parent), m_counterStyles(heap)
+    : m_parent(parent)
 {
     for(const auto& rule : rules) {
         auto& counterStyleRule = to<CssCounterStyleRule>(*rule);
@@ -1374,7 +1374,7 @@ CssCounterStyleMap::CssCounterStyleMap(Heap* heap, const CssRuleList& rules, con
 
     for(const auto& [name, style] : m_counterStyles) {
         if(style->system() == CssValueID::Extends) {
-            std::set<CssCounterStyle*> unresolvedStyles;
+            boost::unordered_flat_set<CssCounterStyle*> unresolvedStyles;
             std::vector<CssCounterStyle*> extendsStyles;
 
             extendsStyles.push_back(style.get());

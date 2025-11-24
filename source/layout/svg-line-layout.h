@@ -4,7 +4,7 @@
 #include "line-layout.h"
 
 #include <optional>
-#include <map>
+#include <boost/unordered/unordered_flat_map.hpp>
 
 namespace plutobook {
 
@@ -16,7 +16,7 @@ struct SvgCharacterPosition {
     std::optional<float> rotate;
 };
 
-using SvgCharacterPositions = std::map<uint32_t, SvgCharacterPosition>;
+using SvgCharacterPositions = boost::unordered_flat_map<uint32_t, SvgCharacterPosition>;
 
 class SvgTextBox;
 class SvgTextPositioningElement;

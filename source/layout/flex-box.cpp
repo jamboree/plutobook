@@ -3,7 +3,7 @@
 
 #include <span>
 #include <ranges>
-#include <list>
+#include <vector>
 
 namespace plutobook {
 
@@ -476,7 +476,7 @@ void FlexBox::layout(FragmentBuilder* fragmentainer)
         auto sign = totalHypotheticalMainSize < mainContentSize ? FlexSign::Positive : FlexSign::Negative;
 
         FlexItemSpan items(begin, it);
-        std::list<FlexItem*> unfrozenItems;
+        std::vector<FlexItem*> unfrozenItems;
         for(auto& item : items) {
             if(item.flexFactor(sign) == 0 || (sign == FlexSign::Positive && item.flexBaseSize() > item.targetMainSize())
                 || (sign == FlexSign::Negative && item.flexBaseSize() < item.targetMainSize())) {
@@ -526,23 +526,22 @@ void FlexBox::layout(FragmentBuilder* fragmentainer)
                 totalViolation += violation;
             }
 
-            auto freezeMinViolations = totalViolation > 0.f;
-            auto freezeMaxViolations = totalViolation < 0.f;
-            auto freezeAllViolations = totalViolation == 0.f;
+            const bool freezeMinViolations = totalViolation > 0.f;
+            const bool freezeMaxViolations = totalViolation < 0.f;
+            const bool freezeAllViolations = totalViolation == 0.f;
 
             auto itemIterator = unfrozenItems.begin();
-            while(itemIterator != unfrozenItems.end()) {
-                auto currentIterator = itemIterator++;
-                auto item = *currentIterator;
-                if(freezeAllViolations || (freezeMinViolations && item->minViolation())
+            std::erase_if(unfrozenItems, [&](FlexItem* item) {
+                if (freezeAllViolations || (freezeMinViolations && item->minViolation())
                     || (freezeMaxViolations && item->maxViolation())) {
                     totalFlexGrow -= item->flexGrow();
                     totalFlexShrink -= item->flexShrink();
                     totalScaledFlexShrink -= item->flexShrink() * item->flexBaseSize();
                     remainingFreeSpace -= item->targetMainSize() - item->flexBaseSize();
-                    unfrozenItems.erase(currentIterator);
+                    return true;
                 }
-            }
+                return false;
+            });
         }
 
         auto availableSpace = mainContentSize;
