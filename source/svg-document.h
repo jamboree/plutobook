@@ -775,7 +775,7 @@ namespace plutobook {
 
     class SvgDocument final : public XmlDocument {
     public:
-        static constexpr ClassKind classKind = ClassKind::SvgElement;
+        static constexpr ClassKind classKind = ClassKind::SvgDocument;
 
         static std::unique_ptr<SvgDocument>
         create(Book* book, ResourceFetcher* fetcher, Url baseUrl);
