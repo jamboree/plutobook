@@ -295,8 +295,7 @@ BitmapImage::BitmapImage(cairo_surface_t* surface)
 
 RefPtr<SvgImage> SvgImage::create(const std::string_view& content, const std::string_view& baseUrl, ResourceFetcher* fetcher)
 {
-    std::unique_ptr<Heap> heap(new Heap(1024 * 24));
-    auto document = SvgDocument::create(nullptr, heap.get(), fetcher, ResourceLoader::completeUrl(baseUrl));
+    auto document = SvgDocument::create(nullptr, fetcher, ResourceLoader::completeUrl(baseUrl));
     if(!document->parse(content))
         return nullptr;
     if(!document->rootElement()->isOfType(svgNs, svgTag)) {
@@ -304,7 +303,7 @@ RefPtr<SvgImage> SvgImage::create(const std::string_view& content, const std::st
         return nullptr;
     }
 
-    return adoptPtr(new SvgImage(std::move(heap), std::move(document)));
+    return adoptPtr(new SvgImage(std::move(document)));
 }
 
 void SvgImage::draw(GraphicsContext& context, const Rect& dstRect, const Rect& srcRect)

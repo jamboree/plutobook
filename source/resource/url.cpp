@@ -550,9 +550,31 @@ Url::Url(const std::string_view& input)
     m_fragmentEnd = m_value.length();
 }
 
+constexpr bool isAbsoluteFilename(const std::string_view& input)
+{
+    if (!input.empty()) {
+        if (input.front() == '/' || input.front() == '\\')
+            return true;
+        return input.size() >= 3
+            && isAlpha(input[0]) && input[1] == ':'
+            && (input[2] == '\\' || input[2] == '/');
+    }
+
+    return false;
+}
+
 Url Url::complete(std::string_view input) const
 {
     stripLeadingAndTrailingSpaces(input);
+    if (protocolIs("file") && isAbsoluteFilename(input)) {
+        std::string value("file:///");
+        while (!input.empty() && (input.front() == '/' || input.front() == '\\'))
+            input.remove_prefix(1);
+        for (auto cc : input)
+            value.push_back(cc == '\\' ? '/' : cc);
+        return Url(value);
+    }
+
     if(m_value.empty())
         return Url(input);
     assert(m_value[m_schemeEnd] == ':');
@@ -565,7 +587,7 @@ Url Url::complete(std::string_view input) const
         if(it != end && *it == ':') {
             auto length = it - input.begin();
             ++it;
-            if(it == end || *it == '/' || !isHierarchical() || !equals(input.data(), length, m_value.data(), m_schemeEnd, false))
+            if (it == end || *it == '/' || !isHierarchical() || !protocolIs(input.substr(0, length)))
                 return Url(input);
             input.remove_prefix(length + 1);
         }

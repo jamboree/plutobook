@@ -114,7 +114,6 @@ RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direct
     auto fontVariantEmoji = style->fontVariantEmoji();
     auto letterSpacing = disableSpacing ? 0 : style->letterSpacing();
     auto wordSpacing = disableSpacing ? 0 : style->wordSpacing();
-    auto heap = style->heap();
 
     auto hbBuffer = hb_buffer_create();
     auto hbDirection = direction == Direction::Ltr ? HB_DIRECTION_LTR : HB_DIRECTION_RTL;
@@ -123,7 +122,7 @@ RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direct
     float totalWidth = 0.f;
     int startIndex = 0;
     int totalLength = text.length();
-    TextShapeRunList textRuns(heap);
+    TextShapeRunList textRuns;
 
     CharacterBreakIterator iterator(text);
     while(totalLength > 0) {
@@ -222,13 +221,12 @@ RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direct
 RefPtr<TextShape> TextShape::createForTabs(const UString& text, Direction direction, const BoxStyle* style)
 {
     const auto& font = style->font();
-    auto heap = style->heap();
 
     float totalWidth = 0.f;
     int startIndex = 0;
     int totalLength = text.length();
 
-    TextShapeRunList runs(heap);
+    TextShapeRunList runs;
     if(auto fontData = font->getFontData(kSpaceCharacter, false)) {
         auto tabWidth = style->tabWidth(fontData->spaceWidth());
         auto spaceGlyph = fontData->spaceGlyph();

@@ -770,7 +770,6 @@ const SimpleFontData* Font::getFontData(uint32_t codepoint, bool preferColor)
 Font::Font(Document* document, const FontDescription& description)
     : m_document(document)
     , m_description(description)
-    , m_fonts(document->heap())
 {
     for(const auto& family : description.families) {
         if(auto font = document->getFontData(family, description.data)) {
