@@ -1667,7 +1667,7 @@ TableCollapsedBorderEdges::TableCollapsedBorderEdges(const TableCellBox* cellBox
 }
 
 TableCellBox::TableCellBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BlockFlowBox(node, style)
+    : BlockFlowBox(classKind, node, style)
 {
 }
 
@@ -1841,7 +1841,7 @@ void TableCellBox::paintDecorations(const PaintInfo& info, const Point& offset)
 }
 
 TableCaptionBox::TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BlockFlowBox(node, style)
+    : BlockFlowBox(classKind, node, style)
 {
 }
 
