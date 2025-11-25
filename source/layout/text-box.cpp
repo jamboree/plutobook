@@ -6,14 +6,13 @@ namespace plutobook {
 
 TextBox::TextBox(ClassKind type, Node* node, const RefPtr<BoxStyle>& style)
     : Box(type, node, style)
-    , m_lines(style->heap())
 {
     setIsInline(true);
 }
 
 void TextBox::appendText(const std::string_view& text)
 {
-    m_text = heap()->concatenateString(m_text, text);
+    m_text = concatenateString(m_text, text);
 }
 
 TextBox::~TextBox() = default;

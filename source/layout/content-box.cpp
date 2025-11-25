@@ -51,7 +51,7 @@ void ContentBoxBuilder::addText(const HeapString& text)
         return;
     }
 
-    auto newBox = new (m_style->heap()) TextBox(nullptr, m_style);
+    auto newBox = new TextBox(nullptr, m_style);
     newBox->setText(text);
     m_box->addChild(newBox);
     m_lastTextBox = newBox;
@@ -61,7 +61,7 @@ void ContentBoxBuilder::addLeaderText(const HeapString& text)
 {
     if(text.empty())
         return;
-    auto newBox = new (m_style->heap()) LeaderBox(m_style);
+    auto newBox = new LeaderBox(m_style);
     newBox->setText(text);
     m_box->addChild(newBox);
     m_lastTextBox = nullptr;
@@ -148,7 +148,7 @@ void ContentBoxBuilder::addTargetCounter(const CssFunctionValue& function)
     }
 
     auto newStyle = BoxStyle::create(m_style, Display::Inline);
-    auto newBox = new (m_style->heap()) TargetCounterBox(newStyle, fragment, identifier, seperator, listStyle);
+    auto newBox = new TargetCounterBox(newStyle, fragment, identifier, seperator, listStyle);
     m_box->addChild(newBox);
     m_lastTextBox = nullptr;
 }
@@ -211,7 +211,7 @@ void ContentBoxBuilder::addImage(RefPtr<Image> image)
     if(image == nullptr)
         return;
     auto newStyle = BoxStyle::create(m_style, Display::Inline);
-    auto newBox = new (m_style->heap()) ImageBox(nullptr, newStyle);
+    auto newBox = new ImageBox(nullptr, newStyle);
     newBox->setImage(std::move(image));
     m_box->addChild(newBox);
     m_lastTextBox = nullptr;

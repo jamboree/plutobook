@@ -6,7 +6,7 @@
 #include <memory>
 
 namespace plutobook {
-    using SvgPropertyMap = std::pmr::map<GlobalString, SvgProperty*>;
+    using SvgPropertyMap = std::map<GlobalString, SvgProperty*>;
 
     class SvgResourceContainerBox;
     class SvgResourceClipperBox;
@@ -778,10 +778,9 @@ namespace plutobook {
         static constexpr ClassKind classKind = ClassKind::SvgElement;
 
         static std::unique_ptr<SvgDocument>
-        create(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl);
+        create(Book* book, ResourceFetcher* fetcher, Url baseUrl);
 
     private:
-        SvgDocument(Book* book, Heap* heap, ResourceFetcher* fetcher,
-                    Url baseUrl);
+        SvgDocument(Book* book, ResourceFetcher* fetcher, Url baseUrl);
     };
 } // namespace plutobook

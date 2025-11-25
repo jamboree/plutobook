@@ -203,37 +203,37 @@ Box* Box::create(Node* node, const RefPtr<BoxStyle>& style)
 {
     if(style->pseudoType() == PseudoType::Marker) {
         if(style->listStylePosition() == ListStylePosition::Inside)
-            return new (style->heap()) InsideListMarkerBox(style);
-        return new (style->heap()) OutsideListMarkerBox(style);
+            return new InsideListMarkerBox(style);
+        return new OutsideListMarkerBox(style);
     }
 
     switch(style->display()) {
     case Display::Inline:
-        return new (style->heap()) InlineBox(node, style);
+        return new InlineBox(node, style);
     case Display::Block:
     case Display::InlineBlock:
-        return new (style->heap()) BlockFlowBox(node, style);
+        return new BlockFlowBox(node, style);
     case Display::Flex:
     case Display::InlineFlex:
-        return new (style->heap()) FlexBox(node, style);
+        return new FlexBox(node, style);
     case Display::Table:
     case Display::InlineTable:
-        return new (style->heap()) TableBox(node, style);
+        return new TableBox(node, style);
     case Display::ListItem:
-        return new (style->heap()) ListItemBox(node, style);
+        return new ListItemBox(node, style);
     case Display::TableCell:
-        return new (style->heap()) TableCellBox(node, style);
+        return new TableCellBox(node, style);
     case Display::TableRow:
-        return new (style->heap()) TableRowBox(node, style);
+        return new TableRowBox(node, style);
     case Display::TableCaption:
-        return new (style->heap()) TableCaptionBox(node, style);
+        return new TableCaptionBox(node, style);
     case Display::TableColumn:
     case Display::TableColumnGroup:
-        return new (style->heap()) TableColumnBox(node, style);
+        return new TableColumnBox(node, style);
     case Display::TableRowGroup:
     case Display::TableHeaderGroup:
     case Display::TableFooterGroup:
-        return new (style->heap()) TableSectionBox(node, style);
+        return new TableSectionBox(node, style);
     default:
         assert(false);
     }
@@ -251,7 +251,7 @@ Box* Box::createAnonymous(Display display, const BoxStyle* parentStyle)
 BlockFlowBox* Box::createAnonymousBlock(const BoxStyle* parentStyle)
 {
     auto newStyle = BoxStyle::create(parentStyle, Display::Block);
-    auto newBlock = new (newStyle->heap()) BlockFlowBox(nullptr, newStyle);
+    auto newBlock = new BlockFlowBox(nullptr, newStyle);
     newBlock->setIsAnonymousBlock(true);
     newBlock->setIsAnonymous(true);
     return newBlock;

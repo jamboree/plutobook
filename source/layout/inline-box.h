@@ -6,7 +6,7 @@ namespace plutobook {
 
     class FlowLineBox;
 
-    using FlowLineBoxList = std::pmr::vector<std::unique_ptr<FlowLineBox>>;
+    using FlowLineBoxList = std::vector<std::unique_ptr<FlowLineBox>>;
 
     class InlineBox : public BoxModel {
     public:

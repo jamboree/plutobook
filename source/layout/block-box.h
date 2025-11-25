@@ -147,7 +147,7 @@ namespace plutobook {
         float m_height{0};
     };
 
-    using FloatingBoxList = std::pmr::vector<FloatingBox>;
+    using FloatingBoxList = std::vector<FloatingBox>;
 
     class MarginInfo;
     class LineLayout;

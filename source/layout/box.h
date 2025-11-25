@@ -80,7 +80,7 @@ namespace plutobook {
         SvgShape,
     };
 
-    class Box : public HeapMember {
+    class Box {
     public:
         using ClassRoot = Box;
         using ClassKind = BoxType;
@@ -226,7 +226,6 @@ namespace plutobook {
         void setHasTransform(bool value) { m_hasTransform = value; }
         void setHasLayer(bool value) { m_hasLayer = value; }
 
-        Heap* heap() const { return m_style->heap(); }
         Document* document() const { return m_style->document(); }
 
         void paintAnnotation(GraphicsContext& context, const Rect& rect) const;

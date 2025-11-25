@@ -62,7 +62,7 @@ struct SvgTextFragment {
     float angle = 0;
 };
 
-using SvgTextFragmentList = std::pmr::vector<SvgTextFragment>;
+using SvgTextFragmentList = std::vector<SvgTextFragment>;
 
 class SvgTextFragmentsBuilder {
 public:

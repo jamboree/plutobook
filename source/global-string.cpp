@@ -8,22 +8,15 @@ namespace plutobook {
 
 class GlobalStringTable {
 public:
-    GlobalStringTable();
+    GlobalStringTable() = default;
 
     const HeapString* add(const std::string_view& value);
 
 private:
-    using StringSet = boost::unordered_node_set<HeapString, StrHash, StrEqual, std::pmr::polymorphic_allocator<HeapString>>;
-    Heap m_heap;
+    using StringSet = boost::unordered_node_set<HeapString, StrHash, StrEqual>;
     StringSet m_table;
     std::mutex m_mutex;
 };
-
-GlobalStringTable::GlobalStringTable()
-    : m_heap(1024 * 24)
-    , m_table(&m_heap)
-{
-}
 
 const HeapString* GlobalStringTable::add(const std::string_view& value)
 {
@@ -31,7 +24,7 @@ const HeapString* GlobalStringTable::add(const std::string_view& value)
     auto lb = m_table.find(value);
     if(lb != m_table.end() && *lb == value)
         return &*lb;
-    return &*m_table.emplace(m_heap.createString(value)).first;
+    return &*m_table.emplace(createString(value)).first;
 }
 
 GlobalStringTable* globalStringTable()

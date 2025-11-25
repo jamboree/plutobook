@@ -798,7 +798,7 @@ void BlockFlowBox::addIntrudingFloats(BlockFlowBox* prevBlock, float offsetX, fl
             floatingBox.setIsIntruding(true);
             floatingBox.setIsPlaced(true);
             if(m_floatingBoxes == nullptr)
-                m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
+                m_floatingBoxes = std::make_unique<FloatingBoxList>();
             m_floatingBoxes->push_back(floatingBox);
         }
     }
@@ -819,7 +819,7 @@ void BlockFlowBox::addOverhangingFloats(BlockFlowBox* childBlock)
             floatingBox.setIsIntruding(true);
             floatingBox.setIsPlaced(true);
             if(m_floatingBoxes == nullptr)
-                m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
+                m_floatingBoxes = std::make_unique<FloatingBoxList>();
             m_floatingBoxes->push_back(floatingBox);
         }
     }
@@ -920,7 +920,7 @@ FloatingBox& BlockFlowBox::insertFloatingBox(BoxFrame* box)
     }
 
     if(m_floatingBoxes == nullptr)
-        m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
+        m_floatingBoxes = std::make_unique<FloatingBoxList>();
     m_floatingBoxes->emplace_back(box);
     return m_floatingBoxes->back();
 }

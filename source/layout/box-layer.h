@@ -12,9 +12,9 @@ class GraphicsContext;
 class BoxModel;
 class BoxLayer;
 
-using BoxLayerList = std::pmr::vector<BoxLayer*>;
+using BoxLayerList = std::vector<BoxLayer*>;
 
-class BoxLayer : public HeapMember {
+class BoxLayer {
 public:
     static std::unique_ptr<BoxLayer> create(BoxModel* box, BoxLayer* parent);
 

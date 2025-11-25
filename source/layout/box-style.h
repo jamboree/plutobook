@@ -674,7 +674,7 @@ enum class PseudoType : uint8_t {
 
 struct FontDescription;
 
-class BoxStyle : public HeapMember, public RefCounted<BoxStyle> {
+class BoxStyle : public RefCounted<BoxStyle> {
 public:
     static RefPtr<BoxStyle> create(Node* node, PseudoType pseudoType, Display display);
     static RefPtr<BoxStyle> create(Node* node, const BoxStyle* parentStyle, PseudoType pseudoType, Display display);
@@ -682,7 +682,6 @@ public:
     static RefPtr<BoxStyle> create(const BoxStyle* parentStyle, Display display);
 
     Document* document() const;
-    Heap* heap() const;
     Book* book() const;
 
     Node* node() const { return m_node; }

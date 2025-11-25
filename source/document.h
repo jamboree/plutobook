@@ -25,7 +25,7 @@ namespace plutobook {
         XmlDocument
     };
 
-    class Node : public HeapMember {
+    class Node {
     public:
         using ClassRoot = Node;
         using ClassKind = NodeType;
@@ -74,7 +74,6 @@ namespace plutobook {
         void setBox(Box* box) { m_box = box; }
         Box* box() const { return m_box; }
         BoxStyle* style() const;
-        Heap* heap() const;
 
         virtual Node* cloneNode(bool deep) = 0;
         virtual Box* createBox(const RefPtr<BoxStyle>& style) = 0;
@@ -176,9 +175,9 @@ namespace plutobook {
         HeapString m_value;
     };
 
-    using AttributeList = std::pmr::forward_list<Attribute>;
-    using ClassNameList = std::pmr::forward_list<HeapString>;
-    using CssPropertyList = std::pmr::vector<CssProperty>;
+    using AttributeList = std::forward_list<Attribute>;
+    using ClassNameList = std::forward_list<HeapString>;
+    using CssPropertyList = std::vector<CssProperty>;
 
     class Element : public ContainerNode {
     public:
@@ -284,8 +283,8 @@ namespace plutobook {
     class CssMediaQuery;
     class CssMediaFeature;
 
-    using CssMediaQueryList = std::pmr::forward_list<CssMediaQuery>;
-    using CssMediaFeatureList = std::pmr::forward_list<CssMediaFeature>;
+    using CssMediaQueryList = std::forward_list<CssMediaQuery>;
+    using CssMediaFeatureList = std::forward_list<CssMediaFeature>;
 
     class Resource;
     class ResourceData;
@@ -301,14 +300,11 @@ namespace plutobook {
     using CounterMap =
         boost::unordered_flat_map<GlobalString, std::vector<int>>;
 
-    using DocumentElementMap =
-        std::pmr::multimap<HeapString, Element*, std::less<>>;
-    using DocumentResourceMap = std::pmr::map<Url, RefPtr<Resource>>;
-    using DocumentFontMap = std::pmr::map<FontDescription, RefPtr<Font>>;
-    using DocumentCounterMap =
-        std::pmr::map<HeapString, CounterMap, std::less<>>;
-    using DocumentRunningStyleMap =
-        std::pmr::map<GlobalString, RefPtr<BoxStyle>>;
+    using DocumentElementMap = std::multimap<HeapString, Element*, std::less<>>;
+    using DocumentResourceMap = std::map<Url, RefPtr<Resource>>;
+    using DocumentFontMap = std::map<FontDescription, RefPtr<Font>>;
+    using DocumentCounterMap = std::map<HeapString, CounterMap, std::less<>>;
+    using DocumentRunningStyleMap = std::map<GlobalString, RefPtr<BoxStyle>>;
 
     class BoxView;
     class GraphicsContext;
@@ -320,18 +316,17 @@ namespace plutobook {
     class PageMargins;
     class PageBox;
 
-    using PageBoxList = std::pmr::vector<std::unique_ptr<PageBox>>;
+    using PageBoxList = std::vector<std::unique_ptr<PageBox>>;
 
     class Document : public ContainerNode, public FragmentBuilder {
     public:
-        Document(ClassKind type, Book* book, Heap* heap,
-                 ResourceFetcher* fetcher, Url baseUrl);
+        Document(ClassKind type, Book* book, ResourceFetcher* fetcher,
+                 Url baseUrl);
         ~Document() override;
 
         bool isSvgImageDocument() const;
 
         Book* book() const { return m_book; }
-        Heap* heap() const { return m_heap; }
         ResourceFetcher* customResourceFetcher() const {
             return m_customResourceFetcher;
         }
@@ -456,7 +451,6 @@ namespace plutobook {
         RefPtr<ResourceType> fetchResource(const Url& url);
         Element* m_rootElement{nullptr};
         Book* m_book;
-        Heap* m_heap;
         ResourceFetcher* m_customResourceFetcher;
         Url m_baseUrl;
         PageBoxList m_pages;
@@ -476,6 +470,4 @@ namespace plutobook {
     inline bool Node::isRootNode() const {
         return this == m_document->rootElement();
     }
-
-    inline Heap* Node::heap() const { return m_document->heap(); }
 } // namespace plutobook

@@ -87,7 +87,7 @@ void XmlParser::handleStartElement(const char* name, const char** attrs)
     auto element = m_document->createElement(tagName.namespaceURI(), tagName.localName());
     while(attrs && *attrs) {
         auto attrName = QualifiedName::parse(attrs[0]);
-        auto attrValue = m_document->heap()->createString(attrs[1]);
+        auto attrValue = createString(attrs[1]);
         element->setAttribute(attrName.localName(), attrValue);
         attrs += 2;
     }

@@ -1479,7 +1479,7 @@ void LineBuilder::handleReplaced(const LineItemRun& run)
 
 std::unique_ptr<LineLayout> LineLayout::create(BlockFlowBox* block)
 {
-    return std::unique_ptr<LineLayout>(new (block->heap()) LineLayout(block));
+    return std::unique_ptr<LineLayout>(new LineLayout(block));
 }
 
 void LineLayout::updateWidth()
@@ -1738,8 +1738,6 @@ void LineLayout::serialize(std::ostream& o, int indent) const
 
 LineLayout::LineLayout(BlockFlowBox* block)
     : m_block(block)
-    , m_lines(block->heap())
-    , m_data(block->heap())
 {
 }
 

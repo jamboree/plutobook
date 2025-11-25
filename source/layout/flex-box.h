@@ -82,7 +82,7 @@ namespace plutobook {
         float m_targetMainSize{0};
     };
 
-    using FlexItemList = std::pmr::vector<FlexItem>;
+    using FlexItemList = std::vector<FlexItem>;
 
     class FlexBox final : public BlockBox {
     public:

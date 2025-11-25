@@ -384,8 +384,6 @@ void SvgTextFragmentsBuilder::handleBidiControl(const LineItem& item)
 
 SvgLineLayout::SvgLineLayout(SvgTextBox* block)
     : m_block(block)
-    , m_fragments(block->heap())
-    , m_data(block->heap())
 {
 }
 
@@ -573,7 +571,7 @@ void SvgLineLayout::build()
         std::vector<int32_t> indices(levels.size());
         BidiParagraph::reorderVisual(levels, indices);
 
-        LineItems visualItems(m_block->heap());
+        LineItems visualItems;
         visualItems.reserve(indices.size());
         for(auto index : indices)
             visualItems.push_back(std::move(m_data.items[index]));

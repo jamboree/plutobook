@@ -19,7 +19,7 @@ const Length Length::ZeroPercent(Length::Type::Percent);
 
 RefPtr<BoxStyle> BoxStyle::create(Node* node, PseudoType pseudoType, Display display)
 {
-    return adoptPtr(new (node->heap()) BoxStyle(node, pseudoType, display));
+    return adoptPtr(new BoxStyle(node, pseudoType, display));
 }
 
 RefPtr<BoxStyle> BoxStyle::create(Node* node, const BoxStyle* parentStyle, PseudoType pseudoType, Display display)
@@ -42,11 +42,6 @@ RefPtr<BoxStyle> BoxStyle::create(const BoxStyle* parentStyle, Display display)
 Document* BoxStyle::document() const
 {
     return m_node->document();
-}
-
-Heap* BoxStyle::heap() const
-{
-    return m_node->heap();
 }
 
 Book* BoxStyle::book() const
@@ -2326,7 +2321,7 @@ RefPtr<CssValue> BoxStyle::resolveLength(const RefPtr<CssValue>& value) const
         }
     }
 
-    return CssLengthValue::create(heap(), convertLengthValue(*value));
+    return CssLengthValue::create(convertLengthValue(*value));
 }
 
 float BoxStyle::convertLengthValue(const CssValue& value) const

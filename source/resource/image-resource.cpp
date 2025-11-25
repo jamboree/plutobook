@@ -39,7 +39,7 @@ RefPtr<ImageResource> ImageResource::create(Document* document, const Url& url)
         return nullptr;
     }
 
-    return adoptPtr(new (document->heap()) ImageResource(std::move(image)));
+    return adoptPtr(new ImageResource(std::move(image)));
 }
 
 RefPtr<Image> ImageResource::decode(const char* data, size_t size, const std::string_view& mimeType, const std::string_view& textEncoding, const std::string_view& baseUrl, ResourceFetcher* fetcher)
@@ -409,8 +409,8 @@ Size SvgImage::size() const
     return m_containerSize;
 }
 
-SvgImage::SvgImage(std::unique_ptr<Heap> heap, std::unique_ptr<SvgDocument> document)
-    : Image(classKind), m_heap(std::move(heap)), m_document(std::move(document))
+SvgImage::SvgImage(std::unique_ptr<SvgDocument> document)
+    : Image(classKind), m_document(std::move(document))
 {
     m_document->build();
 }

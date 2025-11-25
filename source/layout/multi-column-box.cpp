@@ -13,7 +13,7 @@ float MultiColumnContentRun::columnLogicalHeight(float startOffset) const
 MultiColumnRowBox* MultiColumnRowBox::create(MultiColumnFlowBox* columnFlow, const BoxStyle* parentStyle)
 {
     auto newStyle = BoxStyle::create(parentStyle, Display::Block);
-    auto newRow = new (newStyle->heap()) MultiColumnRowBox(columnFlow, newStyle);
+    auto newRow = new MultiColumnRowBox(columnFlow, newStyle);
     newRow->setIsAnonymous(true);
     return newRow;
 }
@@ -37,7 +37,6 @@ void MultiColumnRowBox::updateOverflowRect()
 MultiColumnRowBox::MultiColumnRowBox(MultiColumnFlowBox* columnFlow, const RefPtr<BoxStyle>& style)
     : BoxFrame(classKind, nullptr, style)
     , m_columnFlow(columnFlow)
-    , m_runs(style->heap())
 {
 }
 
@@ -308,7 +307,7 @@ void MultiColumnRowBox::distributeImplicitBreaks()
 MultiColumnSpanBox* MultiColumnSpanBox::create(BoxFrame* box, const BoxStyle* parentStyle)
 {
     auto newStyle = BoxStyle::create(parentStyle, Display::Block);
-    auto newSpanner = new (newStyle->heap()) MultiColumnSpanBox(box, newStyle);
+    auto newSpanner = new MultiColumnSpanBox(box, newStyle);
     newSpanner->setIsAnonymous(true);
     return newSpanner;
 }
@@ -346,7 +345,7 @@ MultiColumnSpanBox::MultiColumnSpanBox(BoxFrame* box, const RefPtr<BoxStyle>& st
 MultiColumnFlowBox* MultiColumnFlowBox::create(const BoxStyle* parentStyle)
 {
     auto newStyle = BoxStyle::create(parentStyle, Display::Block);
-    auto newColumn = new (newStyle->heap()) MultiColumnFlowBox(newStyle);
+    auto newColumn = new MultiColumnFlowBox(newStyle);
     newColumn->setIsAnonymous(true);
     return newColumn;
 }

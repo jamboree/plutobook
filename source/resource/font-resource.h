@@ -328,7 +328,7 @@ namespace plutobook {
         FontData() = default;
     };
 
-    using FontDataList = std::pmr::vector<RefPtr<FontData>>;
+    using FontDataList = std::vector<RefPtr<FontData>>;
 
     struct FontDataInfo {
         float ascent;
@@ -447,12 +447,11 @@ namespace plutobook {
 
     FontDataCache* fontDataCache();
 
-    class Font : public HeapMember, public RefCounted<Font> {
+    class Font : public RefCounted<Font> {
     public:
         static RefPtr<Font> create(Document* document,
                                    const FontDescription& description);
 
-        Heap* heap() const;
         Document* document() const { return m_document; }
         const FontDescription& description() const { return m_description; }
         const FontDataList& fonts() const { return m_fonts; }

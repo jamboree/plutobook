@@ -13,7 +13,7 @@ namespace plutobook {
 
 std::unique_ptr<PageBox> PageBox::create(const RefPtr<BoxStyle>& style, const GlobalString& pageName, uint32_t pageIndex, float pageWidth, float pageHeight, float pageScale)
 {
-    return std::unique_ptr<PageBox>(new (style->heap()) PageBox(style, pageName, pageIndex, pageWidth, pageHeight, pageScale));
+    return std::unique_ptr<PageBox>(new PageBox(style, pageName, pageIndex, pageWidth, pageHeight, pageScale));
 }
 
 PageSize PageBox::pageSize() const
@@ -708,7 +708,7 @@ void PageLayout::buildPageMargin(const Counters& counters, PageBox* pageBox, Pag
         return;
     }
 
-    auto marginBox = new (m_document->heap()) PageMarginBox(marginStyle, marginType);
+    auto marginBox = new PageMarginBox(marginStyle, marginType);
     Counters marginCounters(counters);
     marginCounters.update(marginBox);
     ContentBoxBuilder(marginCounters, nullptr, marginBox).build();

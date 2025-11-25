@@ -22,7 +22,7 @@ namespace plutobook {
         uint32_t m_assumedImplicitBreaks{0};
     };
 
-    using MultiColumnContentRunList = std::pmr::vector<MultiColumnContentRun>;
+    using MultiColumnContentRunList = std::vector<MultiColumnContentRun>;
 
     class MultiColumnFlowBox;
 

@@ -13,15 +13,15 @@
 
 namespace plutobook {
 
-TextShapeRunGlyphDataList::TextShapeRunGlyphDataList(Heap* heap, size_t size)
-    : m_data(new (heap) TextShapeRunGlyphData[size])
+TextShapeRunGlyphDataList::TextShapeRunGlyphDataList(size_t size)
+    : m_data(new TextShapeRunGlyphData[size])
     , m_size(size)
 {
 }
 
-std::unique_ptr<TextShapeRun> TextShapeRun::create(Heap* heap, const SimpleFontData* fontData, uint32_t offset, uint32_t length, float width, TextShapeRunGlyphDataList glyphs)
+std::unique_ptr<TextShapeRun> TextShapeRun::create(const SimpleFontData* fontData, uint32_t offset, uint32_t length, float width, TextShapeRunGlyphDataList glyphs)
 {
-    return std::unique_ptr<TextShapeRun>(new (heap) TextShapeRun(fontData, offset, length, width, std::move(glyphs)));
+    return std::unique_ptr<TextShapeRun>(new TextShapeRun(fontData, offset, length, width, std::move(glyphs)));
 }
 
 TextShapeRun::TextShapeRun(const SimpleFontData* fontData, uint32_t offset, uint32_t length, float width, TextShapeRunGlyphDataList glyphs)
@@ -182,7 +182,7 @@ RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direct
         auto numGlyphs = hb_buffer_get_length(hbBuffer);
 
         float width = 0.f;
-        TextShapeRunGlyphDataList glyphs(heap, numGlyphs);
+        TextShapeRunGlyphDataList glyphs(numGlyphs);
         for(size_t index = 0; index < numGlyphs; ++index) {
             const auto& glyphInfo = glyphInfos[index];
             const auto& glyphPosition = glyphPositions[index];
@@ -206,7 +206,7 @@ RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direct
             width += glyphData.advance;
         }
 
-        auto textRun = TextShapeRun::create(heap, fontData, startIndex, numCharacters, width, std::move(glyphs));
+        auto textRun = TextShapeRun::create(fontData, startIndex, numCharacters, width, std::move(glyphs));
         totalWidth += width;
         startIndex += numCharacters;
         totalLength -= numCharacters;
@@ -216,7 +216,7 @@ RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direct
     hb_buffer_destroy(hbBuffer);
     if(direction == Direction::Rtl)
         std::reverse(textRuns.begin(), textRuns.end());
-    return adoptPtr(new (heap) TextShape(text, direction, totalWidth, std::move(textRuns)));
+    return adoptPtr(new TextShape(text, direction, totalWidth, std::move(textRuns)));
 }
 
 RefPtr<TextShape> TextShape::createForTabs(const UString& text, Direction direction, const BoxStyle* style)
@@ -234,7 +234,7 @@ RefPtr<TextShape> TextShape::createForTabs(const UString& text, Direction direct
         auto spaceGlyph = fontData->spaceGlyph();
         while(totalLength > 0) {
             auto numGlyphs = std::min(totalLength, kMaxGlyphs);
-            TextShapeRunGlyphDataList glyphs(heap, numGlyphs);
+            TextShapeRunGlyphDataList glyphs(numGlyphs);
             for(int index = 0; index < numGlyphs; ++index) {
                 assert(text[index + startIndex] == kTabulationCharacter);
                 auto& glyphData = glyphs[index];
@@ -245,7 +245,7 @@ RefPtr<TextShape> TextShape::createForTabs(const UString& text, Direction direct
                 glyphData.advance = tabWidth;
             }
 
-            auto run = TextShapeRun::create(heap, fontData, startIndex, numGlyphs, numGlyphs * tabWidth, std::move(glyphs));
+            auto run = TextShapeRun::create(fontData, startIndex, numGlyphs, numGlyphs * tabWidth, std::move(glyphs));
             totalWidth += run->width();
             startIndex += numGlyphs;
             totalLength -= numGlyphs;
@@ -253,7 +253,7 @@ RefPtr<TextShape> TextShape::createForTabs(const UString& text, Direction direct
         }
     }
 
-    return adoptPtr(new (heap) TextShape(text, direction, totalWidth, std::move(runs)));
+    return adoptPtr(new TextShape(text, direction, totalWidth, std::move(runs)));
 }
 
 uint32_t TextShape::offsetForPosition(float position) const

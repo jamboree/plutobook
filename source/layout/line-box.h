@@ -21,7 +21,7 @@ namespace plutobook {
 
     enum class LineBoxType { Text, Replaced, Flow, Root };
 
-    class LineBox : public HeapMember {
+    class LineBox {
     public:
         using ClassRoot = LineBox;
         using ClassKind = LineBoxType;
@@ -136,7 +136,7 @@ namespace plutobook {
         ReplacedLineBox(BoxFrame* box);
     };
 
-    using LineBoxList = std::pmr::vector<LineBox*>;
+    using LineBoxList = std::vector<LineBox*>;
 
     class FlowLineBox : public LineBox {
     public:

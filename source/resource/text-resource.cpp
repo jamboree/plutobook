@@ -11,7 +11,7 @@ RefPtr<TextResource> TextResource::create(Document* document, const Url& url)
     auto resource = ResourceLoader::loadUrl(url, document->customResourceFetcher());
     if(resource.isNull())
         return nullptr;
-    return adoptPtr(new (document->heap()) TextResource(decode(resource.content(), resource.contentLength(), resource.mimeType(), resource.textEncoding())));
+    return adoptPtr(new TextResource(decode(resource.content(), resource.contentLength(), resource.mimeType(), resource.textEncoding())));
 }
 
 std::string_view TextResource::decode(const char* data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding)

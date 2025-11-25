@@ -4,7 +4,7 @@
 #include "heap-string.h"
 
 namespace plutobook {
-    class Resource : public HeapMember, public RefCounted<Resource> {
+    class Resource : public RefCounted<Resource> {
     public:
         enum class Type { Text, Image, Font };
         using ClassRoot = Resource;

@@ -95,7 +95,6 @@ namespace plutobook {
     };
 
     class SvgDocument;
-    class Heap;
 
     class SvgImage final : public Image {
     public:
@@ -119,9 +118,7 @@ namespace plutobook {
         Size size() const final;
 
     private:
-        SvgImage(std::unique_ptr<Heap> heap,
-                 std::unique_ptr<SvgDocument> document);
-        std::unique_ptr<Heap> m_heap;
+        explicit SvgImage(std::unique_ptr<SvgDocument> document);
         std::unique_ptr<SvgDocument> m_document;
         Size m_containerSize;
     };

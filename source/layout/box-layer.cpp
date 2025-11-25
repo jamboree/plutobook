@@ -7,7 +7,7 @@ namespace plutobook {
 
 std::unique_ptr<BoxLayer> BoxLayer::create(BoxModel* box, BoxLayer* parent)
 {
-    return std::unique_ptr<BoxLayer>(new (box->heap()) BoxLayer(box, parent));
+    return std::unique_ptr<BoxLayer>(new BoxLayer(box, parent));
 }
 
 BoxLayer* BoxLayer::containingLayer() const
@@ -213,7 +213,6 @@ void BoxLayer::paintLayerColumnContents(BoxLayer* rootLayer, GraphicsContext& co
 BoxLayer::BoxLayer(BoxModel* box, BoxLayer* parent)
     : m_box(box)
     , m_parent(parent)
-    , m_children(box->heap())
     , m_zIndex(box->style()->zIndex().value_or(0))
     , m_opacity(box->style()->opacity())
 {

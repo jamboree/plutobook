@@ -116,7 +116,7 @@ LineBox::LineBox(ClassKind type, Box* box, float width)
 
 std::unique_ptr<TextLineBox> TextLineBox::create(TextBox* box, const TextShapeView& shape, float expansion, float width)
 {
-    return std::unique_ptr<TextLineBox>(new (box->heap()) TextLineBox(box, shape, expansion, width));
+    return std::unique_ptr<TextLineBox>(new TextLineBox(box, shape, expansion, width));
 }
 
 float TextLineBox::lineHeight() const
@@ -239,7 +239,7 @@ TextLineBox::TextLineBox(TextBox* box, const TextShapeView& shape, float width, 
 
 std::unique_ptr<ReplacedLineBox> ReplacedLineBox::create(BoxFrame* box)
 {
-    return std::unique_ptr<ReplacedLineBox>(new (box->heap()) ReplacedLineBox(box));
+    return std::unique_ptr<ReplacedLineBox>(new ReplacedLineBox(box));
 }
 
 float ReplacedLineBox::lineHeight() const
@@ -283,7 +283,7 @@ ReplacedLineBox::ReplacedLineBox(BoxFrame* box)
 
 std::unique_ptr<FlowLineBox> FlowLineBox::create(BoxModel* box)
 {
-    return std::unique_ptr<FlowLineBox>(new (box->heap()) FlowLineBox(box));
+    return std::unique_ptr<FlowLineBox>(new FlowLineBox(box));
 }
 
 float FlowLineBox::lineHeight() const
@@ -652,13 +652,12 @@ void FlowLineBox::serialize(std::ostream& o, int indent) const
 
 FlowLineBox::FlowLineBox(ClassKind type, BoxModel* box)
     : LineBox(type, box, 0.f)
-    , m_children(box->heap())
 {
 }
 
 std::unique_ptr<RootLineBox> RootLineBox::create(BlockFlowBox* box)
 {
-    return std::unique_ptr<RootLineBox>(new (box->heap()) RootLineBox(box));
+    return std::unique_ptr<RootLineBox>(new RootLineBox(box));
 }
 
 BlockFlowBox* RootLineBox::box() const

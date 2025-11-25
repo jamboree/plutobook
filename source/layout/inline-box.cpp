@@ -6,7 +6,6 @@ namespace plutobook {
 
 InlineBox::InlineBox(ClassKind type, Node* node, const RefPtr<BoxStyle>& style)
     : BoxModel(type, node, style)
-    , m_lines(style->heap())
 {
     setIsInline(true);
 }
@@ -156,11 +155,11 @@ void InlineBox::addChild(Box* newChild)
 
     middleBlock->addChild(newChild);
 
-    auto clone = new (heap()) InlineBox(nullptr, style());
+    auto clone = new InlineBox(nullptr, style());
     auto currentParent = parentBox();
     auto currentClone = clone;
     while(currentParent != preBlock) {
-        auto parentClone = new (heap()) InlineBox(nullptr, currentParent->style());
+        auto parentClone = new InlineBox(nullptr, currentParent->style());
         parentClone->appendChild(currentClone);
         currentClone = parentClone;
 

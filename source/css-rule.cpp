@@ -209,8 +209,7 @@ public:
     CssIdentValue* identValue(CssValueID id) const;
 
 private:
-    using CssIdentValueList = std::pmr::vector<CssIdentValue*>;
-    Heap m_heap;
+    using CssIdentValueList = std::vector<CssIdentValue*>;
     CssInitialValue* m_initialValue;
     CssInheritValue* m_inheritValue;
     CssUnsetValue* m_unsetValue;
@@ -218,16 +217,15 @@ private:
 };
 
 CssValuePool::CssValuePool()
-    : m_heap(1024 * 8)
-    , m_initialValue(new (&m_heap) CssInitialValue)
-    , m_inheritValue(new (&m_heap) CssInheritValue)
-    , m_unsetValue(new (&m_heap) CssUnsetValue)
-    , m_identValues(kNumCssValueIDs, &m_heap)
+    : m_initialValue(new CssInitialValue)
+    , m_inheritValue(new CssInheritValue)
+    , m_unsetValue(new CssUnsetValue)
+    , m_identValues(kNumCssValueIDs)
 {
     assert(CssValueID::Unknown == static_cast<CssValueID>(0));
     for(int i = 1; i < kNumCssValueIDs; ++i) {
         const auto id = static_cast<CssValueID>(i);
-        m_identValues[i] = new (&m_heap) CssIdentValue(id);
+        m_identValues[i] = new CssIdentValue(id);
     }
 }
 
@@ -262,18 +260,17 @@ RefPtr<CssIdentValue> CssIdentValue::create(CssValueID value)
     return cssValuePool()->identValue(value);
 }
 
-RefPtr<CssVariableData> CssVariableData::create(Heap* heap, const CssTokenStream& value)
+RefPtr<CssVariableData> CssVariableData::create(const CssTokenStream& value)
 {
-    return adoptPtr(new (heap) CssVariableData(heap, value));
+    return adoptPtr(new CssVariableData(value));
 }
 
-CssVariableData::CssVariableData(Heap* heap, const CssTokenStream& value)
-    : m_tokens(heap)
+CssVariableData::CssVariableData(const CssTokenStream& value)
 {
     m_tokens.assign(value.begin(), value.end());
     for(auto& token : m_tokens) {
         if(!token.m_data.empty()) {
-            token.m_data = heap->createString(token.data());
+            token.m_data = createString(token.data());
         }
     }
 }
@@ -322,9 +319,9 @@ bool CssVariableData::resolveVar(CssTokenStream input, const BoxStyle* style, Cs
     return data->resolve(style, tokens, references);
 }
 
-RefPtr<CssCustomPropertyValue> CssCustomPropertyValue::create(Heap* heap, const GlobalString& name, RefPtr<CssVariableData> value)
+RefPtr<CssCustomPropertyValue> CssCustomPropertyValue::create(const GlobalString& name, RefPtr<CssVariableData> value)
 {
-    return adoptPtr(new (heap) CssCustomPropertyValue(name, std::move(value)));
+    return adoptPtr(new CssCustomPropertyValue(name, std::move(value)));
 }
 
 CssCustomPropertyValue::CssCustomPropertyValue(const GlobalString& name, RefPtr<CssVariableData> value)
@@ -340,9 +337,9 @@ CssParserContext::CssParserContext(const Node* node, CssStyleOrigin origin, Url 
 {
 }
 
-RefPtr<CssVariableReferenceValue> CssVariableReferenceValue::create(Heap* heap, const CssParserContext& context, CssPropertyID id, bool important, RefPtr<CssVariableData> value)
+RefPtr<CssVariableReferenceValue> CssVariableReferenceValue::create(const CssParserContext& context, CssPropertyID id, bool important, RefPtr<CssVariableData> value)
 {
-    return adoptPtr(new (heap) CssVariableReferenceValue(context, id, important, std::move(value)));
+    return adoptPtr(new CssVariableReferenceValue(context, id, important, std::move(value)));
 }
 
 CssPropertyList CssVariableReferenceValue::resolve(const BoxStyle* style) const
@@ -352,7 +349,7 @@ CssPropertyList CssVariableReferenceValue::resolve(const BoxStyle* style) const
     if(!m_value->resolve(style, tokens, references))
         return CssPropertyList();
     CssTokenStream input(tokens.data(), tokens.size());
-    CssParser parser(m_context, style->heap());
+    CssParser parser(m_context);
     return parser.parsePropertyValue(input, m_id, m_important);
 }
 
@@ -361,9 +358,9 @@ CssVariableReferenceValue::CssVariableReferenceValue(const CssParserContext& con
 {
 }
 
-RefPtr<CssImageValue> CssImageValue::create(Heap* heap, Url value)
+RefPtr<CssImageValue> CssImageValue::create(Url value)
 {
-    return adoptPtr(new (heap) CssImageValue(std::move(value)));
+    return adoptPtr(new CssImageValue(std::move(value)));
 }
 
 const RefPtr<Image>& CssImageValue::fetch(Document* document) const
@@ -958,9 +955,9 @@ bool CssPageRuleData::matchSelector(const GlobalString& pageName, uint32_t pageI
     return false;
 }
 
-RefPtr<CssCounterStyle> CssCounterStyle::create(Heap* heap, RefPtr<CssCounterStyleRule> rule)
+RefPtr<CssCounterStyle> CssCounterStyle::create(RefPtr<CssCounterStyleRule> rule)
 {
-    return adoptPtr(new (heap) CssCounterStyle(std::move(rule)));
+    return adoptPtr(new CssCounterStyle(std::move(rule)));
 }
 
 static void cyclicAlgorithm(int value, size_t numSymbols, std::vector<size_t>& indexes)
@@ -1348,9 +1345,9 @@ CssCounterStyle::CssCounterStyle(RefPtr<CssCounterStyleRule> rule)
     }
 }
 
-std::unique_ptr<CssCounterStyleMap> CssCounterStyleMap::create(Heap* heap, const CssRuleList& rules, const CssCounterStyleMap* parent)
+std::unique_ptr<CssCounterStyleMap> CssCounterStyleMap::create(const CssRuleList& rules, const CssCounterStyleMap* parent)
 {
-    return std::unique_ptr<CssCounterStyleMap>(new (heap) CssCounterStyleMap(heap, rules, parent));
+    return std::unique_ptr<CssCounterStyleMap>(new CssCounterStyleMap(rules, parent));
 }
 
 CssCounterStyle* CssCounterStyleMap::findCounterStyle(const GlobalString& name) const
@@ -1363,12 +1360,12 @@ CssCounterStyle* CssCounterStyleMap::findCounterStyle(const GlobalString& name) 
     return m_parent->findCounterStyle(name);
 }
 
-CssCounterStyleMap::CssCounterStyleMap(Heap* heap, const CssRuleList& rules, const CssCounterStyleMap* parent)
+CssCounterStyleMap::CssCounterStyleMap(const CssRuleList& rules, const CssCounterStyleMap* parent)
     : m_parent(parent)
 {
     for(const auto& rule : rules) {
         auto& counterStyleRule = to<CssCounterStyleRule>(*rule);
-        auto counterStyle = CssCounterStyle::create(heap, counterStyleRule);
+        auto counterStyle = CssCounterStyle::create(counterStyleRule);
         m_counterStyles.emplace(counterStyle->name(), std::move(counterStyle));
     }
 
@@ -1418,11 +1415,10 @@ CssCounterStyleMap::CssCounterStyleMap(Heap* heap, const CssRuleList& rules, con
 const CssCounterStyleMap* userAgentCounterStyleMap()
 {
     static std::unique_ptr<CssCounterStyleMap> counterStyleMap = []() {
-        static Heap heap(1024 * 96);
         CssParserContext context(nullptr, CssStyleOrigin::UserAgent, ResourceLoader::baseUrl());
-        CssParser parser(context, &heap);
+        CssParser parser(context);
         CssRuleList rules(parser.parseSheet(kUserAgentCounterStyle));
-        return CssCounterStyleMap::create(&heap, rules, nullptr);
+        return CssCounterStyleMap::create(rules, nullptr);
     }();
 
     return counterStyleMap.get();

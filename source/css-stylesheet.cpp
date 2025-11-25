@@ -10,8 +10,7 @@
 
 namespace plutobook {
 
-CssFontFaceCache::CssFontFaceCache(Heap* heap)
-    : m_table(heap)
+CssFontFaceCache::CssFontFaceCache()
 {
 }
 
@@ -669,9 +668,8 @@ RefPtr<BoxStyle> PageStyleBuilder::build()
 static const CssRuleList& userAgentRules()
 {
     static CssRuleList rules = []() {
-        static Heap heap(1024 * 96);
         CssParserContext context(nullptr, CssStyleOrigin::UserAgent, ResourceLoader::baseUrl());
-        CssParser parser(context, &heap);
+        CssParser parser(context);
         return parser.parseSheet(kUserAgentStyle);
     }();
 
@@ -680,15 +678,6 @@ static const CssRuleList& userAgentRules()
 
 CssStyleSheet::CssStyleSheet(Document* document)
     : m_document(document)
-    , m_idRules(document->heap())
-    , m_classRules(document->heap())
-    , m_tagRules(document->heap())
-    , m_attributeRules(document->heap())
-    , m_pseudoRules(document->heap())
-    , m_universalRules(document->heap())
-    , m_pageRules(document->heap())
-    , m_counterStyleRules(document->heap())
-    , m_fontFaceCache(document->heap())
 {
     if(document->book()) {
         addRuleList(userAgentRules());
@@ -739,7 +728,7 @@ const CssCounterStyle& CssStyleSheet::getCounterStyle(const GlobalString& name)
     auto counterStyleMap = userAgentCounterStyleMap();
     if(!m_counterStyleRules.empty()) {
         if(m_counterStyleMap == nullptr)
-            m_counterStyleMap = CssCounterStyleMap::create(m_document->heap(), m_counterStyleRules, counterStyleMap);
+            m_counterStyleMap = CssCounterStyleMap::create(m_counterStyleRules, counterStyleMap);
         counterStyleMap = m_counterStyleMap.get();
     }
 
@@ -765,7 +754,7 @@ std::string CssStyleSheet::getMarkerText(int value, const GlobalString& listType
 void CssStyleSheet::parseStyle(const std::string_view& content, CssStyleOrigin origin, Url baseUrl)
 {
     CssParserContext context(m_document, origin, std::move(baseUrl));
-    CssParser parser(context, m_document->heap());
+    CssParser parser(context);
     addRuleList(parser.parseSheet(content));
 }
 

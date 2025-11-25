@@ -74,7 +74,7 @@ RefPtr<FontResource> FontResource::create(Document* document, const Url& url)
         return nullptr;
     }
 
-    return adoptPtr(new (document->heap()) FontResource(face, FcFreeTypeCharSet(fontData->face(), nullptr)));
+    return adoptPtr(new FontResource(face, FcFreeTypeCharSet(fontData->face(), nullptr)));
 }
 
 bool FontResource::supportsFormat(const std::string_view& format)
@@ -736,12 +736,7 @@ FontDataCache* fontDataCache()
 
 RefPtr<Font> Font::create(Document* document, const FontDescription& description)
 {
-    return adoptPtr(new (document->heap()) Font(document, description));
-}
-
-Heap* Font::heap() const
-{
-    return m_document->heap();
+    return adoptPtr(new Font(document, description));
 }
 
 const SimpleFontData* Font::getFontData(uint32_t codepoint, bool preferColor)

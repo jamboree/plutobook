@@ -296,7 +296,7 @@ namespace plutobook {
         UnaryFunction
     };
 
-    class CssValue : public HeapMember, public RefCounted<CssValue> {
+    class CssValue : public RefCounted<CssValue> {
     public:
         using ClassRoot = CssValue;
         using ClassKind = CssValueType;
@@ -310,7 +310,7 @@ namespace plutobook {
         ClassKind m_type;
     };
 
-    using CssValueList = std::pmr::vector<RefPtr<CssValue>>;
+    using CssValueList = std::vector<RefPtr<CssValue>>;
 
     enum class CssPropertyID : uint16_t {
         Unknown,
@@ -556,7 +556,7 @@ namespace plutobook {
         RefPtr<CssValue> m_value;
     };
 
-    using CssPropertyList = std::pmr::vector<CssProperty>;
+    using CssPropertyList = std::vector<CssProperty>;
 
     class CssInitialValue final : public CssValue {
     public:
@@ -615,8 +615,7 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::CustomIdent;
 
-        static RefPtr<CssCustomIdentValue> create(Heap* heap,
-                                                  const GlobalString& value);
+        static RefPtr<CssCustomIdentValue> create(const GlobalString& value);
 
         const GlobalString& value() const { return m_value; }
 
@@ -627,24 +626,22 @@ namespace plutobook {
     };
 
     inline RefPtr<CssCustomIdentValue>
-    CssCustomIdentValue::create(Heap* heap, const GlobalString& value) {
-        return adoptPtr(new (heap) CssCustomIdentValue(value));
+    CssCustomIdentValue::create(const GlobalString& value) {
+        return adoptPtr(new CssCustomIdentValue(value));
     }
 
     class BoxStyle;
 
-    class CssVariableData : public HeapMember,
-                            public RefCounted<CssVariableData> {
+    class CssVariableData : public RefCounted<CssVariableData> {
     public:
-        static RefPtr<CssVariableData> create(Heap* heap,
-                                              const CssTokenStream& value);
+        static RefPtr<CssVariableData> create(const CssTokenStream& value);
 
         bool
         resolve(const BoxStyle* style, CssTokenList& tokens,
                 boost::unordered_flat_set<CssVariableData*>& references) const;
 
     private:
-        CssVariableData(Heap* heap, const CssTokenStream& value);
+        CssVariableData(const CssTokenStream& value);
         bool
         resolve(CssTokenStream input, const BoxStyle* style,
                 CssTokenList& tokens,
@@ -652,7 +649,7 @@ namespace plutobook {
         bool resolveVar(
             CssTokenStream input, const BoxStyle* style, CssTokenList& tokens,
             boost::unordered_flat_set<CssVariableData*>& references) const;
-        std::pmr::vector<CssToken> m_tokens;
+        std::vector<CssToken> m_tokens;
     };
 
     class CssCustomPropertyValue final : public CssValue {
@@ -660,8 +657,7 @@ namespace plutobook {
         static constexpr ClassKind classKind = ClassKind::CustomProperty;
 
         static RefPtr<CssCustomPropertyValue>
-        create(Heap* heap, const GlobalString& name,
-               RefPtr<CssVariableData> value);
+        create(const GlobalString& name, RefPtr<CssVariableData> value);
 
         const GlobalString& name() const { return m_name; }
         const RefPtr<CssVariableData>& value() const { return m_value; }
@@ -701,7 +697,7 @@ namespace plutobook {
         static constexpr ClassKind classKind = ClassKind::VariableReference;
 
         static RefPtr<CssVariableReferenceValue>
-        create(Heap* heap, const CssParserContext& context, CssPropertyID id,
+        create(const CssParserContext& context, CssPropertyID id,
                bool important, RefPtr<CssVariableData> value);
 
         const CssParserContext& context() const { return m_context; }
@@ -725,7 +721,7 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::Integer;
 
-        static RefPtr<CssIntegerValue> create(Heap* heap, int value);
+        static RefPtr<CssIntegerValue> create(int value);
 
         int value() const { return m_value; }
 
@@ -734,16 +730,15 @@ namespace plutobook {
         int m_value;
     };
 
-    inline RefPtr<CssIntegerValue> CssIntegerValue::create(Heap* heap,
-                                                           int value) {
-        return adoptPtr(new (heap) CssIntegerValue(value));
+    inline RefPtr<CssIntegerValue> CssIntegerValue::create(int value) {
+        return adoptPtr(new CssIntegerValue(value));
     }
 
     class CssNumberValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Number;
 
-        static RefPtr<CssNumberValue> create(Heap* heap, float value);
+        static RefPtr<CssNumberValue> create(float value);
 
         float value() const { return m_value; }
 
@@ -752,16 +747,15 @@ namespace plutobook {
         float m_value;
     };
 
-    inline RefPtr<CssNumberValue> CssNumberValue::create(Heap* heap,
-                                                         float value) {
-        return adoptPtr(new (heap) CssNumberValue(value));
+    inline RefPtr<CssNumberValue> CssNumberValue::create(float value) {
+        return adoptPtr(new CssNumberValue(value));
     }
 
     class CssPercentValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Percent;
 
-        static RefPtr<CssPercentValue> create(Heap* heap, float value);
+        static RefPtr<CssPercentValue> create(float value);
 
         float value() const { return m_value; }
 
@@ -770,9 +764,8 @@ namespace plutobook {
         float m_value;
     };
 
-    inline RefPtr<CssPercentValue> CssPercentValue::create(Heap* heap,
-                                                           float value) {
-        return adoptPtr(new (heap) CssPercentValue(value));
+    inline RefPtr<CssPercentValue> CssPercentValue::create(float value) {
+        return adoptPtr(new CssPercentValue(value));
     }
 
     class CssAngleValue final : public CssValue {
@@ -781,7 +774,7 @@ namespace plutobook {
 
         enum class Unit { Degrees, Radians, Gradians, Turns };
 
-        static RefPtr<CssAngleValue> create(Heap* heap, float value, Unit unit);
+        static RefPtr<CssAngleValue> create(float value, Unit unit);
 
         float value() const { return m_value; }
         Unit unit() const { return m_unit; }
@@ -809,9 +802,8 @@ namespace plutobook {
         return 0.0;
     }
 
-    inline RefPtr<CssAngleValue> CssAngleValue::create(Heap* heap, float value,
-                                                       Unit unit) {
-        return adoptPtr(new (heap) CssAngleValue(value, unit));
+    inline RefPtr<CssAngleValue> CssAngleValue::create(float value, Unit unit) {
+        return adoptPtr(new CssAngleValue(value, unit));
     }
 
     enum class CssLengthUnits : uint8_t {
@@ -837,8 +829,7 @@ namespace plutobook {
         static constexpr ClassKind classKind = ClassKind::Length;
 
         static RefPtr<CssLengthValue>
-        create(Heap* heap, float value,
-               CssLengthUnits units = CssLengthUnits::Pixels);
+        create(float value, CssLengthUnits units = CssLengthUnits::Pixels);
 
         float value() const { return m_value; }
         CssLengthUnits units() const { return m_units; }
@@ -851,9 +842,9 @@ namespace plutobook {
         CssLengthUnits m_units;
     };
 
-    inline RefPtr<CssLengthValue>
-    CssLengthValue::create(Heap* heap, float value, CssLengthUnits units) {
-        return adoptPtr(new (heap) CssLengthValue(value, units));
+    inline RefPtr<CssLengthValue> CssLengthValue::create(float value,
+                                                         CssLengthUnits units) {
+        return adoptPtr(new CssLengthValue(value, units));
     }
 
     class Font;
@@ -895,14 +886,14 @@ namespace plutobook {
         CssCalcOperator op = CssCalcOperator::None;
     };
 
-    using CssCalcList = std::pmr::vector<CssCalc>;
+    using CssCalcList = std::vector<CssCalc>;
 
     class CssCalcValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Calc;
 
-        static RefPtr<CssCalcValue> create(Heap* heap, bool negative,
-                                           bool unitless, CssCalcList values);
+        static RefPtr<CssCalcValue> create(bool negative, bool unitless,
+                                           CssCalcList values);
 
         const bool negative() const { return m_negative; }
         const bool unitless() const { return m_unitless; }
@@ -920,18 +911,17 @@ namespace plutobook {
         CssCalcList m_values;
     };
 
-    inline RefPtr<CssCalcValue> CssCalcValue::create(Heap* heap, bool negative,
-                                                     bool unitless,
-                                                     CssCalcList values) {
+    inline RefPtr<CssCalcValue>
+    CssCalcValue::create(bool negative, bool unitless, CssCalcList values) {
         return adoptPtr(
-            new (heap) CssCalcValue(negative, unitless, std::move(values)));
+            new CssCalcValue(negative, unitless, std::move(values)));
     }
 
     class CssAttrValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Attr;
 
-        static RefPtr<CssAttrValue> create(Heap* heap, const GlobalString& name,
+        static RefPtr<CssAttrValue> create(const GlobalString& name,
                                            const HeapString& fallback);
 
         const GlobalString& name() const { return m_name; }
@@ -946,17 +936,15 @@ namespace plutobook {
     };
 
     inline RefPtr<CssAttrValue>
-    CssAttrValue::create(Heap* heap, const GlobalString& name,
-                         const HeapString& fallback) {
-        return adoptPtr(new (heap) CssAttrValue(name, fallback));
+    CssAttrValue::create(const GlobalString& name, const HeapString& fallback) {
+        return adoptPtr(new CssAttrValue(name, fallback));
     }
 
     class CssStringValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::String;
 
-        static RefPtr<CssStringValue> create(Heap* heap,
-                                             const HeapString& value);
+        static RefPtr<CssStringValue> create(const HeapString& value);
 
         const HeapString& value() const { return m_value; }
 
@@ -967,16 +955,15 @@ namespace plutobook {
     };
 
     inline RefPtr<CssStringValue>
-    CssStringValue::create(Heap* heap, const HeapString& value) {
-        return adoptPtr(new (heap) CssStringValue(value));
+    CssStringValue::create(const HeapString& value) {
+        return adoptPtr(new CssStringValue(value));
     }
 
     class CssLocalUrlValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::LocalUrl;
 
-        static RefPtr<CssLocalUrlValue> create(Heap* heap,
-                                               const HeapString& value);
+        static RefPtr<CssLocalUrlValue> create(const HeapString& value);
 
         const HeapString& value() const { return m_value; }
 
@@ -987,15 +974,15 @@ namespace plutobook {
     };
 
     inline RefPtr<CssLocalUrlValue>
-    CssLocalUrlValue::create(Heap* heap, const HeapString& value) {
-        return adoptPtr(new (heap) CssLocalUrlValue(value));
+    CssLocalUrlValue::create(const HeapString& value) {
+        return adoptPtr(new CssLocalUrlValue(value));
     }
 
     class CssUrlValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Url;
 
-        static RefPtr<CssUrlValue> create(Heap* heap, Url value);
+        static RefPtr<CssUrlValue> create(Url value);
 
         const Url& value() const { return m_value; }
 
@@ -1005,8 +992,8 @@ namespace plutobook {
         Url m_value;
     };
 
-    inline RefPtr<CssUrlValue> CssUrlValue::create(Heap* heap, Url value) {
-        return adoptPtr(new (heap) CssUrlValue(std::move(value)));
+    inline RefPtr<CssUrlValue> CssUrlValue::create(Url value) {
+        return adoptPtr(new CssUrlValue(std::move(value)));
     }
 
     class Image;
@@ -1015,7 +1002,7 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::Image;
 
-        static RefPtr<CssImageValue> create(Heap* heap, Url value);
+        static RefPtr<CssImageValue> create(Url value);
 
         const Url& value() const { return m_value; }
         const RefPtr<Image>& image() const { return m_image; }
@@ -1031,7 +1018,7 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::Color;
 
-        static RefPtr<CssColorValue> create(Heap* heap, const Color& value);
+        static RefPtr<CssColorValue> create(const Color& value);
 
         const Color& value() const { return m_value; }
 
@@ -1040,17 +1027,15 @@ namespace plutobook {
         Color m_value;
     };
 
-    inline RefPtr<CssColorValue> CssColorValue::create(Heap* heap,
-                                                       const Color& value) {
-        return adoptPtr(new (heap) CssColorValue(value));
+    inline RefPtr<CssColorValue> CssColorValue::create(const Color& value) {
+        return adoptPtr(new CssColorValue(value));
     }
 
     class CssCounterValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Counter;
 
-        static RefPtr<CssCounterValue> create(Heap* heap,
-                                              const GlobalString& identifier,
+        static RefPtr<CssCounterValue> create(const GlobalString& identifier,
                                               const GlobalString& listStyle,
                                               const HeapString& separator);
 
@@ -1071,19 +1056,18 @@ namespace plutobook {
     };
 
     inline RefPtr<CssCounterValue>
-    CssCounterValue::create(Heap* heap, const GlobalString& identifier,
+    CssCounterValue::create(const GlobalString& identifier,
                             const GlobalString& listStyle,
                             const HeapString& separator) {
-        return adoptPtr(new (heap)
-                            CssCounterValue(identifier, listStyle, separator));
+        return adoptPtr(new CssCounterValue(identifier, listStyle, separator));
     }
 
     class CssFontFeatureValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::FontFeature;
 
-        static RefPtr<CssFontFeatureValue>
-        create(Heap* heap, const GlobalString& tag, int value);
+        static RefPtr<CssFontFeatureValue> create(const GlobalString& tag,
+                                                  int value);
 
         const GlobalString& tag() const { return m_tag; }
         int value() const { return m_value; }
@@ -1097,17 +1081,16 @@ namespace plutobook {
     };
 
     inline RefPtr<CssFontFeatureValue>
-    CssFontFeatureValue::create(Heap* heap, const GlobalString& tag,
-                                int value) {
-        return adoptPtr(new (heap) CssFontFeatureValue(tag, value));
+    CssFontFeatureValue::create(const GlobalString& tag, int value) {
+        return adoptPtr(new CssFontFeatureValue(tag, value));
     }
 
     class CssFontVariationValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::FontVariation;
 
-        static RefPtr<CssFontVariationValue>
-        create(Heap* heap, const GlobalString& tag, float value);
+        static RefPtr<CssFontVariationValue> create(const GlobalString& tag,
+                                                    float value);
 
         const GlobalString& tag() const { return m_tag; }
         float value() const { return m_value; }
@@ -1121,17 +1104,15 @@ namespace plutobook {
     };
 
     inline RefPtr<CssFontVariationValue>
-    CssFontVariationValue::create(Heap* heap, const GlobalString& tag,
-                                  float value) {
-        return adoptPtr(new (heap) CssFontVariationValue(tag, value));
+    CssFontVariationValue::create(const GlobalString& tag, float value) {
+        return adoptPtr(new CssFontVariationValue(tag, value));
     }
 
     class CssUnicodeRangeValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::UnicodeRange;
 
-        static RefPtr<CssUnicodeRangeValue> create(Heap* heap, uint32_t from,
-                                                   uint32_t to);
+        static RefPtr<CssUnicodeRangeValue> create(uint32_t from, uint32_t to);
 
         uint32_t from() const { return m_from; }
         uint32_t to() const { return m_to; }
@@ -1145,15 +1126,15 @@ namespace plutobook {
     };
 
     inline RefPtr<CssUnicodeRangeValue>
-    CssUnicodeRangeValue::create(Heap* heap, uint32_t from, uint32_t to) {
-        return adoptPtr(new (heap) CssUnicodeRangeValue(from, to));
+    CssUnicodeRangeValue::create(uint32_t from, uint32_t to) {
+        return adoptPtr(new CssUnicodeRangeValue(from, to));
     }
 
     class CssPairValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Pair;
 
-        static RefPtr<CssPairValue> create(Heap* heap, RefPtr<CssValue> first,
+        static RefPtr<CssPairValue> create(RefPtr<CssValue> first,
                                            RefPtr<CssValue> second);
 
         const RefPtr<CssValue>& first() const { return m_first; }
@@ -1168,18 +1149,16 @@ namespace plutobook {
         RefPtr<CssValue> m_second;
     };
 
-    inline RefPtr<CssPairValue> CssPairValue::create(Heap* heap,
-                                                     RefPtr<CssValue> first,
+    inline RefPtr<CssPairValue> CssPairValue::create(RefPtr<CssValue> first,
                                                      RefPtr<CssValue> second) {
-        return adoptPtr(new (heap)
-                            CssPairValue(std::move(first), std::move(second)));
+        return adoptPtr(new CssPairValue(std::move(first), std::move(second)));
     }
 
     class CssRectValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Rect;
 
-        static RefPtr<CssRectValue> create(Heap* heap, RefPtr<CssValue> top,
+        static RefPtr<CssRectValue> create(RefPtr<CssValue> top,
                                            RefPtr<CssValue> right,
                                            RefPtr<CssValue> bottom,
                                            RefPtr<CssValue> left);
@@ -1202,13 +1181,11 @@ namespace plutobook {
         RefPtr<CssValue> m_left;
     };
 
-    inline RefPtr<CssRectValue> CssRectValue::create(Heap* heap,
-                                                     RefPtr<CssValue> top,
+    inline RefPtr<CssRectValue> CssRectValue::create(RefPtr<CssValue> top,
                                                      RefPtr<CssValue> right,
                                                      RefPtr<CssValue> bottom,
                                                      RefPtr<CssValue> left) {
-        return adoptPtr(new (heap)
-                            CssRectValue(std::move(top), std::move(right),
+        return adoptPtr(new CssRectValue(std::move(top), std::move(right),
                                          std::move(bottom), std::move(left)));
     }
 
@@ -1237,7 +1214,7 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::List;
 
-        static RefPtr<CssListValue> create(Heap* heap, CssValueList values);
+        static RefPtr<CssListValue> create(CssValueList values);
 
     protected:
         CssListValue(CssValueList values)
@@ -1245,9 +1222,8 @@ namespace plutobook {
         CssValueList m_values;
     };
 
-    inline RefPtr<CssListValue> CssListValue::create(Heap* heap,
-                                                     CssValueList values) {
-        return adoptPtr(new (heap) CssListValue(std::move(values)));
+    inline RefPtr<CssListValue> CssListValue::create(CssValueList values) {
+        return adoptPtr(new CssListValue(std::move(values)));
     }
 
     enum class CssFunctionID {
@@ -1276,7 +1252,7 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::Function;
 
-        static RefPtr<CssFunctionValue> create(Heap* heap, CssFunctionID id,
+        static RefPtr<CssFunctionValue> create(CssFunctionID id,
                                                CssValueList values);
 
         CssFunctionID id() const { return m_id; }
@@ -1289,17 +1265,16 @@ namespace plutobook {
     };
 
     inline RefPtr<CssFunctionValue>
-    CssFunctionValue::create(Heap* heap, CssFunctionID id,
-                             CssValueList values) {
-        return adoptPtr(new (heap) CssFunctionValue(id, std::move(values)));
+    CssFunctionValue::create(CssFunctionID id, CssValueList values) {
+        return adoptPtr(new CssFunctionValue(id, std::move(values)));
     }
 
     class CssUnaryFunctionValue final : public CssValue {
     public:
         static constexpr ClassKind classKind = ClassKind::UnaryFunction;
 
-        static RefPtr<CssUnaryFunctionValue>
-        create(Heap* heap, CssFunctionID id, RefPtr<CssValue> value);
+        static RefPtr<CssUnaryFunctionValue> create(CssFunctionID id,
+                                                    RefPtr<CssValue> value);
 
         CssFunctionID id() const { return m_id; }
         const RefPtr<CssValue>& value() const { return m_value; }
@@ -1313,19 +1288,18 @@ namespace plutobook {
     };
 
     inline RefPtr<CssUnaryFunctionValue>
-    CssUnaryFunctionValue::create(Heap* heap, CssFunctionID id,
-                                  RefPtr<CssValue> value) {
-        return adoptPtr(new (heap) CssUnaryFunctionValue(id, std::move(value)));
+    CssUnaryFunctionValue::create(CssFunctionID id, RefPtr<CssValue> value) {
+        return adoptPtr(new CssUnaryFunctionValue(id, std::move(value)));
     }
 
     class CssSimpleSelector;
     class CssComplexSelector;
 
-    using CssCompoundSelector = std::pmr::forward_list<CssSimpleSelector>;
-    using CssSelector = std::pmr::forward_list<CssComplexSelector>;
+    using CssCompoundSelector = std::forward_list<CssSimpleSelector>;
+    using CssSelector = std::forward_list<CssComplexSelector>;
 
-    using CssCompoundSelectorList = std::pmr::forward_list<CssCompoundSelector>;
-    using CssSelectorList = std::pmr::forward_list<CssSelector>;
+    using CssCompoundSelectorList = std::forward_list<CssCompoundSelector>;
+    using CssSelectorList = std::forward_list<CssSelector>;
 
     using CssPageSelector = CssCompoundSelector;
     using CssPageSelectorList = CssCompoundSelectorList;
@@ -1473,7 +1447,7 @@ namespace plutobook {
         PageMargin
     };
 
-    class CssRule : public HeapMember, public RefCounted<CssRule> {
+    class CssRule : public RefCounted<CssRule> {
     public:
         using ClassRoot = CssRule;
         using ClassKind = CssRuleType;
@@ -1486,14 +1460,13 @@ namespace plutobook {
         ClassKind m_type;
     };
 
-    using CssRuleList = std::pmr::vector<RefPtr<CssRule>>;
+    using CssRuleList = std::vector<RefPtr<CssRule>>;
 
     class CssStyleRule final : public CssRule {
     public:
         static constexpr ClassKind classKind = ClassKind::Style;
 
-        static RefPtr<CssStyleRule> create(Heap* heap,
-                                           CssSelectorList selectors,
+        static RefPtr<CssStyleRule> create(CssSelectorList selectors,
                                            CssPropertyList properties);
 
         const CssSelectorList& selectors() const { return m_selectors; }
@@ -1509,10 +1482,10 @@ namespace plutobook {
     };
 
     inline RefPtr<CssStyleRule>
-    CssStyleRule::create(Heap* heap, CssSelectorList selectors,
+    CssStyleRule::create(CssSelectorList selectors,
                          CssPropertyList properties) {
-        return adoptPtr(new (heap) CssStyleRule(std::move(selectors),
-                                                std::move(properties)));
+        return adoptPtr(
+            new CssStyleRule(std::move(selectors), std::move(properties)));
     }
 
     class CssMediaFeature {
@@ -1528,7 +1501,7 @@ namespace plutobook {
         RefPtr<CssValue> m_value;
     };
 
-    using CssMediaFeatureList = std::pmr::forward_list<CssMediaFeature>;
+    using CssMediaFeatureList = std::forward_list<CssMediaFeature>;
 
     class CssMediaQuery {
     public:
@@ -1551,14 +1524,14 @@ namespace plutobook {
         CssMediaFeatureList m_features;
     };
 
-    using CssMediaQueryList = std::pmr::forward_list<CssMediaQuery>;
+    using CssMediaQueryList = std::forward_list<CssMediaQuery>;
 
     class CssMediaRule final : public CssRule {
     public:
         static constexpr ClassKind classKind = ClassKind::Media;
 
-        static RefPtr<CssMediaRule>
-        create(Heap* heap, CssMediaQueryList queries, CssRuleList rules);
+        static RefPtr<CssMediaRule> create(CssMediaQueryList queries,
+                                           CssRuleList rules);
 
         const CssMediaQueryList& queries() const { return m_queries; }
         const CssRuleList& rules() const { return m_rules; }
@@ -1572,19 +1545,16 @@ namespace plutobook {
         CssRuleList m_rules;
     };
 
-    inline RefPtr<CssMediaRule> CssMediaRule::create(Heap* heap,
-                                                     CssMediaQueryList queries,
+    inline RefPtr<CssMediaRule> CssMediaRule::create(CssMediaQueryList queries,
                                                      CssRuleList rules) {
-        return adoptPtr(new (heap)
-                            CssMediaRule(std::move(queries), std::move(rules)));
+        return adoptPtr(new CssMediaRule(std::move(queries), std::move(rules)));
     }
 
     class CssImportRule final : public CssRule {
     public:
         static constexpr ClassKind classKind = ClassKind::Import;
 
-        static RefPtr<CssImportRule> create(Heap* heap, CssStyleOrigin origin,
-                                            Url href,
+        static RefPtr<CssImportRule> create(CssStyleOrigin origin, Url href,
                                             CssMediaQueryList queries);
 
         CssStyleOrigin origin() const { return m_origin; }
@@ -1603,18 +1573,18 @@ namespace plutobook {
     };
 
     inline RefPtr<CssImportRule>
-    CssImportRule::create(Heap* heap, CssStyleOrigin origin, Url href,
+    CssImportRule::create(CssStyleOrigin origin, Url href,
                           CssMediaQueryList queries) {
-        return adoptPtr(new (heap) CssImportRule(origin, std::move(href),
-                                                 std::move(queries)));
+        return adoptPtr(
+            new CssImportRule(origin, std::move(href), std::move(queries)));
     }
 
     class CssNamespaceRule final : public CssRule {
     public:
         static constexpr ClassKind classKind = ClassKind::Namespace;
 
-        static RefPtr<CssNamespaceRule>
-        create(Heap* heap, const GlobalString& prefix, const GlobalString& uri);
+        static RefPtr<CssNamespaceRule> create(const GlobalString& prefix,
+                                               const GlobalString& uri);
 
         const GlobalString& prefix() const { return m_prefix; }
         const GlobalString& uri() const { return m_uri; }
@@ -1628,17 +1598,16 @@ namespace plutobook {
     };
 
     inline RefPtr<CssNamespaceRule>
-    CssNamespaceRule::create(Heap* heap, const GlobalString& prefix,
+    CssNamespaceRule::create(const GlobalString& prefix,
                              const GlobalString& uri) {
-        return adoptPtr(new (heap) CssNamespaceRule(prefix, uri));
+        return adoptPtr(new CssNamespaceRule(prefix, uri));
     }
 
     class CssFontFaceRule final : public CssRule {
     public:
         static constexpr ClassKind classKind = ClassKind::FontFace;
 
-        static RefPtr<CssFontFaceRule> create(Heap* heap,
-                                              CssPropertyList properties);
+        static RefPtr<CssFontFaceRule> create(CssPropertyList properties);
 
         const CssPropertyList& properties() const { return m_properties; }
 
@@ -1650,16 +1619,15 @@ namespace plutobook {
     };
 
     inline RefPtr<CssFontFaceRule>
-    CssFontFaceRule::create(Heap* heap, CssPropertyList properties) {
-        return adoptPtr(new (heap) CssFontFaceRule(std::move(properties)));
+    CssFontFaceRule::create(CssPropertyList properties) {
+        return adoptPtr(new CssFontFaceRule(std::move(properties)));
     }
 
     class CssCounterStyleRule final : public CssRule {
     public:
         static constexpr ClassKind classKind = ClassKind::CounterStyle;
 
-        static RefPtr<CssCounterStyleRule> create(Heap* heap,
-                                                  const GlobalString& name,
+        static RefPtr<CssCounterStyleRule> create(const GlobalString& name,
                                                   CssPropertyList properties);
 
         const GlobalString& name() const { return m_name; }
@@ -1676,10 +1644,9 @@ namespace plutobook {
     };
 
     inline RefPtr<CssCounterStyleRule>
-    CssCounterStyleRule::create(Heap* heap, const GlobalString& name,
+    CssCounterStyleRule::create(const GlobalString& name,
                                 CssPropertyList properties) {
-        return adoptPtr(new (heap)
-                            CssCounterStyleRule(name, std::move(properties)));
+        return adoptPtr(new CssCounterStyleRule(name, std::move(properties)));
     }
 
     enum class PageMarginType : uint8_t {
@@ -1706,8 +1673,7 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::PageMargin;
 
-        static RefPtr<CssPageMarginRule> create(Heap* heap,
-                                                PageMarginType marginType,
+        static RefPtr<CssPageMarginRule> create(PageMarginType marginType,
                                                 CssPropertyList properties);
 
         PageMarginType marginType() const { return m_marginType; }
@@ -1723,20 +1689,19 @@ namespace plutobook {
     };
 
     inline RefPtr<CssPageMarginRule>
-    CssPageMarginRule::create(Heap* heap, PageMarginType marginType,
+    CssPageMarginRule::create(PageMarginType marginType,
                               CssPropertyList properties) {
         return adoptPtr(
-            new (heap) CssPageMarginRule(marginType, std::move(properties)));
+            new CssPageMarginRule(marginType, std::move(properties)));
     }
 
-    using CssPageMarginRuleList = std::pmr::vector<RefPtr<CssPageMarginRule>>;
+    using CssPageMarginRuleList = std::vector<RefPtr<CssPageMarginRule>>;
 
     class CssPageRule final : public CssRule {
     public:
         static constexpr ClassKind classKind = ClassKind::Page;
 
-        static RefPtr<CssPageRule> create(Heap* heap,
-                                          CssPageSelectorList selectors,
+        static RefPtr<CssPageRule> create(CssPageSelectorList selectors,
                                           CssPageMarginRuleList margins,
                                           CssPropertyList properties);
 
@@ -1757,10 +1722,10 @@ namespace plutobook {
     };
 
     inline RefPtr<CssPageRule>
-    CssPageRule::create(Heap* heap, CssPageSelectorList selectors,
+    CssPageRule::create(CssPageSelectorList selectors,
                         CssPageMarginRuleList margins,
                         CssPropertyList properties) {
-        return adoptPtr(new (heap) CssPageRule(
+        return adoptPtr(new CssPageRule(
             std::move(selectors), std::move(margins), std::move(properties)));
     }
 
@@ -1931,11 +1896,9 @@ namespace plutobook {
         uint32_t m_position;
     };
 
-    class CssCounterStyle : public HeapMember,
-                            public RefCounted<CssCounterStyle> {
+    class CssCounterStyle : public RefCounted<CssCounterStyle> {
     public:
-        static RefPtr<CssCounterStyle> create(Heap* heap,
-                                              RefPtr<CssCounterStyleRule> rule);
+        static RefPtr<CssCounterStyle> create(RefPtr<CssCounterStyleRule> rule);
 
         std::string generateInitialRepresentation(int value) const;
         std::string generateFallbackRepresentation(int value) const;
@@ -1979,16 +1942,15 @@ namespace plutobook {
         mutable RefPtr<CssCounterStyle> m_fallbackStyle;
     };
 
-    class CssCounterStyleMap : public HeapMember {
+    class CssCounterStyleMap {
     public:
         static std::unique_ptr<CssCounterStyleMap>
-        create(Heap* heap, const CssRuleList& rules,
-               const CssCounterStyleMap* parent);
+        create(const CssRuleList& rules, const CssCounterStyleMap* parent);
 
         CssCounterStyle* findCounterStyle(const GlobalString& name) const;
 
     private:
-        CssCounterStyleMap(Heap* heap, const CssRuleList& rules,
+        CssCounterStyleMap(const CssRuleList& rules,
                            const CssCounterStyleMap* parent);
         const CssCounterStyleMap* m_parent;
         boost::unordered_flat_map<GlobalString, RefPtr<CssCounterStyle>>

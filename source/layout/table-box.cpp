@@ -9,9 +9,6 @@ namespace plutobook {
 
 TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(classKind, node, style)
-    , m_columns(style->heap())
-    , m_captions(style->heap())
-    , m_sections(style->heap())
     , m_borderHorizontalSpacing(0.f)
     , m_borderVerticalSpacing(0.f)
 {
@@ -517,7 +514,7 @@ std::unique_ptr<TableLayoutAlgorithm> TableLayoutAlgorithm::create(TableBox* tab
 
 std::unique_ptr<FixedTableLayoutAlgorithm> FixedTableLayoutAlgorithm::create(TableBox* table)
 {
-    return std::unique_ptr<FixedTableLayoutAlgorithm>(new (table->heap()) FixedTableLayoutAlgorithm(table));
+    return std::unique_ptr<FixedTableLayoutAlgorithm>(new FixedTableLayoutAlgorithm(table));
 }
 
 void FixedTableLayoutAlgorithm::computeIntrinsicWidths(float& minWidth, float& maxWidth)
@@ -644,13 +641,12 @@ void FixedTableLayoutAlgorithm::layout()
 
 FixedTableLayoutAlgorithm::FixedTableLayoutAlgorithm(TableBox* table)
     : TableLayoutAlgorithm(table)
-    , m_widths(table->heap())
 {
 }
 
 std::unique_ptr<AutoTableLayoutAlgorithm> AutoTableLayoutAlgorithm::create(TableBox* table)
 {
-    return std::unique_ptr<AutoTableLayoutAlgorithm>(new (table->heap()) AutoTableLayoutAlgorithm(table));
+    return std::unique_ptr<AutoTableLayoutAlgorithm>(new AutoTableLayoutAlgorithm(table));
 }
 
 static std::vector<float> distributeWidthToColumns(float availableWidth, std::span<TableColumnWidth> columns, bool constrained)
@@ -981,15 +977,11 @@ void AutoTableLayoutAlgorithm::layout()
 
 AutoTableLayoutAlgorithm::AutoTableLayoutAlgorithm(TableBox* table)
     : TableLayoutAlgorithm(table)
-    , m_columnWidths(table->heap())
-    , m_spanningCells(table->heap())
 {
 }
 
 TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
     : BoxFrame(classKind, node, style)
-    , m_rows(style->heap())
-    , m_spanningCells(style->heap())
 {
 }
 
@@ -1411,7 +1403,7 @@ bool TableCollapsedBorderEdge::isLessThan(const TableCollapsedBorderEdge& edge) 
 
 std::unique_ptr<TableCollapsedBorderEdges> TableCollapsedBorderEdges::create(const TableCellBox* cellBox)
 {
-    return std::unique_ptr<TableCollapsedBorderEdges>(new (cellBox->heap()) TableCollapsedBorderEdges(cellBox));
+    return std::unique_ptr<TableCollapsedBorderEdges>(new TableCollapsedBorderEdges(cellBox));
 }
 
 TableCollapsedBorderEdge TableCollapsedBorderEdges::chooseEdge(const TableCollapsedBorderEdge& a, const TableCollapsedBorderEdge& b)

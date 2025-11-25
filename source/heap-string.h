@@ -1,9 +1,8 @@
 #pragma once
 
-#include <string_view>
-#include <memory_resource>
+#include <atomic>
 #include <ostream>
-#include <cstring>
+#include <string_view>
 #include <boost/container_hash/hash.hpp>
 
 namespace plutobook {
@@ -15,69 +14,97 @@ namespace plutobook {
         using is_transparent = void;
     };
 
+    class HeapString;
+
+    HeapString createString(const std::string_view& value);
+
+    HeapString concatenateString(const std::string_view& a,
+                                 const std::string_view& b);
+
     class HeapString : public std::string_view {
     public:
         HeapString() = default;
 
+        HeapString(const HeapString& other) noexcept
+            : std::string_view(other), m_head(other.m_head) {
+            if (m_head)
+                m_head->acquire();
+        }
+
+        HeapString(HeapString&& other) noexcept
+            : std::string_view(other), m_head(other.m_head) {
+            static_cast<std::string_view&>(other) = {};
+            other.m_head = nullptr;
+        }
+
+        ~HeapString() {
+            if (m_head)
+                m_head->release();
+        }
+
+        HeapString& operator=(HeapString other) noexcept {
+            this->~HeapString();
+            return *new (this) HeapString(std::move(other));
+        }
+
         const char* begin() const { return data(); }
+
         const char* end() const { return data() + size(); }
 
-        HeapString substring(size_t offset) const { return substr(offset); }
+        HeapString substring(size_t offset) const {
+            return HeapString(*this, substr(offset));
+        }
+
         HeapString substring(size_t offset, size_t count) const {
-            return substr(offset, count);
+            return HeapString(*this, substr(offset, count));
         }
 
         const std::string_view& value() const { return *this; }
 
+        friend HeapString createString(const std::string_view& value) {
+            const auto head =
+                new (::operator new(sizeof(Head) + value.size())) Head;
+            std::memcpy(head->m_data, value.data(), value.size());
+            return HeapString(head, value.size());
+        }
+
+        friend HeapString concatenateString(const std::string_view& a,
+                                            const std::string_view& b) {
+            const auto size = a.size() + b.size();
+            const auto head = new (::operator new(sizeof(Head) + size)) Head;
+            auto p = head->m_data;
+            std::memcpy(p, a.data(), a.size());
+            p += a.size();
+            std::memcpy(p, b.data(), b.size());
+            return HeapString(head, size);
+        }
+
     protected:
-        HeapString(const std::string_view& value) : std::string_view(value) {}
-        friend class Heap;
-    };
+        struct Head {
+            std::atomic<unsigned> m_refCount{1};
+            char m_data[];
 
-    class Heap : public std::pmr::monotonic_buffer_resource {
-    public:
-        explicit Heap(size_t capacity) : monotonic_buffer_resource(capacity) {}
+            void acquire() noexcept {
+                m_refCount.fetch_add(1u, std::memory_order::relaxed);
+            };
 
-        HeapString createString(const std::string_view& value);
-        HeapString concatenateString(const std::string_view& a,
-                                     const std::string_view& b);
-    };
+            void release() noexcept {
+                if (m_refCount.fetch_sub(1u, std::memory_order::relaxed) ==
+                    1u) {
+                    this->~Head();
+                    ::operator delete(this);
+                }
+            }
+        };
 
-    inline HeapString Heap::createString(const std::string_view& value) {
-        auto content =
-            static_cast<char*>(allocate(value.size(), alignof(char)));
-        std::memcpy(content, value.data(), value.size());
-        return HeapString({content, value.size()});
-    }
+        HeapString(Head* head, size_t size) noexcept
+            : std::string_view(head->m_data, size), m_head(head) {}
 
-    inline HeapString Heap::concatenateString(const std::string_view& a,
-                                              const std::string_view& b) {
-        auto content =
-            static_cast<char*>(allocate(a.size() + b.size(), alignof(char)));
-        std::memcpy(content, a.data(), a.size());
-        std::memcpy(content + a.size(), b.data(), b.size());
-        return HeapString({content, a.size() + b.size()});
-    }
-
-    class HeapMember {
-    public:
-        HeapMember() = default;
-
-        static void* operator new(size_t size, Heap* heap) {
-            return heap->allocate(size);
-        }
-        static void* operator new[](size_t size, Heap* heap) {
-            return heap->allocate(size);
+        HeapString(const HeapString& other, std::string_view str) noexcept
+            : std::string_view(str), m_head(other.m_head) {
+            m_head->acquire();
         }
 
-        static void operator delete(void* data, Heap* heap) {}
-        static void operator delete[](void* data, Heap* heap) {}
-
-        static void operator delete(void* data) {}
-        static void operator delete[](void* data) {}
-
-    private:
-        HeapMember(const HeapMember&) = delete;
-        HeapMember& operator=(const HeapMember&) = delete;
+        Head* m_head = nullptr;
     };
 } // namespace plutobook

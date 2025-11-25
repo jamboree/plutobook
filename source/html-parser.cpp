@@ -634,7 +634,7 @@ Element* HtmlFormattingElementList::closestElementInScope(const GlobalString& ta
 }
 
 HtmlParser::HtmlParser(HtmlDocument* document, const std::string_view& content)
-    : m_document(document), m_tokenizer(content, document->heap())
+    : m_document(document), m_tokenizer(content)
 {
 }
 

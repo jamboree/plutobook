@@ -14,9 +14,9 @@ namespace plutobook {
     class TableColumn;
     class TableCollapsedBorderEdge;
 
-    using TableCaptionBoxList = std::pmr::vector<TableCaptionBox*>;
-    using TableSectionBoxList = std::pmr::vector<TableSectionBox*>;
-    using TableColumnList = std::pmr::vector<TableColumn>;
+    using TableCaptionBoxList = std::vector<TableCaptionBox*>;
+    using TableSectionBoxList = std::vector<TableSectionBox*>;
+    using TableColumnList = std::vector<TableColumn>;
 
     class TableLayoutAlgorithm;
 
@@ -90,7 +90,7 @@ namespace plutobook {
             m_collapsedBorderEdges;
     };
 
-    class TableLayoutAlgorithm : public HeapMember {
+    class TableLayoutAlgorithm {
     public:
         static std::unique_ptr<TableLayoutAlgorithm> create(TableBox* table);
 
@@ -116,7 +116,7 @@ namespace plutobook {
 
     private:
         FixedTableLayoutAlgorithm(TableBox* table);
-        using LengthList = std::pmr::vector<Length>;
+        using LengthList = std::vector<Length>;
         LengthList m_widths;
     };
 
@@ -128,8 +128,8 @@ namespace plutobook {
         Length width = Length::Auto;
     };
 
-    using TableCellBoxList = std::pmr::vector<TableCellBox*>;
-    using TableColumnWidthList = std::pmr::vector<TableColumnWidth>;
+    using TableCellBoxList = std::vector<TableCellBox*>;
+    using TableColumnWidthList = std::vector<TableColumnWidth>;
 
     class AutoTableLayoutAlgorithm final : public TableLayoutAlgorithm {
     public:
@@ -148,7 +148,7 @@ namespace plutobook {
 
     class TableRowBox;
 
-    using TableRowBoxList = std::pmr::vector<TableRowBox*>;
+    using TableRowBoxList = std::vector<TableRowBox*>;
 
     class TableSectionBox final : public BoxFrame {
     public:
@@ -367,7 +367,7 @@ namespace plutobook {
         return a.isLessThan(b);
     }
 
-    class TableCollapsedBorderEdges : public HeapMember {
+    class TableCollapsedBorderEdges {
     public:
         static std::unique_ptr<TableCollapsedBorderEdges>
         create(const TableCellBox* cellBox);

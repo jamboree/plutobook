@@ -5,7 +5,7 @@
 namespace plutobook {
     class TextLineBox;
 
-    using TextLineBoxList = std::pmr::vector<std::unique_ptr<TextLineBox>>;
+    using TextLineBoxList = std::vector<std::unique_ptr<TextLineBox>>;
 
     class TextBox : public Box {
     public:

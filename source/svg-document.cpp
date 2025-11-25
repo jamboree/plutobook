@@ -12,7 +12,6 @@ namespace plutobook {
 
 SvgElement::SvgElement(Document* document, const GlobalString& tagName)
     : Element(classKind, document, svgNs, tagName)
-    , m_properties(document->heap())
 {
 }
 
@@ -289,8 +288,8 @@ void SvgSvgElement::collectAttributeStyle(std::string& output, const GlobalStrin
 Box* SvgSvgElement::createBox(const RefPtr<BoxStyle>& style)
 {
     if(isSvgRootNode())
-        return new (heap()) SvgRootBox(this, style);
-    return new (heap()) SvgViewportContainerBox(this, style);
+        return new SvgRootBox(this, style);
+    return new SvgViewportContainerBox(this, style);
 }
 
 SvgUseElement::SvgUseElement(Document* document)
@@ -309,7 +308,7 @@ SvgUseElement::SvgUseElement(Document* document)
 
 Box* SvgUseElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgTransformableContainerBox(this, style);
+    return new SvgTransformableContainerBox(this, style);
 }
 
 void SvgUseElement::finishParsingDocument()
@@ -401,7 +400,7 @@ SvgImageElement::SvgImageElement(Document* document)
 
 Box* SvgImageElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgImageBox(this, style);
+    return new SvgImageBox(this, style);
 }
 
 RefPtr<Image> SvgImageElement::image() const
@@ -420,7 +419,7 @@ SvgSymbolElement::SvgSymbolElement(Document* document)
 
 Box* SvgSymbolElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgHiddenContainerBox(this, style);
+    return new SvgHiddenContainerBox(this, style);
 }
 
 SvgAElement::SvgAElement(Document* document)
@@ -431,7 +430,7 @@ SvgAElement::SvgAElement(Document* document)
 
 Box* SvgAElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgTransformableContainerBox(this, style);
+    return new SvgTransformableContainerBox(this, style);
 }
 
 SvgGElement::SvgGElement(Document* document)
@@ -441,7 +440,7 @@ SvgGElement::SvgGElement(Document* document)
 
 Box* SvgGElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgTransformableContainerBox(this, style);
+    return new SvgTransformableContainerBox(this, style);
 }
 
 SvgDefsElement::SvgDefsElement(Document* document)
@@ -451,7 +450,7 @@ SvgDefsElement::SvgDefsElement(Document* document)
 
 Box* SvgDefsElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgHiddenContainerBox(this, style);
+    return new SvgHiddenContainerBox(this, style);
 }
 
 SvgGeometryElement::SvgGeometryElement(Document* document, const GlobalString& tagName)
@@ -472,7 +471,7 @@ SvgPathElement::SvgPathElement(Document* document)
 
 Box* SvgPathElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgPathBox(this, style);
+    return new SvgPathBox(this, style);
 }
 
 SvgShapeElement::SvgShapeElement(Document* document, const GlobalString& tagName)
@@ -482,7 +481,7 @@ SvgShapeElement::SvgShapeElement(Document* document, const GlobalString& tagName
 
 Box* SvgShapeElement::createBox(const RefPtr<BoxStyle> &style)
 {
-    return new (heap()) SvgShapeBox(this, style);
+    return new SvgShapeBox(this, style);
 }
 
 SvgLineElement::SvgLineElement(Document* document)
@@ -650,7 +649,7 @@ SvgTSpanElement::SvgTSpanElement(Document* document)
 
 Box* SvgTSpanElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgTSpanBox(this, style);
+    return new SvgTSpanBox(this, style);
 }
 
 SvgTextElement::SvgTextElement(Document* document)
@@ -660,7 +659,7 @@ SvgTextElement::SvgTextElement(Document* document)
 
 Box* SvgTextElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgTextBox(this, style);
+    return new SvgTextBox(this, style);
 }
 
 SvgMarkerElement::SvgMarkerElement(Document* document)
@@ -682,7 +681,7 @@ SvgMarkerElement::SvgMarkerElement(Document* document)
 
 Box* SvgMarkerElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgResourceMarkerBox(this, style);
+    return new SvgResourceMarkerBox(this, style);
 }
 
 SvgClipPathElement::SvgClipPathElement(Document* document)
@@ -694,7 +693,7 @@ SvgClipPathElement::SvgClipPathElement(Document* document)
 
 Box* SvgClipPathElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgResourceClipperBox(this, style);
+    return new SvgResourceClipperBox(this, style);
 }
 
 SvgMaskElement::SvgMaskElement(Document* document)
@@ -716,7 +715,7 @@ SvgMaskElement::SvgMaskElement(Document* document)
 
 Box* SvgMaskElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgResourceMaskerBox(this, style);
+    return new SvgResourceMaskerBox(this, style);
 }
 
 SvgPatternElement::SvgPatternElement(Document* document)
@@ -788,7 +787,7 @@ SvgPatternAttributes SvgPatternElement::collectPatternAttributes() const
 
 Box* SvgPatternElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgResourcePatternBox(this, style);
+    return new SvgResourcePatternBox(this, style);
 }
 
 SvgStopElement::SvgStopElement(Document* document)
@@ -806,7 +805,7 @@ Color SvgStopElement::stopColorIncludingOpacity() const
 
 Box* SvgStopElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgGradientStopBox(this, style);
+    return new SvgGradientStopBox(this, style);
 }
 
 SvgGradientElement::SvgGradientElement(Document* document, const GlobalString& tagName)
@@ -887,7 +886,7 @@ SvgLinearGradientAttributes SvgLinearGradientElement::collectGradientAttributes(
 
 Box* SvgLinearGradientElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgResourceLinearGradientBox(this, style);
+    return new SvgResourceLinearGradientBox(this, style);
 }
 
 SvgRadialGradientElement::SvgRadialGradientElement(Document* document)
@@ -943,7 +942,7 @@ SvgRadialGradientAttributes SvgRadialGradientElement::collectGradientAttributes(
 
 Box* SvgRadialGradientElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SvgResourceRadialGradientBox(this, style);
+    return new SvgResourceRadialGradientBox(this, style);
 }
 
 SvgStyleElement::SvgStyleElement(Document* document)
@@ -968,13 +967,13 @@ void SvgStyleElement::finishParsingDocument()
     SvgElement::finishParsingDocument();
 }
 
-std::unique_ptr<SvgDocument> SvgDocument::create(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl)
+std::unique_ptr<SvgDocument> SvgDocument::create(Book* book, ResourceFetcher* fetcher, Url baseUrl)
 {
-    return std::unique_ptr<SvgDocument>(new (heap) SvgDocument(book, heap, fetcher, std::move(baseUrl)));
+    return std::unique_ptr<SvgDocument>(new SvgDocument(book, fetcher, std::move(baseUrl)));
 }
 
-SvgDocument::SvgDocument(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl)
-    : XmlDocument(classKind, book, heap, fetcher, std::move(baseUrl))
+SvgDocument::SvgDocument(Book* book, ResourceFetcher* fetcher, Url baseUrl)
+    : XmlDocument(classKind, book, fetcher, std::move(baseUrl))
 {
 }
 

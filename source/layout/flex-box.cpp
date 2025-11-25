@@ -216,7 +216,6 @@ FlexBox::FlexBox(Node* node, const RefPtr<BoxStyle>& style)
     , m_flexWrap(style->flexWrap())
     , m_justifyContent(style->justifyContent())
     , m_alignContent(style->alignContent())
-    , m_items(style->heap())
 {
 }
 

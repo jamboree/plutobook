@@ -82,7 +82,7 @@ void HtmlElement::buildFirstLetterPseudoBox(Box* parent)
         if(auto textBox = to<TextBox>(child)) {
             const auto& text = textBox->text();
             if(auto length = firstLetterTextLength(text)) {
-                auto newTextBox = new (heap()) TextBox(nullptr, style);
+                auto newTextBox = new TextBox(nullptr, style);
                 newTextBox->setText(text.substring(0, length));
                 textBox->setText(text.substring(length));
 
@@ -428,16 +428,16 @@ Box* HtmlImageElement::createBox(const RefPtr<BoxStyle>& style)
     auto image = srcImage();
     auto text = altText();
     if(image == nullptr && text.empty())
-        return new (heap()) ImageBox(this, style);
+        return new ImageBox(this, style);
     if(image == nullptr) {
         auto container = Box::create(this, style);
-        auto box = new (heap()) TextBox(nullptr, style);
+        auto box = new TextBox(nullptr, style);
         box->setText(text);
         container->addChild(box);
         return container;
     }
 
-    auto box = new (heap()) ImageBox(this, style);
+    auto box = new ImageBox(this, style);
     box->setImage(std::move(image));
     return box;
 }
@@ -489,7 +489,7 @@ HtmlBrElement::HtmlBrElement(Document* document)
 
 Box* HtmlBrElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) LineBreakBox(this, style);
+    return new LineBreakBox(this, style);
 }
 
 HtmlWbrElement::HtmlWbrElement(Document* document)
@@ -499,7 +499,7 @@ HtmlWbrElement::HtmlWbrElement(Document* document)
 
 Box* HtmlWbrElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) WordBreakBox(this, style);
+    return new WordBreakBox(this, style);
 }
 
 HtmlLiElement::HtmlLiElement(Document* document)
@@ -877,7 +877,7 @@ Box* HtmlInputElement::createBox(const RefPtr<BoxStyle>& style)
         return HtmlElement::createBox(style);
     }
 
-    auto box = new (heap()) TextInputBox(this, style);
+    auto box = new TextInputBox(this, style);
     box->setCols(size());
     return box;
 }
@@ -899,7 +899,7 @@ unsigned HtmlTextAreaElement::cols() const
 
 Box* HtmlTextAreaElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    auto box = new (heap()) TextInputBox(this, style);
+    auto box = new TextInputBox(this, style);
     box->setRows(rows());
     box->setCols(cols());
     return box;
@@ -919,7 +919,7 @@ unsigned HtmlSelectElement::size() const
 
 Box* HtmlSelectElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new (heap()) SelectBox(this, style);
+    return new SelectBox(this, style);
 }
 
 HtmlStyleElement::HtmlStyleElement(Document* document)
@@ -1002,9 +1002,9 @@ void HtmlBaseElement::finishParsingDocument()
     HtmlElement::finishParsingDocument();
 }
 
-std::unique_ptr<HtmlDocument> HtmlDocument::create(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl)
+std::unique_ptr<HtmlDocument> HtmlDocument::create(Book* book, ResourceFetcher* fetcher, Url baseUrl)
 {
-    return std::unique_ptr<HtmlDocument>(new (heap) HtmlDocument(book, heap, fetcher, std::move(baseUrl)));
+    return std::unique_ptr<HtmlDocument>(new HtmlDocument(book, fetcher, std::move(baseUrl)));
 }
 
 bool HtmlDocument::parse(const std::string_view& content)
@@ -1012,8 +1012,8 @@ bool HtmlDocument::parse(const std::string_view& content)
     return HtmlParser(this, content).parse();
 }
 
-HtmlDocument::HtmlDocument(Book* book, Heap* heap, ResourceFetcher* fetcher, Url baseUrl)
-    : Document(classKind, book, heap, fetcher, std::move(baseUrl))
+HtmlDocument::HtmlDocument(Book* book, ResourceFetcher* fetcher, Url baseUrl)
+    : Document(classKind, book, fetcher, std::move(baseUrl))
 {
 }
 

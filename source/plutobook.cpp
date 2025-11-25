@@ -299,7 +299,6 @@ Book::Book(const PageSize& size, const PageMargins& margins, MediaType media)
     : m_pageSize(size)
     , m_pageMargins(margins)
     , m_mediaType(media)
-    , m_heap(new Heap(1024 * 32))
 {
 }
 
@@ -400,7 +399,7 @@ bool Book::loadImage(const char* data, size_t length, const std::string_view& mi
 bool Book::loadXml(const std::string_view& content, const std::string_view& userStyle, const std::string_view& userScript, const std::string_view& baseUrl)
 {
     clearContent();
-    m_document = XmlDocument::create(this, m_heap.get(), m_customResourceFetcher, ResourceLoader::completeUrl(baseUrl));
+    m_document = XmlDocument::create(this, m_customResourceFetcher, ResourceLoader::completeUrl(baseUrl));
     if(!m_document->parse(content)) {
         clearContent();
         return false;
@@ -414,7 +413,7 @@ bool Book::loadXml(const std::string_view& content, const std::string_view& user
 bool Book::loadHtml(const std::string_view& content, const std::string_view& userStyle, const std::string_view& userScript, const std::string_view& baseUrl)
 {
     clearContent();
-    m_document = HtmlDocument::create(this, m_heap.get(), m_customResourceFetcher, ResourceLoader::completeUrl(baseUrl));
+    m_document = HtmlDocument::create(this, m_customResourceFetcher, ResourceLoader::completeUrl(baseUrl));
     if(!m_document->parse(content)) {
         assert(false);
     }
@@ -427,7 +426,6 @@ bool Book::loadHtml(const std::string_view& content, const std::string_view& use
 void Book::clearContent()
 {
     m_document.reset();
-    m_heap->release();
     m_needsBuild = true;
     m_needsLayout = true;
     m_needsPagination = true;
