@@ -567,6 +567,7 @@ bool BlockFlowBox::avoidsFloats() const
 
 void BlockFlowBox::addChild(Box* newChild)
 {
+    assert(is<BoxFrame>(newChild) || newChild->isTextBox());
     if(isChildrenInline() && !newChild->isInline() && !newChild->isFloatingOrPositioned()) {
         for(auto child = firstChild(); child; child = child->nextSibling()) {
             if(child->isFloatingOrPositioned())
@@ -1538,7 +1539,9 @@ void BlockFlowBox::layoutBlockChildren(FragmentBuilder* fragmentainer)
     auto bottom = borderBottom() + paddingBottom();
 
     MarginInfo marginInfo(this, top, bottom);
-    for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {
+    for(auto c = firstChild(); c; c = c->nextSibling()) {
+        auto child = to<BoxFrame>(c);
+        assert(child);
         if(child->isPositioned()) {
             child->containingBlock()->insertPositonedBox(child);
             adjustPositionedBox(child, marginInfo);

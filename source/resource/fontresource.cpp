@@ -7,8 +7,8 @@
 #include <fontconfig/fontconfig.h>
 #include <fontconfig/fcfreetype.h>
 
-#include <cairo-ft.h>
-#include <hb-ft.h>
+#include <cairo/cairo-ft.h>
+#include <harfbuzz/hb-ft.h>
 
 #include <numbers>
 #include <cmath>

@@ -8,8 +8,8 @@
 
 #include <unicode/uchar.h>
 #include <unicode/uscript.h>
-#include <cairo-ft.h>
-#include <hb-ft.h>
+#include <cairo/cairo-ft.h>
+#include <harfbuzz/hb-ft.h>
 
 namespace plutobook {
 

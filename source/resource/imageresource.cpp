@@ -6,7 +6,7 @@
 
 #include "plutobook.hpp"
 
-#include <cairo.h>
+#include <cairo/cairo.h>
 #ifdef PLUTOBOOK_HAS_WEBP
 #include <webp/decode.h>
 #endif

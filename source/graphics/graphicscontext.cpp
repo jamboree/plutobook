@@ -1,7 +1,7 @@
 #include "graphicscontext.h"
 #include "geometry.h"
 
-#include <cairo.h>
+#include <cairo/cairo.h>
 
 #include <cmath>
 #include <sstream>
