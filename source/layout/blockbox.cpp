@@ -567,7 +567,6 @@ bool BlockFlowBox::avoidsFloats() const
 
 void BlockFlowBox::addChild(Box* newChild)
 {
-    assert(is<BoxFrame>(newChild) || newChild->isTextBox());
     if(isChildrenInline() && !newChild->isInline() && !newChild->isFloatingOrPositioned()) {
         for(auto child = firstChild(); child; child = child->nextSibling()) {
             if(child->isFloatingOrPositioned())
