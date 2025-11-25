@@ -920,8 +920,13 @@ void FlexBox::build()
     auto rowGap = style()->rowGap().value_or(0);
     auto columnGap = style()->columnGap().value_or(0);
 
-    m_gapBetweenItems = isVerticalFlow() ? rowGap : columnGap;
-    m_gapBetweenLines = isVerticalFlow() ? columnGap : rowGap;
+    if (isVerticalFlow()) {
+        m_gapBetweenItems = rowGap;
+        m_gapBetweenLines = columnGap;
+    } else {
+        m_gapBetweenItems = columnGap;
+        m_gapBetweenLines = rowGap;
+    }
 
     std::ranges::stable_sort(m_items, std::ranges::less{}, [](const FlexItem& item) { return item.order(); });
     BlockBox::build();
