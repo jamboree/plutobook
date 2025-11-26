@@ -7,7 +7,7 @@ namespace plutobook {
 inline bool isNumberedHeaderTag(const GlobalString& tagName)
 {
     using enum GlobalStringId;
-    switch (GlobalStringId(tagName.index())) {
+    switch (tagName.asId()) {
     case h1Tag:
     case h2Tag:
     case h3Tag:
@@ -23,7 +23,7 @@ inline bool isNumberedHeaderTag(const GlobalString& tagName)
 inline bool isImpliedEndTag(const GlobalString& tagName)
 {
     using enum GlobalStringId;
-    switch (GlobalStringId(tagName.index())) {
+    switch (tagName.asId()) {
     case ddTag:
     case dtTag:
     case liTag:
@@ -41,7 +41,7 @@ inline bool isImpliedEndTag(const GlobalString& tagName)
 inline bool isFosterRedirectingTag(const GlobalString& tagName)
 {
     using enum GlobalStringId;
-    switch (GlobalStringId(tagName.index())) {
+    switch (tagName.asId()) {
     case tableTag:
     case tbodyTag:
     case theadTag:
@@ -57,38 +57,47 @@ inline bool isNumberedHeaderElement(const Element* element)
     return isNumberedHeaderTag(element->tagName());
 }
 
+inline bool isSvgTag(const GlobalString& tagName)
+{
+    using enum GlobalStringId;
+    switch (tagName.asId()) {
+    case foreignObjectTag:
+    case descTag:
+    case titleTag:
+        return true;
+    default:
+        return false;
+    };
+}
+
+inline bool isMathmlTag(const GlobalString& tagName)
+{
+    using enum GlobalStringId;
+    switch (tagName.asId()) {
+    case miTag:
+    case moTag:
+    case mnTag:
+    case msTag:
+    case mtextTag:
+        return true;
+    default:
+        return false;
+    };
+}
+
 inline bool isSpecialElement(const Element* element)
 {
     const auto& tagName = element->tagName();
     if(element->namespaceURI() == svgNs) {
-        using enum GlobalStringId;
-        switch (GlobalStringId(tagName.index())) {
-        case foreignObjectTag:
-        case descTag:
-        case titleTag:
-            return true;
-        default:
-            return false;
-        };
+        return isSvgTag(tagName);
     }
 
     if(element->namespaceURI() == mathmlNs) {
-        using enum GlobalStringId;
-        switch (GlobalStringId(tagName.index())) {
-        case miTag:
-        case moTag:
-        case mnTag:
-        case msTag:
-        case mtextTag:
-        case annotation_xmlTag:
-            return true;
-        default:
-            return false;
-        };
+        return isMathmlTag(tagName) || tagName == annotation_xmlTag;
     }
 
     using enum GlobalStringId;
-    switch (GlobalStringId(tagName.index())) {
+    switch (tagName.asId()) {
     case addressTag:
     case appletTag:
     case areaTag:
@@ -181,9 +190,7 @@ inline bool isHtmlIntegrationPoint(const Element* element)
     }
 
     if(element->namespaceURI() == svgNs) {
-        return element->tagName() == foreignObjectTag
-            || element->tagName() == descTag
-            || element->tagName() == titleTag;
+        return isSvgTag(element->tagName());
     }
 
     return false;
@@ -192,11 +199,7 @@ inline bool isHtmlIntegrationPoint(const Element* element)
 inline bool isMathMLTextIntegrationPoint(const Element* element)
 {
     if(element->namespaceURI() == mathmlNs) {
-        return element->tagName() == miTag
-            || element->tagName() == moTag
-            || element->tagName() == mnTag
-            || element->tagName() == msTag
-            || element->tagName() == mtextTag;
+        return isMathmlTag(element->tagName());
     }
 
     return false;
@@ -206,27 +209,26 @@ inline bool isScopeMarker(const Element* element)
 {
     const auto& tagName = element->tagName();
     if(element->namespaceURI() == svgNs) {
-        return tagName == foreignObjectTag
-            || tagName == descTag
-            || tagName == titleTag;
+        return isSvgTag(tagName);
     }
 
     if(element->namespaceURI() == mathmlNs) {
-        return tagName == miTag
-            || tagName == moTag
-            || tagName == mnTag
-            || tagName == msTag
-            || tagName == mtextTag
-            || tagName == annotation_xmlTag;
+        return isMathmlTag(tagName) || tagName == annotation_xmlTag;
     }
 
-    return tagName == captionTag
-        || tagName == marqueeTag
-        || tagName == objectTag
-        || tagName == tableTag
-        || tagName == tdTag
-        || tagName == thTag
-        || tagName == htmlTag;
+    using enum GlobalStringId;
+    switch (tagName.asId()) {
+    case captionTag:
+    case marqueeTag:
+    case objectTag:
+    case tableTag:
+    case tdTag:
+    case thTag:
+    case htmlTag:
+        return true;
+    default:
+        return false;
+    };
 }
 
 inline bool isListItemScopeMarker(const Element* element)

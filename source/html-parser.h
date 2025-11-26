@@ -228,6 +228,10 @@ private:
     bool m_skipLeadingNewline{false};
 };
 
+inline bool isSvgW(const plutobook::GlobalString& tagName);
+
+inline bool isMathmlW(const plutobook::GlobalString& tagName);
+
 } // namespace plutobook
 
 #endif // PLUTOBOOK_HtmlPARSER_H

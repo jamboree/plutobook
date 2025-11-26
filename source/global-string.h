@@ -19,14 +19,16 @@ namespace plutobook {
 
         bool isEmpty() const { return m_index == 0; }
 
-        constexpr unsigned index() const { return m_index; }
+        constexpr GlobalStringId asId() const {
+            return GlobalStringId(m_index);
+        }
 
         GlobalString foldCase() const;
 
         operator const std::string_view&() const { return value(); }
         operator const HeapString&() const { return value(); }
 
-        bool operator==(const GlobalString& o) const = default;
+        bool operator==(const GlobalString&) const = default;
 
         friend std::size_t hash_value(GlobalString key) {
             return boost::hash<unsigned>{}(key.m_index);
