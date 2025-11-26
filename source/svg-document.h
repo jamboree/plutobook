@@ -6,7 +6,8 @@
 #include <memory>
 
 namespace plutobook {
-    using SvgPropertyMap = std::map<GlobalString, SvgProperty*>;
+    using SvgPropertyMap =
+        boost::unordered_flat_map<GlobalString, SvgProperty*>;
 
     class SvgResourceContainerBox;
     class SvgResourceClipperBox;

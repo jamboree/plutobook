@@ -273,7 +273,7 @@ BlockBox* Box::containingBlock() const
     if(style()->position() == Position::Static || style()->position() == Position::Relative || isTextBox()) {
         while(parent && !parent->isBlockBox())
             parent = parent->parentBox();
-        return to<BlockBox>(parent);
+        return static_cast<BlockBox*>(parent);
     }
 
     if(style()->position() == Position::Fixed) {
@@ -290,7 +290,7 @@ BlockBox* Box::containingBlock() const
         parent = parent->containingBlock();
     while(parent && parent->isAnonymous())
         parent = parent->containingBlock();
-    return to<BlockBox>(parent);
+    return static_cast<BlockBox*>(parent);
 }
 
 BoxModel* Box::containingBox() const
@@ -313,11 +313,13 @@ BoxModel* Box::containingBox() const
 
 BoxLayer* Box::enclosingLayer() const
 {
-    for(auto current = this; current; current = current->parentBox()) {
-        if(current->hasLayer()) {
+    auto current = this;
+    do {
+        if (current->hasLayer()) {
             return to<BoxModel>(*current).layer();
         }
-    }
+        current = current->parentBox();
+    } while (current);
 
     return nullptr;
 }
@@ -408,7 +410,7 @@ void Box::paintAnnotation(GraphicsContext& context, const Rect& rect) const
         const auto& baseUrl = element.document()->baseUrl();
         auto completeUrl = element.getUrlAttribute(hrefAttr);
         auto fragmentName = completeUrl.fragment();
-        if(!fragmentName.empty() && baseUrl == completeUrl.base()) {
+        if(!fragmentName.empty() && baseUrl.value() == completeUrl.base()) {
             context.addLinkAnnotation(fragmentName.substr(1), emptyGlo, rect);
         } else {
             context.addLinkAnnotation(emptyGlo, completeUrl.value(), rect);

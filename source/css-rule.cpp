@@ -802,7 +802,7 @@ bool CssRuleData::matchPseudoClassLocalLinkSelector(const Element* element, cons
     if(matchPseudoClassLinkSelector(element, selector)) {
         const auto& baseUrl = element->document()->baseUrl();
         auto completeUrl = element->getUrlAttribute(hrefAttr);
-        return baseUrl == completeUrl.base();
+        return baseUrl.value() == completeUrl.base();
     }
 
     return false;
@@ -1095,7 +1095,7 @@ std::string CssCounterStyle::generateInitialRepresentation(int value) const
     }
 
     for(auto index : indexes) {
-        representation += counterStyleSymbol(*m_symbols->at(index));
+        representation += counterStyleSymbol(*(*m_symbols)[index]);
     }
 
     return representation;

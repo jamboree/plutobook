@@ -5,9 +5,20 @@
 
 #include <sstream>
 #include <algorithm>
+#include <span>
 #include <cmath>
+#include <frozen/unordered_map.h>
+#include <frozen/string.h>
 
 namespace plutobook {
+template<class T, unsigned N>
+using IdentTable = frozen::unordered_map<frozen::string, T, N>;
+
+template<class T, unsigned N>
+constexpr IdentTable<T, N>
+    makeIdentTable(const std::pair<frozen::string, T>(&items)[N]) {
+    return IdentTable<T, N>{items};
+}
 
 CssParser::CssParser(const CssParserContext& context)
     : m_context(context)
@@ -48,19 +59,6 @@ CssPropertyList CssParser::parsePropertyValue(CssTokenStream input, CssPropertyI
     return properties;
 }
 
-template<typename T>
-struct CssIdentEntry {
-    constexpr CssIdentEntry(const char* name, T value)
-        : name(name), value(value), length(std::strlen(name))
-    {}
-
-    const char* name;
-    const T value;
-    const int length;
-};
-
-using CssIdentValueEntry = CssIdentEntry<CssValueID>;
-
 static bool identMatches(const char* name, int length, const std::string_view& ident)
 {
     if(length != ident.length())
@@ -77,14 +75,11 @@ static bool identMatches(const char* name, int length, const std::string_view& i
 }
 
 template<typename T, unsigned int N>
-static std::optional<T> matchIdent(const CssIdentEntry<T>(&table)[N], const std::string_view& ident)
+static std::optional<T> matchIdent(const IdentTable<T, N>& table, const std::string_view& ident)
 {
-    for(const auto& entry : table) {
-        if(identMatches(entry.name, entry.length, ident)) {
-            return entry.value;
-        }
-    }
-
+    const auto it = table.find(ident);
+    if (it != table.end())
+        return it->second;
     return std::nullopt;
 }
 
@@ -122,7 +117,7 @@ bool CssParser::consumeMediaFeature(CssTokenStream& input, CssMediaFeatureList& 
 {
     if(input->type() != CssToken::Type::LeftParenthesis)
         return false;
-    static const CssIdentEntry<CssPropertyID> table[] = {
+    static constexpr auto table = makeIdentTable<CssPropertyID>({
         {"width", CssPropertyID::Width},
         {"min-width", CssPropertyID::MinWidth},
         {"max-width", CssPropertyID::MaxWidth},
@@ -130,7 +125,7 @@ bool CssParser::consumeMediaFeature(CssTokenStream& input, CssMediaFeatureList& 
         {"min-height", CssPropertyID::MinHeight},
         {"max-height", CssPropertyID::MaxHeight},
         {"orientation", CssPropertyID::Orientation}
-    };
+    });
 
     auto block = input.consumeBlock();
     block.consumeWhitespace();
@@ -418,7 +413,7 @@ RefPtr<CssPageMarginRule> CssParser::consumePageMarginRule(CssTokenStream& input
     prelude.consumeWhitespace();
     if(!prelude.empty())
         return nullptr;
-    static const CssIdentEntry<PageMarginType> table[] = {
+    static constexpr auto table = makeIdentTable<PageMarginType>({
         {"top-left-corner", PageMarginType::TopLeftCorner},
         {"top-left", PageMarginType::TopLeft},
         {"top-center", PageMarginType::TopCenter},
@@ -435,7 +430,7 @@ RefPtr<CssPageMarginRule> CssParser::consumePageMarginRule(CssTokenStream& input
         {"right-top", PageMarginType::RightTop},
         {"right-middle", PageMarginType::RightMiddle},
         {"right-bottom", PageMarginType::RightBottom}
-    };
+    });
 
     auto marginType = matchIdent(table, name);
     if(marginType == std::nullopt)
@@ -508,12 +503,12 @@ bool CssParser::consumePageSelector(CssTokenStream& input, CssPageSelector& sele
 
         if(input->type() != CssToken::Type::Ident)
             return false;
-        static const CssIdentEntry<CssSimpleSelector::MatchType> table[] = {
+        static constexpr auto table = makeIdentTable<CssSimpleSelector::MatchType>({
             {"first", CssSimpleSelector::MatchType::PseudoPageFirst},
             {"left", CssSimpleSelector::MatchType::PseudoPageLeft},
             {"right", CssSimpleSelector::MatchType::PseudoPageRight},
             {"blank", CssSimpleSelector::MatchType::PseudoPageBlank}
-        };
+        });
 
         auto name = input->data();
         input.consumeIncludingWhitespace();
@@ -727,13 +722,13 @@ bool CssParser::consumePseudoSelector(CssTokenStream& input, CssCompoundSelector
             return false;
         auto name = input->data();
         input.consume();
-        static const CssIdentEntry<CssSimpleSelector::MatchType> table[] = {
+        static constexpr auto table = makeIdentTable<CssSimpleSelector::MatchType>({
             {"after", CssSimpleSelector::MatchType::PseudoElementAfter},
             {"before", CssSimpleSelector::MatchType::PseudoElementBefore},
             {"first-letter", CssSimpleSelector::MatchType::PseudoElementFirstLetter},
             {"first-line", CssSimpleSelector::MatchType::PseudoElementFirstLine},
             {"marker", CssSimpleSelector::MatchType::PseudoElementMarker}
-        };
+        });
 
         auto matchType = matchIdent(table, name);
         if(matchType == std::nullopt)
@@ -745,7 +740,7 @@ bool CssParser::consumePseudoSelector(CssTokenStream& input, CssCompoundSelector
     if(input->type() == CssToken::Type::Ident) {
         auto name = input->data();
         input.consume();
-        static const CssIdentEntry<CssSimpleSelector::MatchType> table[] = {
+        static constexpr auto table = makeIdentTable<CssSimpleSelector::MatchType>({
             {"active", CssSimpleSelector::MatchType::PseudoClassActive},
             {"any-link", CssSimpleSelector::MatchType::PseudoClassAnyLink},
             {"checked", CssSimpleSelector::MatchType::PseudoClassChecked},
@@ -773,7 +768,7 @@ bool CssParser::consumePseudoSelector(CssTokenStream& input, CssCompoundSelector
             {"before", CssSimpleSelector::MatchType::PseudoElementBefore},
             {"first-letter", CssSimpleSelector::MatchType::PseudoElementFirstLetter},
             {"first-line", CssSimpleSelector::MatchType::PseudoElementFirstLine}
-        };
+        });
 
         auto matchType = matchIdent(table, name);
         if(matchType == std::nullopt)
@@ -786,7 +781,7 @@ bool CssParser::consumePseudoSelector(CssTokenStream& input, CssCompoundSelector
         auto name = input->data();
         auto block = input.consumeBlock();
         block.consumeWhitespace();
-        static const CssIdentEntry<CssSimpleSelector::MatchType> table[] = {
+        static constexpr auto table = makeIdentTable<CssSimpleSelector::MatchType>({
             {"is", CssSimpleSelector::MatchType::PseudoClassIs},
             {"not", CssSimpleSelector::MatchType::PseudoClassNot},
             {"has", CssSimpleSelector::MatchType::PseudoClassHas},
@@ -796,7 +791,7 @@ bool CssParser::consumePseudoSelector(CssTokenStream& input, CssCompoundSelector
             {"nth-last-child", CssSimpleSelector::MatchType::PseudoClassNthLastChild},
             {"nth-last-of-type", CssSimpleSelector::MatchType::PseudoClassNthLastOfType},
             {"nth-of-type", CssSimpleSelector::MatchType::PseudoClassNthOfType}
-        };
+        });
 
         auto matchType = matchIdent(table, name);
         if(matchType == std::nullopt)
@@ -1160,17 +1155,14 @@ bool CssParser::consumeDescriptor(CssTokenStream& input, CssPropertyList& proper
 
 constexpr bool isCustomPropertyName(std::string_view name)
 {
-    return name.length() > 2 && name[0] == '-' && name[1] == '-';
+    return name.length() > 2 && name.starts_with("--");
 }
 
 static CssPropertyID csspropertyid(const std::string_view& name)
 {
     if(isCustomPropertyName(name))
         return CssPropertyID::Custom;
-    static const struct {
-        std::string_view name;
-        CssPropertyID value;
-    } table[] = {
+    static constexpr auto table = makeIdentTable<CssPropertyID>({
         {"-pluto-page-scale", CssPropertyID::PageScale},
         {"additive-symbols", CssPropertyID::AdditiveSymbols},
         {"align-content", CssPropertyID::AlignContent},
@@ -1382,7 +1374,7 @@ static CssPropertyID csspropertyid(const std::string_view& name)
         {"x", CssPropertyID::X},
         {"y", CssPropertyID::Y},
         {"z-index", CssPropertyID::ZIndex}
-    };
+    });
 
     char buffer[32];
     if(name.length() > sizeof(buffer))
@@ -1392,9 +1384,9 @@ static CssPropertyID csspropertyid(const std::string_view& name)
     }
 
     std::string_view lowerName(buffer, name.length());
-    auto it = std::lower_bound(table, std::end(table), lowerName, [](const auto& item, const auto& name) { return item.name < name; });
-    if(it != std::end(table) && it->name == lowerName)
-        return it->value;
+    const auto it = table.find(lowerName);
+    if(it != table.end())
+        return it->second;
     return CssPropertyID::Unknown;
 }
 
@@ -1506,24 +1498,7 @@ void CssParser::addProperty(CssPropertyList& properties, CssPropertyID id, bool 
     properties.emplace_back(id, m_context.origin(), important, std::move(value));
 }
 
-class CssShorthand {
-public:
-    static CssShorthand longhand(CssPropertyID id);
-
-    CssPropertyID at(size_t index) const { return m_data[index]; }
-    size_t length() const { return m_length; }
-    bool empty() const { return m_length == 0; }
-
-private:
-    CssShorthand(const CssPropertyID* data, size_t length)
-        : m_data(data), m_length(length)
-    {}
-
-    const CssPropertyID* m_data;
-    size_t m_length;
-};
-
-CssShorthand CssShorthand::longhand(CssPropertyID id)
+std::span<const CssPropertyID> expandShorthand(CssPropertyID id)
 {
     switch(id) {
     case CssPropertyID::BorderColor: {
@@ -1534,7 +1509,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::BorderLeftColor
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::BorderStyle: {
@@ -1545,7 +1520,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::BorderLeftStyle
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::BorderWidth: {
@@ -1556,7 +1531,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::BorderLeftWidth
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::BorderTop: {
@@ -1566,7 +1541,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::BorderTopWidth
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::BorderRight: {
@@ -1576,7 +1551,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::BorderRightWidth
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::BorderBottom: {
@@ -1586,7 +1561,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::BorderBottomWidth
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::BorderLeft: {
@@ -1596,7 +1571,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::BorderLeftWidth
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::BorderRadius: {
@@ -1607,7 +1582,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::BorderBottomRightRadius
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::BorderSpacing: {
@@ -1616,7 +1591,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::BorderVerticalSpacing
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::Padding: {
@@ -1627,7 +1602,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::PaddingLeft
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::Margin: {
@@ -1638,7 +1613,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::MarginLeft
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::Outline: {
@@ -1648,7 +1623,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::OutlineWidth
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::ListStyle: {
@@ -1658,7 +1633,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::ListStyleImage
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::ColumnRule: {
@@ -1668,7 +1643,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::ColumnRuleWidth
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::FlexFlow: {
@@ -1677,7 +1652,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::FlexWrap
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::Flex: {
@@ -1687,7 +1662,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::FlexBasis
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::Background: {
@@ -1702,7 +1677,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::BackgroundSize
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::Gap: {
@@ -1711,7 +1686,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::ColumnGap
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::Columns: {
@@ -1720,7 +1695,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::ColumnCount
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::Font: {
@@ -1734,7 +1709,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::FontFamily
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::FontVariant: {
@@ -1747,7 +1722,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::FontVariantPosition
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::Border: {
@@ -1766,7 +1741,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::BorderLeftColor
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::TextDecoration: {
@@ -1776,7 +1751,7 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::TextDecorationColor
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     case CssPropertyID::Marker: {
@@ -1786,31 +1761,29 @@ CssShorthand CssShorthand::longhand(CssPropertyID id)
             CssPropertyID::MarkerEnd
         };
 
-        return CssShorthand(data, std::size(data));
+        return data;
     }
 
     default:
-        return CssShorthand(nullptr, 0);
+        return {};
     }
 }
 
 void CssParser::addExpandedProperty(CssPropertyList& properties, CssPropertyID id, bool important, RefPtr<CssValue> value)
 {
-    auto longhand = CssShorthand::longhand(id);
+    auto longhand = expandShorthand(id);
     if(longhand.empty()) {
         addProperty(properties, id, important, std::move(value));
         return;
     }
 
-    size_t index = 0;
-    do {
-        addProperty(properties, longhand.at(index), important, value);
-        index += 1;
-    } while(index < longhand.length());
+    for (const auto id : longhand) {
+        addProperty(properties, id, important, value);
+    }
 }
 
 template<unsigned int N>
-static CssValueID matchIdent(const CssTokenStream& input, const CssIdentValueEntry(&table)[N])
+static CssValueID matchIdent(const CssTokenStream& input, const IdentTable<CssValueID, N>& table)
 {
     if(input->type() == CssToken::Type::Ident) {
         if(auto id = matchIdent(table, input->data())) {
@@ -1822,29 +1795,32 @@ static CssValueID matchIdent(const CssTokenStream& input, const CssIdentValueEnt
 }
 
 template<unsigned int N>
-static RefPtr<CssIdentValue> consumeIdent(CssTokenStream& input, const CssIdentValueEntry(&table)[N])
+static RefPtr<CssIdentValue> consumeIdent(CssTokenStream& input, const IdentTable<CssValueID, N>& table)
 {
-    auto id = matchIdent(input, table);
-    if(id == CssValueID::Unknown)
-        return nullptr;
-    input.consumeIncludingWhitespace();
-    return CssIdentValue::create(id);
+    if (input->type() == CssToken::Type::Ident) {
+        if (auto id = matchIdent(table, input->data())) {
+            input.consumeIncludingWhitespace();
+            return CssIdentValue::create(id.value());
+        }
+    }
+
+    return nullptr;
 }
 
 RefPtr<CssIdentValue> CssParser::consumeFontStyleIdent(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"normal", CssValueID::Normal},
         {"italic", CssValueID::Italic},
         {"oblique", CssValueID::Oblique}
-    };
+    });
 
     return consumeIdent(input, table);
 }
 
 RefPtr<CssIdentValue> CssParser::consumeFontStretchIdent(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"normal", CssValueID::Normal},
         {"ultra-condensed", CssValueID::UltraCondensed},
         {"extra-condensed", CssValueID::ExtraCondensed},
@@ -1854,49 +1830,49 @@ RefPtr<CssIdentValue> CssParser::consumeFontStretchIdent(CssTokenStream& input)
         {"expanded", CssValueID::Expanded},
         {"extra-expanded", CssValueID::ExtraExpanded},
         {"ultra-expanded", CssValueID::UltraExpanded}
-    };
+    });
 
     return consumeIdent(input, table);
 }
 
 RefPtr<CssIdentValue> CssParser::consumeFontVariantCapsIdent(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"small-caps", CssValueID::SmallCaps},
         {"all-small-caps", CssValueID::AllSmallCaps},
         {"petite-caps", CssValueID::PetiteCaps},
         {"all-petite-caps", CssValueID::AllPetiteCaps},
         {"unicase", CssValueID::Unicase},
         {"titling-caps", CssValueID::TitlingCaps}
-    };
+    });
 
     return consumeIdent(input, table);
 }
 
 RefPtr<CssIdentValue> CssParser::consumeFontVariantEmojiIdent(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"text", CssValueID::Text},
         {"emoji", CssValueID::Emoji},
         {"unicode", CssValueID::Unicode}
-    };
+    });
 
     return consumeIdent(input, table);
 }
 
 RefPtr<CssIdentValue> CssParser::consumeFontVariantPositionIdent(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"sub", CssValueID::Sub},
         {"super", CssValueID::Super}
-    };
+    });
 
     return consumeIdent(input, table);
 }
 
 RefPtr<CssIdentValue> CssParser::consumeFontVariantEastAsianIdent(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"jis78", CssValueID::Jis78},
         {"jis83", CssValueID::Jis83},
         {"jis90", CssValueID::Jis90},
@@ -1906,14 +1882,14 @@ RefPtr<CssIdentValue> CssParser::consumeFontVariantEastAsianIdent(CssTokenStream
         {"full-width", CssValueID::FullWidth},
         {"proportional-width", CssValueID::ProportionalWidth},
         {"ruby", CssValueID::Ruby}
-    };
+    });
 
     return consumeIdent(input, table);
 }
 
 RefPtr<CssIdentValue> CssParser::consumeFontVariantLigaturesIdent(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"common-ligatures", CssValueID::CommonLigatures},
         {"no-common-ligatures", CssValueID::NoCommonLigatures},
         {"historical-ligatures", CssValueID::HistoricalLigatures},
@@ -1922,14 +1898,14 @@ RefPtr<CssIdentValue> CssParser::consumeFontVariantLigaturesIdent(CssTokenStream
         {"no-discretionary-ligatures", CssValueID::NoDiscretionaryLigatures},
         {"contextual", CssValueID::Contextual},
         {"no-contextual", CssValueID::NoContextual}
-    };
+    });
 
     return consumeIdent(input, table);
 }
 
 RefPtr<CssIdentValue> CssParser::consumeFontVariantNumericIdent(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"lining-nums", CssValueID::LiningNums},
         {"oldstyle-nums", CssValueID::OldstyleNums},
         {"proportional-nums", CssValueID::ProportionalNums},
@@ -1938,7 +1914,7 @@ RefPtr<CssIdentValue> CssParser::consumeFontVariantNumericIdent(CssTokenStream& 
         {"stacked-fractions", CssValueID::StackedFractions},
         {"ordinal", CssValueID::Ordinal},
         {"slashed-zero", CssValueID::SlashedZero}
-    };
+    });
 
     return consumeIdent(input, table);
 }
@@ -2044,7 +2020,7 @@ RefPtr<CssValue> CssParser::consumeNumberOrPercentOrAuto(CssTokenStream& input, 
 
 static std::optional<CssLengthUnits> matchUnitType(std::string_view name)
 {
-    static const CssIdentEntry<CssLengthUnits> table[] = {
+    static constexpr auto table = makeIdentTable<CssLengthUnits>({
         {"px", CssLengthUnits::Pixels},
         {"pt", CssLengthUnits::Points},
         {"pc", CssLengthUnits::Picas},
@@ -2059,7 +2035,7 @@ static std::optional<CssLengthUnits> matchUnitType(std::string_view name)
         {"ex", CssLengthUnits::Exs},
         {"ch", CssLengthUnits::Chs},
         {"rem", CssLengthUnits::Rems}
-    };
+    });
 
     return matchIdent(table, name);
 }
@@ -2276,11 +2252,11 @@ RefPtr<CssValue> CssParser::consumeLengthOrPercentOrNormal(CssTokenStream& input
 
 RefPtr<CssValue> CssParser::consumeWidthOrHeight(CssTokenStream& input, bool unitless)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"min-content", CssValueID::MinContent},
         {"max-content", CssValueID::MaxContent},
         {"fit-content", CssValueID::FitContent}
-    };
+    });
 
     if(auto value = consumeIdent(input, table))
         return value;
@@ -2578,12 +2554,12 @@ static bool consumeAngleComponent(CssTokenStream& input, float& component)
 
     component = input->number();
     if(input->type() == CssToken::Type::Dimension) {
-        static const CssIdentEntry<CssAngleValue::Unit> table[] = {
+        static constexpr auto table = makeIdentTable<CssAngleValue::Unit>({
             {"deg", CssAngleValue::Unit::Degrees},
             {"rad", CssAngleValue::Unit::Radians},
             {"grad", CssAngleValue::Unit::Gradians},
             {"turn", CssAngleValue::Unit::Turns}
-        };
+        });
 
         auto unitType = matchIdent(table, input->data());
         if(unitType == std::nullopt)
@@ -2745,12 +2721,12 @@ RefPtr<CssValue> CssParser::consumePaint(CssTokenStream& input)
 
 RefPtr<CssValue> CssParser::consumeListStyleType(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"none", CssValueID::None},
         {"disc", CssValueID::Disc},
         {"circle", CssValueID::Circle},
         {"square", CssValueID::Square}
-    };
+    });
 
     if(auto value = consumeIdent(input, table))
         return value;
@@ -2786,12 +2762,12 @@ RefPtr<CssValue> CssParser::consumeContent(CssTokenStream& input)
         if(value == nullptr)
             value = consumeAttr(input);
         if(value == nullptr && input->type() == CssToken::Type::Ident) {
-            static const CssIdentValueEntry table[] = {
+            static constexpr auto table = makeIdentTable<CssValueID>({
                 {"open-quote", CssValueID::OpenQuote},
                 {"close-quote", CssValueID::CloseQuote},
                 {"no-open-quote", CssValueID::NoOpenQuote},
                 {"no-close-quote", CssValueID::NoCloseQuote}
-            };
+            });
 
             value = consumeIdent(input, table);
         }
@@ -2826,11 +2802,11 @@ RefPtr<CssValue> CssParser::consumeContent(CssTokenStream& input)
 
 RefPtr<CssValue> CssParser::consumeContentLeader(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"dotted", CssValueID::Dotted},
         {"solid", CssValueID::Solid},
         {"space", CssValueID::Space}
-    };
+    });
 
     auto value = consumeString(input);
     if(value == nullptr)
@@ -2972,7 +2948,7 @@ RefPtr<CssValue> CssParser::consumeSize(CssTokenStream& input)
     RefPtr<CssValue> size;
     RefPtr<CssValue> orientation;
     for(int index = 0; index < 2; ++index) {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"a3", CssValueID::A3},
             {"a4", CssValueID::A4},
             {"a5", CssValueID::A5},
@@ -2981,7 +2957,7 @@ RefPtr<CssValue> CssParser::consumeSize(CssTokenStream& input)
             {"ledger", CssValueID::Ledger},
             {"legal", CssValueID::Legal},
             {"letter", CssValueID::Letter}
-        };
+        });
 
         if(size == nullptr && (size = consumeIdent(input, table)))
             continue;
@@ -3003,17 +2979,17 @@ RefPtr<CssValue> CssParser::consumeSize(CssTokenStream& input)
 
 RefPtr<CssValue> CssParser::consumeOrientation(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"portrait", CssValueID::Portrait},
         {"landscape", CssValueID::Landscape}
-    };
+    });
 
     return consumeIdent(input, table);
 }
 
 RefPtr<CssValue> CssParser::consumeFontSize(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"xx-small", CssValueID::XxSmall},
         {"x-small", CssValueID::XSmall},
         {"small", CssValueID::Small},
@@ -3024,7 +3000,7 @@ RefPtr<CssValue> CssParser::consumeFontSize(CssTokenStream& input)
         {"xxx-large", CssValueID::XxxLarge},
         {"smaller", CssValueID::Smaller},
         {"larger", CssValueID::Larger}
-    };
+    });
 
     if(auto value = consumeIdent(input, table))
         return value;
@@ -3033,12 +3009,12 @@ RefPtr<CssValue> CssParser::consumeFontSize(CssTokenStream& input)
 
 RefPtr<CssValue> CssParser::consumeFontWeight(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"normal", CssValueID::Normal},
         {"bold", CssValueID::Bold},
         {"bolder", CssValueID::Bolder},
         {"lighter", CssValueID::Lighter}
-    };
+    });
 
     if(auto value = consumeIdent(input, table))
         return value;
@@ -3123,10 +3099,10 @@ RefPtr<CssValue> CssParser::consumeFontFeature(CssTokenStream& input)
         value = input->integer();
         input.consumeIncludingWhitespace();
     } else if(input->type() == CssToken::Type::Ident) {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"on", CssValueID::On},
             {"off", CssValueID::Off}
-        };
+        });
 
         switch(matchIdent(input, table)) {
         case CssValueID::On:
@@ -3369,11 +3345,11 @@ RefPtr<CssValue> CssParser::consumeFontVariantNumeric(CssTokenStream& input)
 
 RefPtr<CssValue> CssParser::consumeLineWidth(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"thin", CssValueID::Thin},
         {"medium", CssValueID::Medium},
         {"thick", CssValueID::Thick}
-    };
+    });
 
     if(auto value = consumeIdent(input, table))
         return value;
@@ -3438,12 +3414,12 @@ RefPtr<CssValue> CssParser::consumeDashList(CssTokenStream& input)
 
 RefPtr<CssValue> CssParser::consumePosition(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"static", CssValueID::Static},
         {"relative", CssValueID::Relative},
         {"absolute", CssValueID::Absolute},
         {"fixed", CssValueID::Fixed}
-    };
+    });
 
     if(auto value = consumeIdent(input, table))
         return value;
@@ -3462,7 +3438,7 @@ RefPtr<CssValue> CssParser::consumePosition(CssTokenStream& input)
 
 RefPtr<CssValue> CssParser::consumeVerticalAlign(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"baseline", CssValueID::Baseline},
         {"sub", CssValueID::Sub},
         {"super", CssValueID::Super},
@@ -3471,7 +3447,7 @@ RefPtr<CssValue> CssParser::consumeVerticalAlign(CssTokenStream& input)
         {"middle", CssValueID::Middle},
         {"top", CssValueID::Top},
         {"bottom", CssValueID::Bottom}
-    };
+    });
 
     if(auto value = consumeIdent(input, table))
         return value;
@@ -3480,11 +3456,11 @@ RefPtr<CssValue> CssParser::consumeVerticalAlign(CssTokenStream& input)
 
 RefPtr<CssValue> CssParser::consumeBaselineShift(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"baseline", CssValueID::Baseline},
         {"sub", CssValueID::Sub},
         {"super", CssValueID::Super}
-    };
+    });
 
     if(auto value = consumeIdent(input, table))
         return value;
@@ -3495,11 +3471,11 @@ RefPtr<CssValue> CssParser::consumeTextDecorationLine(CssTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"underline", CssValueID::Underline},
         {"overline", CssValueID::Overline},
         {"line-through", CssValueID::LineThrough}
-    };
+    });
 
     bool consumedUnderline = false;
     bool consumedOverline = false;
@@ -3546,21 +3522,21 @@ RefPtr<CssValue> CssParser::consumePositionCoordinate(CssTokenStream& input)
             continue;
         if(second == nullptr && (second = consumeLengthOrPercent(input, true, false)))
             continue;
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"left", CssValueID::Left},
             {"right", CssValueID::Right},
             {"center", CssValueID::Center}
-        };
+        });
 
         if(first == nullptr && (first = consumeIdent(input, table))) {
             continue;
         }
         {
-            static const CssIdentValueEntry table[] = {
+            static constexpr auto table = makeIdentTable<CssValueID>({
                 {"top", CssValueID::Top},
                 {"bottom", CssValueID::Bottom},
                 {"center", CssValueID::Center}
-            };
+            });
 
             if(second == nullptr && (second = consumeIdent(input, table))) {
                 continue;
@@ -3581,10 +3557,10 @@ RefPtr<CssValue> CssParser::consumePositionCoordinate(CssTokenStream& input)
 
 RefPtr<CssValue> CssParser::consumeBackgroundSize(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"contain", CssValueID::Contain},
         {"cover", CssValueID::Cover}
-    };
+    });
 
     if(auto value = consumeIdent(input, table))
         return value;
@@ -3601,12 +3577,12 @@ RefPtr<CssValue> CssParser::consumeAngle(CssTokenStream& input)
 {
     if(input->type() != CssToken::Type::Dimension)
         return nullptr;
-    static const CssIdentEntry<CssAngleValue::Unit> table[] = {
+    static constexpr auto table = makeIdentTable<CssAngleValue::Unit>({
         {"deg", CssAngleValue::Unit::Degrees},
         {"rad", CssAngleValue::Unit::Radians},
         {"grad", CssAngleValue::Unit::Gradians},
         {"turn", CssAngleValue::Unit::Turns}
-    };
+    });
 
     auto unitType = matchIdent(table, input->data());
     if(unitType == std::nullopt)
@@ -3620,7 +3596,7 @@ RefPtr<CssValue> CssParser::consumeTransformValue(CssTokenStream& input)
 {
     if(input->type() != CssToken::Type::Function)
         return nullptr;
-    static const CssIdentEntry<CssFunctionID> table[] = {
+    static constexpr auto table = makeIdentTable<CssFunctionID>({
         {"skew", CssFunctionID::Skew},
         {"skewx", CssFunctionID::SkewX},
         {"skewy", CssFunctionID::SkewY},
@@ -3632,7 +3608,7 @@ RefPtr<CssValue> CssParser::consumeTransformValue(CssTokenStream& input)
         {"translatey", CssFunctionID::TranslateY},
         {"rotate", CssFunctionID::Rotate},
         {"matrix", CssFunctionID::Matrix}
-    };
+    });
 
     auto id = matchIdent(table, input->data());
     if(id == std::nullopt)
@@ -3739,11 +3715,11 @@ RefPtr<CssValue> CssParser::consumePaintOrder(CssTokenStream& input)
 {
     if(auto value = consumeNormal(input))
         return value;
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"fill", CssValueID::Fill},
         {"stroke", CssValueID::Stroke},
         {"markers", CssValueID::Markers}
-    };
+    });
 
     CssValueList values;
     do {
@@ -3932,52 +3908,52 @@ RefPtr<CssValue> CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID
     case CssPropertyID::PaintOrder:
         return consumePaintOrder(input);
     case CssPropertyID::FontKerning: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"auto", CssValueID::Auto},
             {"normal", CssValueID::Normal},
             {"none", CssValueID::None}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::BackgroundAttachment: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"scroll", CssValueID::Scroll},
             {"fixed", CssValueID::Fixed},
             {"local", CssValueID::Local}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::BackgroundClip:
     case CssPropertyID::BackgroundOrigin: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"border-box", CssValueID::BorderBox},
             {"padding-box", CssValueID::PaddingBox},
             {"content-box", CssValueID::ContentBox}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::BackgroundRepeat: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"repeat", CssValueID::Repeat},
             {"repeat-x", CssValueID::RepeatX},
             {"repeat-y", CssValueID::RepeatY},
             {"no-repeat", CssValueID::NoRepeat}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::BorderCollapse: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"collapse", CssValueID::Collapse},
             {"separate", CssValueID::Separate}
-        };
+        });
 
         return consumeIdent(input, table);
     }
@@ -3988,7 +3964,7 @@ RefPtr<CssValue> CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID
     case CssPropertyID::BorderLeftStyle:
     case CssPropertyID::ColumnRuleStyle:
     case CssPropertyID::OutlineStyle: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"none", CssValueID::None},
             {"hidden", CssValueID::Hidden},
             {"inset", CssValueID::Inset},
@@ -3999,123 +3975,123 @@ RefPtr<CssValue> CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID
             {"dashed", CssValueID::Dashed},
             {"solid", CssValueID::Solid},
             {"double", CssValueID::Double}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::BoxSizing: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"border-box", CssValueID::BorderBox},
             {"content-box", CssValueID::ContentBox}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::CaptionSide: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"top", CssValueID::Top},
             {"bottom", CssValueID::Bottom}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::Clear: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"none", CssValueID::None},
             {"left", CssValueID::Left},
             {"right", CssValueID::Right},
             {"both", CssValueID::Both}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::EmptyCells: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"show", CssValueID::Show},
             {"hide", CssValueID::Hide}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::FillRule:
     case CssPropertyID::ClipRule: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"nonzero", CssValueID::Nonzero},
             {"evenodd", CssValueID::Evenodd}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::Float: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"none", CssValueID::None},
             {"left", CssValueID::Left},
             {"right", CssValueID::Right}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::Hyphens: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"none", CssValueID::None},
             {"auto", CssValueID::Auto},
             {"manual", CssValueID::Manual}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::ListStylePosition: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"inside", CssValueID::Inside},
             {"outside", CssValueID::Outside}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::WordBreak: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"normal", CssValueID::Normal},
             {"keep-all", CssValueID::KeepAll},
             {"break-all", CssValueID::BreakAll},
             {"break-word", CssValueID::BreakWord}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::OverflowWrap: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"normal", CssValueID::Normal},
             {"anywhere", CssValueID::Anywhere},
             {"break-word", CssValueID::BreakWord}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::Overflow: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"auto", CssValueID::Auto},
             {"visible", CssValueID::Visible},
             {"hidden", CssValueID::Hidden},
             {"scroll", CssValueID::Scroll}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::BreakBefore:
     case CssPropertyID::BreakAfter: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"auto", CssValueID::Auto},
             {"avoid", CssValueID::Avoid},
             {"avoid-column", CssValueID::AvoidColumn},
@@ -4126,87 +4102,87 @@ RefPtr<CssValue> CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID
             {"right", CssValueID::Right},
             {"recto", CssValueID::Recto},
             {"verso", CssValueID::Verso}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::BreakInside: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"auto", CssValueID::Auto},
             {"avoid", CssValueID::Avoid},
             {"avoid-column", CssValueID::AvoidColumn},
             {"avoid-page", CssValueID::AvoidPage}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::ColumnBreakBefore:
     case CssPropertyID::ColumnBreakAfter: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"auto", CssValueID::Auto},
             {"always", CssValueID::Column},
             {"avoid", CssValueID::Avoid}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::PageBreakBefore:
     case CssPropertyID::PageBreakAfter: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"auto", CssValueID::Auto},
             {"always", CssValueID::Page},
             {"avoid", CssValueID::Avoid},
             {"left", CssValueID::Left},
             {"right", CssValueID::Right}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::ColumnBreakInside:
     case CssPropertyID::PageBreakInside: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"auto", CssValueID::Auto},
             {"avoid", CssValueID::Avoid}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::StrokeLinecap: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"butt", CssValueID::Butt},
             {"round", CssValueID::Round},
             {"square", CssValueID::Square}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::StrokeLinejoin: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"miter", CssValueID::Miter},
             {"round", CssValueID::Round},
             {"bevel", CssValueID::Bevel}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::TableLayout: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"auto", CssValueID::Auto},
             {"fixed", CssValueID::Fixed}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::AlignmentBaseline: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"auto", CssValueID::Auto},
             {"baseline", CssValueID::Baseline},
             {"before-edge", CssValueID::BeforeEdge},
@@ -4219,13 +4195,13 @@ RefPtr<CssValue> CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID
             {"alphabetic", CssValueID::Alphabetic},
             {"hanging", CssValueID::Hanging},
             {"mathematical", CssValueID::Mathematical}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::DominantBaseline: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"auto", CssValueID::Auto},
             {"use-script", CssValueID::UseScript},
             {"no-change", CssValueID::NoChange},
@@ -4238,26 +4214,26 @@ RefPtr<CssValue> CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID
             {"middle", CssValueID::Middle},
             {"text-after-edge", CssValueID::TextAfterEdge},
             {"text-before-edge", CssValueID::TextBeforeEdge}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::TextAlign: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"left", CssValueID::Left},
             {"right", CssValueID::Right},
             {"center", CssValueID::Center},
             {"justify", CssValueID::Justify},
             {"start", CssValueID::Start},
             {"end", CssValueID::End}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::WritingMode: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"horizontal-tb", CssValueID::HorizontalTb},
             {"vertical-rl", CssValueID::VerticalRl},
             {"vertical-lr", CssValueID::VerticalLr},
@@ -4267,64 +4243,64 @@ RefPtr<CssValue> CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID
             {"rl", CssValueID::HorizontalTb},
             {"tb-rl", CssValueID::VerticalRl},
             {"tb", CssValueID::VerticalLr}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::TextOrientation: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"mixed", CssValueID::Mixed},
             {"upright", CssValueID::Upright}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::TextAnchor: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"start", CssValueID::Start},
             {"middle", CssValueID::Middle},
             {"end", CssValueID::End}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::TextDecorationStyle: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"solid", CssValueID::Solid},
             {"double", CssValueID::Double},
             {"dotted", CssValueID::Dotted},
             {"dashed", CssValueID::Dashed},
             {"wavy", CssValueID::Wavy}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::TextOverflow: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"clip", CssValueID::Clip},
             {"ellipsis", CssValueID::Ellipsis}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::TextTransform: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"none", CssValueID::None},
             {"capitalize", CssValueID::Capitalize},
             {"uppercase", CssValueID::Uppercase},
             {"lowercase", CssValueID::Lowercase}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::MixBlendMode: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"normal", CssValueID::Normal},
             {"multiply", CssValueID::Multiply},
             {"screen", CssValueID::Screen},
@@ -4341,41 +4317,41 @@ RefPtr<CssValue> CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID
             {"saturation", CssValueID::Saturation},
             {"color", CssValueID::Color},
             {"luminosity", CssValueID::Luminosity}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::MaskType: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"luminance", CssValueID::Luminance},
             {"alpha", CssValueID::Alpha}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::VectorEffect: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"none", CssValueID::None},
             {"non-scaling-stroke", CssValueID::NonScalingStroke}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::Visibility: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"visible", CssValueID::Visible},
             {"hidden", CssValueID::Hidden},
             {"collapse", CssValueID::Collapse}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::Display: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"none", CssValueID::None},
             {"block", CssValueID::Block},
             {"flex", CssValueID::Flex},
@@ -4393,98 +4369,98 @@ RefPtr<CssValue> CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID
             {"table-header-group", CssValueID::TableHeaderGroup},
             {"table-row", CssValueID::TableRow},
             {"table-row-group", CssValueID::TableRowGroup}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::FlexDirection: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"row", CssValueID::Row},
             {"row-reverse", CssValueID::RowReverse},
             {"column", CssValueID::Column},
             {"column-reverse", CssValueID::ColumnReverse}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::FlexWrap: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"nowrap", CssValueID::Nowrap},
             {"wrap", CssValueID::Wrap},
             {"wrap-reverse", CssValueID::WrapReverse}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::WhiteSpace: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"normal", CssValueID::Normal},
             {"pre", CssValueID::Pre},
             {"pre-wrap", CssValueID::PreWrap},
             {"pre-line", CssValueID::PreLine},
             {"nowrap", CssValueID::Nowrap}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::Direction: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"ltr", CssValueID::Ltr},
             {"rtl", CssValueID::Rtl}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::UnicodeBidi: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"normal", CssValueID::Normal},
             {"embed", CssValueID::Embed},
             {"bidi-override", CssValueID::BidiOverride},
             {"isolate", CssValueID::Isolate},
             {"isolate-override", CssValueID::IsolateOverride}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::ColumnSpan: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"none", CssValueID::None},
             {"all", CssValueID::All}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::ColumnFill: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"auto", CssValueID::Auto},
             {"balance", CssValueID::Balance}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::JustifyContent: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"flex-start", CssValueID::FlexStart},
             {"flex-end", CssValueID::FlexEnd},
             {"center", CssValueID::Center},
             {"space-between", CssValueID::SpaceBetween},
             {"space-around", CssValueID::SpaceAround},
             {"space-evenly", CssValueID::SpaceEvenly}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::AlignContent: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"flex-start", CssValueID::FlexStart},
             {"flex-end", CssValueID::FlexEnd},
             {"center", CssValueID::Center},
@@ -4492,44 +4468,44 @@ RefPtr<CssValue> CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID
             {"space-around", CssValueID::SpaceAround},
             {"space-evenly", CssValueID::SpaceEvenly},
             {"stretch", CssValueID::Stretch}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::AlignItems: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"flex-start", CssValueID::FlexStart},
             {"flex-end", CssValueID::FlexEnd},
             {"center", CssValueID::Center},
             {"baseline", CssValueID::Baseline},
             {"stretch", CssValueID::Stretch}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::AlignSelf: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"auto", CssValueID::Auto},
             {"flex-start", CssValueID::FlexStart},
             {"flex-end", CssValueID::FlexEnd},
             {"center", CssValueID::Center},
             {"baseline", CssValueID::Baseline},
             {"stretch", CssValueID::Stretch}
-        };
+        });
 
         return consumeIdent(input, table);
     }
 
     case CssPropertyID::ObjectFit: {
-        static const CssIdentValueEntry table[] = {
+        static constexpr auto table = makeIdentTable<CssValueID>({
             {"fill", CssValueID::Fill},
             {"contain", CssValueID::Contain},
             {"cover", CssValueID::Cover},
             {"none", CssValueID::None},
             {"scale-down", CssValueID::ScaleDown}
-        };
+        });
 
         return consumeIdent(input, table);
     }
@@ -4894,66 +4870,67 @@ bool CssParser::consumeMarker(CssTokenStream& input, CssPropertyList& properties
 
 bool CssParser::consume2Shorthand(CssTokenStream& input, CssPropertyList& properties, CssPropertyID id, bool important)
 {
-    auto longhand = CssShorthand::longhand(id);
-    assert(longhand.length() == 2);
-    auto first = consumeLonghand(input, longhand.at(0));
+    auto longhand = expandShorthand(id);
+    assert(longhand.size() == 2);
+    auto first = consumeLonghand(input, longhand[0]);
     if(first == nullptr)
         return false;
-    addProperty(properties, longhand.at(0), important, first);
-    auto second = consumeLonghand(input, longhand.at(1));
+    addProperty(properties, longhand[0], important, first);
+    auto second = consumeLonghand(input, longhand[1]);
     if(second == nullptr) {
-        addProperty(properties, longhand.at(1), important, first);
+        addProperty(properties, longhand[1], important, first);
         return true;
     }
 
-    addProperty(properties, longhand.at(1), important, second);
+    addProperty(properties, longhand[1], important, second);
     return true;
 }
 
 bool CssParser::consume4Shorthand(CssTokenStream& input, CssPropertyList& properties, CssPropertyID id, bool important)
 {
-    auto longhand = CssShorthand::longhand(id);
-    assert(longhand.length() == 4);
-    auto top = consumeLonghand(input, longhand.at(0));
+    auto longhand = expandShorthand(id);
+    assert(longhand.size() == 4);
+    auto top = consumeLonghand(input, longhand[0]);
     if(top == nullptr)
         return false;
-    addProperty(properties, longhand.at(0), important, top);
-    auto right = consumeLonghand(input, longhand.at(1));
+    addProperty(properties, longhand[0], important, top);
+    auto right = consumeLonghand(input, longhand[1]);
     if(right == nullptr) {
-        addProperty(properties, longhand.at(1), important, top);
-        addProperty(properties, longhand.at(2), important, top);
-        addProperty(properties, longhand.at(3), important, top);
+        addProperty(properties, longhand[1], important, top);
+        addProperty(properties, longhand[2], important, top);
+        addProperty(properties, longhand[3], important, top);
         return true;
     }
 
-    addProperty(properties, longhand.at(1), important, right);
-    auto bottom = consumeLonghand(input, longhand.at(1));
+    addProperty(properties, longhand[1], important, right);
+    auto bottom = consumeLonghand(input, longhand[1]);
     if(bottom == nullptr) {
-        addProperty(properties, longhand.at(2), important, top);
-        addProperty(properties, longhand.at(3), important, right);
+        addProperty(properties, longhand[2], important, top);
+        addProperty(properties, longhand[3], important, right);
         return true;
     }
 
-    addProperty(properties, longhand.at(2), important, bottom);
-    auto left = consumeLonghand(input, longhand.at(3));
+    addProperty(properties, longhand[2], important, bottom);
+    auto left = consumeLonghand(input, longhand[3]);
     if(left == nullptr) {
-        addProperty(properties, longhand.at(3), important, right);
+        addProperty(properties, longhand[3], important, right);
         return true;
     }
 
-    addProperty(properties, longhand.at(3), important, left);
+    addProperty(properties, longhand[3], important, left);
     return true;
 }
 
 bool CssParser::consumeShorthand(CssTokenStream& input, CssPropertyList& properties, CssPropertyID id, bool important)
 {
     RefPtr<CssValue> values[6];
-    auto longhand = CssShorthand::longhand(id);
-    assert(longhand.length() <= sizeof(values));
+    auto longhand = expandShorthand(id);
+    const auto n = longhand.size();
+    assert(n <= std::size(values));
     while(!input.empty()) {
         bool consumed = false;
-        for(size_t i = 0; i < longhand.length(); ++i) {
-            if(values[i] == nullptr && (values[i] = consumeLonghand(input, longhand.at(i)))) {
+        for(size_t i = 0; i != n; ++i) {
+            if(values[i] == nullptr && (values[i] = consumeLonghand(input, longhand[i]))) {
                 consumed = true;
             }
         }
@@ -4963,8 +4940,8 @@ bool CssParser::consumeShorthand(CssTokenStream& input, CssPropertyList& propert
         }
     }
 
-    for(size_t i = 0; i < longhand.length(); ++i)
-        addProperty(properties, longhand.at(i), important, std::move(values[i]));
+    for(size_t i = 0; i != n; ++i)
+        addProperty(properties, longhand[i], important, std::move(values[i]));
     return true;
 }
 
@@ -5014,10 +4991,10 @@ RefPtr<CssValue> CssParser::consumeFontFaceSrc(CssTokenStream& input)
 
 RefPtr<CssValue> CssParser::consumeFontFaceWeight(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"normal", CssValueID::Normal},
         {"bold", CssValueID::Bold}
-    };
+    });
 
     if(auto value = consumeIdent(input, table))
         return value;
@@ -5088,7 +5065,7 @@ RefPtr<CssValue> CssParser::consumeCounterStyleName(CssTokenStream& input)
 
 RefPtr<CssValue> CssParser::consumeCounterStyleSystem(CssTokenStream& input)
 {
-    static const CssIdentValueEntry table[] = {
+    static constexpr auto table = makeIdentTable<CssValueID>({
         {"cyclic", CssValueID::Cyclic},
         {"symbolic", CssValueID::Symbolic},
         {"alphabetic", CssValueID::Alphabetic},
@@ -5096,7 +5073,7 @@ RefPtr<CssValue> CssParser::consumeCounterStyleSystem(CssTokenStream& input)
         {"additive", CssValueID::Additive},
         {"fixed", CssValueID::Fixed},
         {"extends", CssValueID::Extends}
-    };
+    });
 
     auto ident = consumeIdent(input, table);
     if(ident == nullptr)

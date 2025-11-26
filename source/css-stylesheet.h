@@ -5,7 +5,8 @@
 #include <memory_resource>
 #include <vector>
 #include <memory>
-#include <map>
+#include <boost/unordered/unordered_flat_map.hpp>
+#include <boost/unordered/unordered_node_map.hpp>
 
 namespace plutobook {
     class CssRule;
@@ -35,13 +36,12 @@ namespace plutobook {
         const CssRuleDataList* get(const T& name) const;
 
     private:
-        std::map<T, CssRuleDataList> m_table;
+        boost::unordered_node_map<T, CssRuleDataList> m_table;
     };
 
     template<typename T>
     bool CssRuleDataMap<T>::add(const T& name, CssRuleData&& rule) {
-        auto [it, inserted] =
-            m_table.try_emplace(name);
+        auto [it, inserted] = m_table.try_emplace(name);
         it->second.push_back(std::move(rule));
         return inserted;
     }
@@ -75,8 +75,9 @@ namespace plutobook {
                  RefPtr<FontFace> face);
 
     private:
-        std::map<GlobalString,
-                 std::map<FontSelectionDescription, RefPtr<SegmentedFontFace>>>
+        boost::unordered_flat_map<
+            GlobalString, boost::unordered_flat_map<FontSelectionDescription,
+                                                    RefPtr<SegmentedFontFace>>>
             m_table;
     };
 

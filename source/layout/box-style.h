@@ -704,7 +704,7 @@ public:
     float fontSize() const;
     float fontWeight() const;
     float fontStretch() const;
-    float fontStyle() const;
+    float fontSlope() const;
 
     const FontFamilyList& fontFamily() const;
     const FontVariationList& fontVariationSettings() const;

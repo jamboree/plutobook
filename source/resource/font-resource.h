@@ -100,6 +100,13 @@ namespace plutobook {
 
         bool operator==(const FontSelectionRange& other) const = default;
         auto operator<=>(const FontSelectionRange& other) const = default;
+
+        friend std::size_t hash_value(const FontSelectionRange& self) {
+            std::size_t seed = 0;
+            boost::hash_combine(seed, self.minimum);
+            boost::hash_combine(seed, self.maximum);
+            return seed;
+        }
     };
 
     constexpr FontSelectionRange kInvalidFontSelectionRange =
@@ -123,6 +130,14 @@ namespace plutobook {
 
         bool operator==(const FontSelectionDescription& other) const = default;
         auto operator<=>(const FontSelectionDescription& other) const = default;
+
+        friend std::size_t hash_value(const FontSelectionDescription& self) {
+            std::size_t seed = 0;
+            boost::hash_combine(seed, self.weight);
+            boost::hash_combine(seed, self.width);
+            boost::hash_combine(seed, self.slope);
+            return seed;
+        }
     };
 
     class FontSelectionAlgorithm {
@@ -202,6 +217,13 @@ namespace plutobook {
 
         bool operator==(const FontDescription& other) const = default;
         auto operator<=>(const FontDescription& other) const = default;
+
+        friend std::size_t hash_value(const FontDescription& self) {
+            std::size_t seed = 0;
+            boost::hash_combine(seed, self.families);
+            boost::hash_combine(seed, self.data);
+            return seed;
+        }
     };
 
     using UnicodeRange = std::pair<uint32_t, uint32_t>;
@@ -460,7 +482,7 @@ namespace plutobook {
         float size() const { return m_description.data.size; }
         float weight() const { return m_description.data.request.weight; }
         float stretch() const { return m_description.data.request.width; }
-        float style() const { return m_description.data.request.slope; }
+        float slope() const { return m_description.data.request.slope; }
 
         const FontFamilyList& family() const { return m_description.families; }
         const FontVariationList& variationSettings() const {

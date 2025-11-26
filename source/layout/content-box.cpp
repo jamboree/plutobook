@@ -125,19 +125,19 @@ void ContentBoxBuilder::addTargetCounter(const CssFunctionValue& function)
 
     size_t index = 0;
 
-    if(auto value = to<CssLocalUrlValue>(function.at(index))) {
+    if(auto value = to<CssLocalUrlValue>(function[index])) {
         fragment = value->value();
     } else {
-        fragment = resolveAttr(to<CssAttrValue>(*function.at(index)));
+        fragment = resolveAttr(to<CssAttrValue>(*function[index]));
     }
 
     ++index;
 
-    identifier = to<CssCustomIdentValue>(*function.at(index++)).value();
+    identifier = to<CssCustomIdentValue>(*function[index++]).value();
     if(function.id() == CssFunctionID::TargetCounters)
-        seperator = to<CssStringValue>(*function.at(index++)).value();
+        seperator = to<CssStringValue>(*function[index++]).value();
     if(index < function.size()) {
-        listStyle = to<CssCustomIdentValue>(*function.at(index++)).value();
+        listStyle = to<CssCustomIdentValue>(*function[index++]).value();
     }
 
     assert(index == function.size());
@@ -170,11 +170,11 @@ void ContentBoxBuilder::addQuote(CssValueID value)
 
 void ContentBoxBuilder::addQrCode(const CssFunctionValue& function)
 {
-    std::string text(to<CssStringValue>(*function.at(0)).value());
+    std::string text(to<CssStringValue>(*function[0]).value());
 
     char fill[16] = "black";
     if(function.size() == 2) {
-        const auto& color = to<CssColorValue>(*function.at(1)).value();
+        const auto& color = to<CssColorValue>(*function[1]).value();
         if(color.alpha() == 255) {
             std::snprintf(fill, sizeof(fill), "#%02X%02X%02X", color.red(), color.green(), color.blue());
         } else {

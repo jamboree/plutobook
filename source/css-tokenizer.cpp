@@ -12,6 +12,39 @@ constexpr bool isNonPrintable(char cc) { return (cc >= 0 && cc <= 0x8) || cc == 
 
 const CssToken CssTokenStream::eofToken(CssToken::Type::EndOfFile);
 
+void CssTokenStream::consumeComponent() {
+    assert(m_begin < m_end);
+    switch (m_begin->type()) {
+    case CssToken::Type::Function:
+    case CssToken::Type::LeftParenthesis:
+    case CssToken::Type::LeftSquareBracket:
+    case CssToken::Type::LeftCurlyBracket: {
+        auto closeType = CssToken::closeType(m_begin->type());
+        ++m_begin;
+        while (m_begin < m_end && m_begin->type() != closeType)
+            consumeComponent();
+        if (m_begin < m_end)
+            ++m_begin;
+        break;
+    }
+
+    default: ++m_begin; break;
+    }
+}
+
+CssTokenStream CssTokenStream::consumeBlock() {
+    assert(m_begin < m_end);
+    auto closeType = CssToken::closeType(m_begin->type());
+    ++m_begin;
+    auto blockBegin = m_begin;
+    while (m_begin < m_end && m_begin->type() != closeType)
+        consumeComponent();
+    auto blockEnd = m_begin;
+    if (m_begin < m_end)
+        ++m_begin;
+    return CssTokenStream(blockBegin, blockEnd);
+}
+
 CssTokenStream CssTokenizer::tokenize()
 {
     while(true) {

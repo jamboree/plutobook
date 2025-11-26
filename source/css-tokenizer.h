@@ -115,20 +115,20 @@ namespace plutobook {
 
         void consume() {
             assert(m_begin < m_end);
-            m_begin += 1;
+            ++m_begin;
         }
 
         void consumeWhitespace() {
             while (m_begin < m_end &&
                    m_begin->type() == CssToken::Type::Whitespace) {
-                m_begin += 1;
+                ++m_begin;
             }
         }
 
         void consumeIncludingWhitespace() {
             assert(m_begin < m_end);
             do {
-                m_begin += 1;
+                ++m_begin;
             } while (m_begin < m_end &&
                      m_begin->type() == CssToken::Type::Whitespace);
         }
@@ -142,38 +142,9 @@ namespace plutobook {
             return false;
         }
 
-        void consumeComponent() {
-            assert(m_begin < m_end);
-            switch (m_begin->type()) {
-            case CssToken::Type::Function:
-            case CssToken::Type::LeftParenthesis:
-            case CssToken::Type::LeftSquareBracket:
-            case CssToken::Type::LeftCurlyBracket: {
-                auto closeType = CssToken::closeType(m_begin->type());
-                m_begin += 1;
-                while (m_begin < m_end && m_begin->type() != closeType)
-                    consumeComponent();
-                if (m_begin < m_end)
-                    m_begin += 1;
-                break;
-            }
+        void consumeComponent();
 
-            default: m_begin += 1; break;
-            }
-        }
-
-        CssTokenStream consumeBlock() {
-            assert(m_begin < m_end);
-            auto closeType = CssToken::closeType(m_begin->type());
-            m_begin += 1;
-            auto blockBegin = m_begin;
-            while (m_begin < m_end && m_begin->type() != closeType)
-                consumeComponent();
-            auto blockEnd = m_begin;
-            if (m_begin < m_end)
-                m_begin += 1;
-            return CssTokenStream(blockBegin, blockEnd);
-        }
+        CssTokenStream consumeBlock();
 
         const CssToken& get() const {
             return m_begin < m_end ? *m_begin : eofToken;

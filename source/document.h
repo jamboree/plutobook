@@ -7,6 +7,7 @@
 #include "url.h"
 
 #include <forward_list>
+#include <boost/unordered/unordered_map.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
 
 namespace plutobook {
@@ -300,11 +301,15 @@ namespace plutobook {
     using CounterMap =
         boost::unordered_flat_map<GlobalString, std::vector<int>>;
 
-    using DocumentElementMap = std::multimap<HeapString, Element*, std::less<>>;
-    using DocumentResourceMap = std::map<Url, RefPtr<Resource>>;
-    using DocumentFontMap = std::map<FontDescription, RefPtr<Font>>;
-    using DocumentCounterMap = std::map<HeapString, CounterMap, std::less<>>;
-    using DocumentRunningStyleMap = std::map<GlobalString, RefPtr<BoxStyle>>;
+    using DocumentElementMap = boost::unordered_multimap<HeapString, Element*, StrHash, StrEqual>;
+    using DocumentResourceMap =
+        boost::unordered_flat_map<Url, RefPtr<Resource>>;
+    using DocumentFontMap =
+        boost::unordered_flat_map<FontDescription, RefPtr<Font>>;
+    using DocumentCounterMap =
+        boost::unordered_flat_map<HeapString, CounterMap>;
+    using DocumentRunningStyleMap =
+        boost::unordered_flat_map<GlobalString, RefPtr<BoxStyle>>;
 
     class BoxView;
     class GraphicsContext;

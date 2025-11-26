@@ -1218,7 +1218,7 @@ namespace plutobook {
         /**
          * @brief Loads the document from the specified URL.
          * @param url The URL to load the document from.
-         * @param userStyle An optional user-defined style to apply.
+         * @param userStyle An optional user-defined slope to apply.
          * @param userScript An optional user-defined script to run after the
          * document has loaded.
          * @return `true` on success, or `false` on failure.
@@ -1233,7 +1233,7 @@ namespace plutobook {
          * @param length The length of the data in bytes.
          * @param mimeType The MIME type of the data.
          * @param textEncoding The text encoding of the data.
-         * @param userStyle An optional user-defined style to apply.
+         * @param userStyle An optional user-defined slope to apply.
          * @param userScript An optional user-defined script to run after the
          * document has loaded.
          * @param baseUrl The base URL for resolving relative URLs.
@@ -1252,7 +1252,7 @@ namespace plutobook {
          * @param length The length of the image data in bytes.
          * @param mimeType The MIME type of the image data.
          * @param textEncoding The text encoding of the image data.
-         * @param userStyle An optional user-defined style to apply.
+         * @param userStyle An optional user-defined slope to apply.
          * @param userScript An optional user-defined script to run after the
          * document has loaded.
          * @param baseUrl The base URL for resolving relative URLs.
@@ -1269,7 +1269,7 @@ namespace plutobook {
          * @brief Loads the document from the specified XML data.
          * @param content The XML data to load the document from, encoded in
          * UTF-8.
-         * @param userStyle An optional user-defined style to apply.
+         * @param userStyle An optional user-defined slope to apply.
          * @param userScript An optional user-defined script to run after the
          * document has loaded.
          * @param baseUrl The base URL for resolving relative URLs.
@@ -1284,7 +1284,7 @@ namespace plutobook {
          * @brief Loads the document from the specified HTML data.
          * @param content The HTML data to load the document from, encoded in
          * UTF-8.
-         * @param userStyle An optional user-defined style to apply.
+         * @param userStyle An optional user-defined slope to apply.
          * @param userScript An optional user-defined script to run after the
          * document has loaded.
          * @param baseUrl The base URL for resolving relative URLs.

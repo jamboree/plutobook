@@ -606,7 +606,7 @@ bool HtmlTokenizer::handleScriptDataDoubleEscapeStartState(char cc)
 {
     if(isSpace(cc) || cc == '/' || cc == '>') {
         m_characterBuffer += cc;
-        if(temporaryBufferIs(scriptTag.value()))
+        if(temporaryBufferIs(scriptTag))
             return advanceTo(State::ScriptDataDoubleEscaped);
         return advanceTo(State::ScriptDataEscaped);
     }
@@ -697,7 +697,7 @@ bool HtmlTokenizer::handleScriptDataDoubleEscapeEndState(char cc)
 {
     if(isSpace(cc) || cc == '/' || cc == '>') {
         m_characterBuffer += cc;
-        if(temporaryBufferIs(scriptTag.value()))
+        if(temporaryBufferIs(scriptTag))
             return advanceTo(State::ScriptDataEscaped);
         return advanceTo(State::ScriptDataDoubleEscaped);
     }

@@ -549,7 +549,7 @@ namespace plutobook {
         bool important() const { return m_important; }
         const RefPtr<CssValue>& value() const { return m_value; }
 
-    private:
+    protected:
         CssPropertyID m_id;
         CssStyleOrigin m_origin;
         bool m_important;
@@ -1197,8 +1197,8 @@ namespace plutobook {
 
         const RefPtr<CssValue>& front() const { return m_values.front(); }
         const RefPtr<CssValue>& back() const { return m_values.back(); }
-        const RefPtr<CssValue>& at(size_t index) const {
-            return m_values.at(index);
+        const RefPtr<CssValue>& operator[](size_t index) const {
+            return m_values[index];
         }
         const CssValueList& values() const { return m_values; }
         size_t size() const { return m_values.size(); }

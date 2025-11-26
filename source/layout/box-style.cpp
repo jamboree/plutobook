@@ -116,9 +116,9 @@ float BoxStyle::fontStretch() const
     return m_font->stretch();
 }
 
-float BoxStyle::fontStyle() const
+float BoxStyle::fontSlope() const
 {
-    return m_font->style();
+    return m_font->slope();
 }
 
 const FontFamilyList& BoxStyle::fontFamily() const
@@ -1517,61 +1517,61 @@ Transform BoxStyle::getTransform(float width, float height) const
         const auto& function = to<CssFunctionValue>(*operation);
         switch(function.id()) {
         case CssFunctionID::Translate: {
-            float firstValue = convertLengthOrPercent(width, *function.at(0));
+            float firstValue = convertLengthOrPercent(width, *function[0]);
             float secondValue = 0.f;
             if(function.size() == 2)
-                secondValue = convertLengthOrPercent(height, *function.at(1));
+                secondValue = convertLengthOrPercent(height, *function[1]);
             transform.translate(firstValue, secondValue);
             break;
         }
 
         case CssFunctionID::TranslateX:
-            transform.translate(convertLengthOrPercent(width, *function.at(0)), 0.f);
+            transform.translate(convertLengthOrPercent(width, *function[0]), 0.f);
             break;
         case CssFunctionID::TranslateY:
-            transform.translate(0.f, convertLengthOrPercent(height, *function.at(0)));
+            transform.translate(0.f, convertLengthOrPercent(height, *function[1]));
             break;
         case CssFunctionID::Scale: {
-            float firstValue = convertNumberOrPercent(*function.at(0));
+            float firstValue = convertNumberOrPercent(*function[0]);
             float secondValue = firstValue;
             if(function.size() == 2)
-                secondValue = convertNumberOrPercent(*function.at(1));
+                secondValue = convertNumberOrPercent(*function[1]);
             transform.scale(firstValue, secondValue);
             break;
         }
 
         case CssFunctionID::ScaleX:
-            transform.scale(convertNumberOrPercent(*function.at(0)), 1.f);
+            transform.scale(convertNumberOrPercent(*function[0]), 1.f);
             break;
         case CssFunctionID::ScaleY:
-            transform.scale(1.f, convertNumberOrPercent(*function.at(0)));
+            transform.scale(1.f, convertNumberOrPercent(*function[0]));
             break;
         case CssFunctionID::Skew: {
-            float firstValue = convertAngle(*function.at(0));
+            float firstValue = convertAngle(*function[0]);
             float secondValue = 0.f;
             if(function.size() == 2)
-                secondValue = convertAngle(*function.at(1));
+                secondValue = convertAngle(*function[1]);
             transform.shear(firstValue, secondValue);
             break;
         }
 
         case CssFunctionID::SkewX:
-            transform.shear(convertAngle(*function.at(0)), 0.f);
+            transform.shear(convertAngle(*function[0]), 0.f);
             break;
         case CssFunctionID::SkewY:
-            transform.shear(0.f, convertAngle(*function.at(0)));
+            transform.shear(0.f, convertAngle(*function[0]));
             break;
         case CssFunctionID::Rotate:
-            transform.rotate(convertAngle(*function.at(0)));
+            transform.rotate(convertAngle(*function[0]));
             break;
         default:
             assert(function.id() == CssFunctionID::Matrix && function.size() == 6);
-            auto a = convertNumber(*function.at(0));
-            auto b = convertNumber(*function.at(1));
-            auto c = convertNumber(*function.at(2));
-            auto d = convertNumber(*function.at(3));
-            auto e = convertNumber(*function.at(4));
-            auto f = convertNumber(*function.at(5));
+            auto a = convertNumber(*function[0]);
+            auto b = convertNumber(*function[1]);
+            auto c = convertNumber(*function[2]);
+            auto d = convertNumber(*function[3]);
+            auto e = convertNumber(*function[4]);
+            auto f = convertNumber(*function[5]);
             transform.multiply(Transform(a, b, c, d, e, f));
             break;
         }
@@ -1633,7 +1633,7 @@ const HeapString& BoxStyle::getQuote(bool open, size_t depth) const
     }
 
     const auto& list = to<CssListValue>(*value);
-    const auto& pair = to<CssPairValue>(*list.at(std::min(depth, list.size() - 1)));
+    const auto& pair = to<CssPairValue>(*list[std::min(depth, list.size() - 1)]);
     const auto& quote = open ? pair.first() : pair.second();
     return to<CssStringValue>(*quote).value();
 }
@@ -2408,7 +2408,7 @@ Length BoxStyle::convertLengthOrPercent(const CssValue& value) const
 
 Length BoxStyle::convertLengthOrPercentOrAuto(const CssValue& value) const
 {
-    if(is<CssIdentValue>(value)) {
+    if (is<CssIdentValue>(value)) {
         const auto& ident = to<CssIdentValue>(value);
         assert(ident.value() == CssValueID::Auto);
         return Length::Auto;

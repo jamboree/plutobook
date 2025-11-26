@@ -548,7 +548,7 @@ void Element::finishParsingDocument()
         const auto& baseUrl = document()->baseUrl();
         auto completeUrl = getUrlAttribute(hrefAttr);
         auto fragmentName = completeUrl.fragment();
-        if(!fragmentName.empty() && baseUrl == completeUrl.base()) {
+        if(!fragmentName.empty() && baseUrl.value() == completeUrl.base()) {
             auto element = document()->getElementById(fragmentName.substr(1));
             if(element) {
                 element->setIsLinkDestination(true);

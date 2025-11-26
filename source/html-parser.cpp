@@ -6,32 +6,50 @@ namespace plutobook {
 
 inline bool isNumberedHeaderTag(const GlobalString& tagName)
 {
-    return tagName == h1Tag
-        || tagName == h2Tag
-        || tagName == h3Tag
-        || tagName == h4Tag
-        || tagName == h5Tag
-        || tagName == h6Tag;
+    using enum GlobalStringId;
+    switch (GlobalStringId(tagName.index())) {
+    case h1Tag:
+    case h2Tag:
+    case h3Tag:
+    case h4Tag:
+    case h5Tag:
+    case h6Tag:
+        return true;
+    default:
+        return false;
+    }
 }
 
 inline bool isImpliedEndTag(const GlobalString& tagName)
 {
-    return tagName == ddTag
-        || tagName == dtTag
-        || tagName == liTag
-        || tagName == optionTag
-        || tagName == optgroupTag
-        || tagName == pTag
-        || tagName == rpTag
-        || tagName == rtTag;
+    using enum GlobalStringId;
+    switch (GlobalStringId(tagName.index())) {
+    case ddTag:
+    case dtTag:
+    case liTag:
+    case optionTag:
+    case optgroupTag:
+    case pTag:
+    case rpTag:
+    case rtTag:
+        return true;
+    default:
+        return false;
+    };
 }
 
 inline bool isFosterRedirectingTag(const GlobalString& tagName)
 {
-    return tagName == tableTag
-        || tagName == tbodyTag
-        || tagName == theadTag
-        || tagName == trTag;
+    using enum GlobalStringId;
+    switch (GlobalStringId(tagName.index())) {
+    case tableTag:
+    case tbodyTag:
+    case theadTag:
+    case trTag:
+        return true;
+    default:
+        return false;
+    };
 }
 
 inline bool isNumberedHeaderElement(const Element* element)
@@ -43,94 +61,111 @@ inline bool isSpecialElement(const Element* element)
 {
     const auto& tagName = element->tagName();
     if(element->namespaceURI() == svgNs) {
-        return tagName == foreignObjectTag
-            || tagName == descTag
-            || tagName == titleTag;
+        using enum GlobalStringId;
+        switch (GlobalStringId(tagName.index())) {
+        case foreignObjectTag:
+        case descTag:
+        case titleTag:
+            return true;
+        default:
+            return false;
+        };
     }
 
     if(element->namespaceURI() == mathmlNs) {
-        return tagName == miTag
-            || tagName == moTag
-            || tagName == mnTag
-            || tagName == msTag
-            || tagName == mtextTag
-            || tagName == annotation_xmlTag;
+        using enum GlobalStringId;
+        switch (GlobalStringId(tagName.index())) {
+        case miTag:
+        case moTag:
+        case mnTag:
+        case msTag:
+        case mtextTag:
+        case annotation_xmlTag:
+            return true;
+        default:
+            return false;
+        };
     }
 
-    return tagName == addressTag
-        || tagName == appletTag
-        || tagName == areaTag
-        || tagName == articleTag
-        || tagName == asideTag
-        || tagName == baseTag
-        || tagName == basefontTag
-        || tagName == bgsoundTag
-        || tagName == blockquoteTag
-        || tagName == bodyTag
-        || tagName == brTag
-        || tagName == buttonTag
-        || tagName == captionTag
-        || tagName == centerTag
-        || tagName == colTag
-        || tagName == colgroupTag
-        || tagName == commandTag
-        || tagName == ddTag
-        || tagName == detailsTag
-        || tagName == dirTag
-        || tagName == divTag
-        || tagName == dlTag
-        || tagName == dtTag
-        || tagName == embedTag
-        || tagName == fieldsetTag
-        || tagName == figcaptionTag
-        || tagName == figureTag
-        || tagName == footerTag
-        || tagName == formTag
-        || tagName == frameTag
-        || tagName == framesetTag
-        || isNumberedHeaderTag(tagName)
-        || tagName == headTag
-        || tagName == headerTag
-        || tagName == hgroupTag
-        || tagName == hrTag
-        || tagName == htmlTag
-        || tagName == iframeTag
-        || tagName == imgTag
-        || tagName == inputTag
-        || tagName == liTag
-        || tagName == linkTag
-        || tagName == listingTag
-        || tagName == mainTag
-        || tagName == marqueeTag
-        || tagName == menuTag
-        || tagName == metaTag
-        || tagName == navTag
-        || tagName == noembedTag
-        || tagName == noframesTag
-        || tagName == noscriptTag
-        || tagName == objectTag
-        || tagName == olTag
-        || tagName == pTag
-        || tagName == paramTag
-        || tagName == plaintextTag
-        || tagName == preTag
-        || tagName == scriptTag
-        || tagName == sectionTag
-        || tagName == selectTag
-        || tagName == styleTag
-        || tagName == summaryTag
-        || tagName == tableTag
-        || tagName == tbodyTag
-        || tagName == tdTag
-        || tagName == textareaTag
-        || tagName == tfootTag
-        || tagName == thTag
-        || tagName == theadTag
-        || tagName == titleTag
-        || tagName == trTag
-        || tagName == ulTag
-        || tagName == wbrTag
-        || tagName == xmpTag;
+    using enum GlobalStringId;
+    switch (GlobalStringId(tagName.index())) {
+    case addressTag:
+    case appletTag:
+    case areaTag:
+    case articleTag:
+    case asideTag:
+    case baseTag:
+    case basefontTag:
+    case bgsoundTag:
+    case blockquoteTag:
+    case bodyTag:
+    case brTag:
+    case buttonTag:
+    case captionTag:
+    case centerTag:
+    case colTag:
+    case colgroupTag:
+    case commandTag:
+    case ddTag:
+    case detailsTag:
+    case dirTag:
+    case divTag:
+    case dlTag:
+    case dtTag:
+    case embedTag:
+    case fieldsetTag:
+    case figcaptionTag:
+    case figureTag:
+    case footerTag:
+    case formTag:
+    case frameTag:
+    case framesetTag:
+    case headTag:
+    case headerTag:
+    case hgroupTag:
+    case hrTag:
+    case htmlTag:
+    case iframeTag:
+    case imgTag:
+    case inputTag:
+    case liTag:
+    case linkTag:
+    case listingTag:
+    case mainTag:
+    case marqueeTag:
+    case menuTag:
+    case metaTag:
+    case navTag:
+    case noembedTag:
+    case noframesTag:
+    case noscriptTag:
+    case objectTag:
+    case olTag:
+    case pTag:
+    case paramTag:
+    case plaintextTag:
+    case preTag:
+    case scriptTag:
+    case sectionTag:
+    case selectTag:
+    case styleTag:
+    case summaryTag:
+    case tableTag:
+    case tbodyTag:
+    case tdTag:
+    case textareaTag:
+    case tfootTag:
+    case thTag:
+    case theadTag:
+    case titleTag:
+    case trTag:
+    case ulTag:
+    case wbrTag:
+    case xmpTag:
+        return true;
+    default:
+        return isNumberedHeaderTag(tagName);
+    };
 }
 
 inline bool isHtmlIntegrationPoint(const Element* element)
@@ -786,7 +821,7 @@ void HtmlParser::closeTheCell()
 
 void HtmlParser::adjustSvgTagNames(HtmlTokenView& token)
 {
-    static const std::map<GlobalString, GlobalString> table = {
+    static const boost::unordered_flat_map<GlobalString, GlobalString> table = {
         {"altglyph"_glo, "altGlyph"_glo},
         {"altglyphdef"_glo, "altGlyphDef"_glo},
         {"altglyphitem"_glo, "altGlyphItem"_glo},
@@ -832,7 +867,7 @@ void HtmlParser::adjustSvgTagNames(HtmlTokenView& token)
 
 void HtmlParser::adjustSvgAttributes(HtmlTokenView& token)
 {
-    static const std::map<GlobalString, GlobalString> table = {
+    static const boost::unordered_flat_map<GlobalString, GlobalString> table = {
         {"attributename"_glo, "attributeName"_glo},
         {"attributetype"_glo, "attributeType"_glo},
         {"basefrequency"_glo, "baseFrequency"_glo},

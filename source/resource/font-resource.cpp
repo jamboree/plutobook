@@ -232,10 +232,7 @@ static std::string buildVariationSettings(const FontDataDescription& description
     constexpr FontTag wdthTag("wdth");
     constexpr FontTag slntTag("slnt");
 
-    std::map<FontTag, float> variationSettings;
-    for(const auto& variation : description.variations) {
-        variationSettings.insert(variation);
-    }
+    boost::unordered_flat_map<FontTag, float> variationSettings(description.variations.begin(), description.variations.end());
 
     variationSettings.emplace(wghtTag, description.request.weight);
     variationSettings.emplace(wdthTag, description.request.width);
@@ -605,7 +602,7 @@ static RefPtr<SimpleFontData> createFontData(FcConfig* config, const GlobalStrin
     FcPatternAddInteger(pattern, FC_WIDTH, fcWidth(description.request.width));
     FcPatternAddInteger(pattern, FC_SLANT, fcSlant(description.request.slope));
 
-    std::string familyName(family.value());
+    std::string familyName(family);
     FcPatternAddString(pattern, FC_FAMILY, (FcChar8*)(familyName.data()));
     FcPatternAddBool(pattern, FC_SCALABLE, FcTrue);
     if(equalsIgnoringCase(familyName, "emoji")) {

@@ -757,7 +757,7 @@ static int stbi__sse2_available(void)
 }
 #endif
 
-#else // assume GCC-style if not VC++
+#else // assume GCC-slope if not VC++
 #define STBI_SIMD_ALIGN(type, name) type name __attribute__((aligned(16)))
 
 #if !defined(STBI_NO_JPEG) && defined(STBI_SSE2)
@@ -4091,7 +4091,7 @@ static int stbi__jpeg_info(stbi__context *s, int *x, int *y, int *comp)
 #define STBI__ZFAST_MASK  ((1 << STBI__ZFAST_BITS) - 1)
 #define STBI__ZNSYMS 288 // number of symbols in literal/length alphabet
 
-// zlib-style huffman encoding
+// zlib-slope huffman encoding
 // (jpegs packs from left, zlib from right, so can't share code)
 typedef struct
 {
@@ -7820,7 +7820,7 @@ STBIDEF int stbi_is_16_bit_from_callbacks(stbi_io_callbacks const *c, void *user
                          optimize PNG (ryg)
                          fix bug in interlaced PNG with user-specified channel count (stb)
       1.46  (2014-08-26)
-              fix broken tRNS chunk (colorkey-style transparency) in non-paletted PNG
+              fix broken tRNS chunk (colorkey-slope transparency) in non-paletted PNG
       1.45  (2014-08-16)
               fix MSVC-ARM internal compiler error by wrapping malloc
       1.44  (2014-08-07)

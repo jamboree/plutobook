@@ -42,40 +42,31 @@ void CssFontFaceCache::add(const GlobalString& family, const FontSelectionDescri
     fontFace->add(std::move(face));
 }
 
-class CssPropertyData {
+class CssPropertyData : public CssProperty {
 public:
     CssPropertyData(uint32_t specificity, uint32_t position, const CssProperty& property)
-        : m_id(property.id()), m_origin(property.origin()), m_important(property.important())
-        , m_specificity(specificity), m_position(position), m_value(property.value())
+        : CssProperty(property),  m_specificity(specificity), m_position(position)
     {}
 
-    CssPropertyID id() const { return m_id; }
-    CssStyleOrigin origin() const { return m_origin; }
-    bool important() const { return m_important; }
     uint32_t specificity() const { return m_specificity; }
     uint32_t position() const { return m_position; }
-    const RefPtr<CssValue>& value() const { return m_value; }
 
     bool isLessThan(const CssPropertyData& data) const;
 
 private:
-    CssPropertyID m_id;
-    CssStyleOrigin m_origin;
-    bool m_important;
     uint32_t m_specificity;
     uint32_t m_position;
-    RefPtr<CssValue> m_value;
 };
 
 inline bool CssPropertyData::isLessThan(const CssPropertyData& data) const
 {
-    if(m_important != data.important())
-        return m_important < data.important();
-    if(m_origin != data.origin())
-        return m_origin < data.origin();
-    if(m_specificity != data.specificity())
-        return m_specificity < data.specificity();
-    return m_position < data.position();
+    if(m_important != data.m_important)
+        return m_important < data.m_important;
+    if(m_origin != data.m_origin)
+        return m_origin < data.m_origin;
+    if(m_specificity != data.m_specificity)
+        return m_specificity < data.m_specificity;
+    return m_position < data.m_position;
 }
 
 using CssPropertyDataList = std::vector<CssPropertyData>;
@@ -88,7 +79,7 @@ public:
     FontSelectionValue size() const;
     FontSelectionValue weight() const;
     FontSelectionValue stretch() const;
-    FontSelectionValue style() const;
+    FontSelectionValue slope() const;
     FontVariationList variationSettings() const;
 
     FontDescription build() const;
@@ -285,7 +276,7 @@ FontSelectionValue FontDescriptionBuilder::stretch() const
     return convertFontStretchIdent(*m_stretch);
 }
 
-static FontSelectionValue convertFontStyleIdent(const CssValue& value)
+static FontSelectionValue convertFontSlopeIdent(const CssValue& value)
 {
     const auto& ident = to<CssIdentValue>(value);
     switch(ident.value()) {
@@ -302,23 +293,23 @@ static FontSelectionValue convertFontStyleIdent(const CssValue& value)
     return kNormalFontSlope;
 }
 
-static FontSelectionValue convertFontStyleAngle(const CssValue& value)
+static FontSelectionValue convertFontSlopeAngle(const CssValue& value)
 {
     return std::clamp<FontSelectionValue>(to<CssAngleValue>(value).valueInDegrees(), kMinFontSlope, kMaxFontSlope);
 }
 
-FontSelectionValue FontDescriptionBuilder::style() const
+FontSelectionValue FontDescriptionBuilder::slope() const
 {
     if(m_style == nullptr)
-        return m_parentStyle->fontStyle();
+        return m_parentStyle->fontSlope();
     if(is<CssInitialValue>(*m_style))
         return kNormalFontSlope;
     if(auto ident = to<CssIdentValue>(m_style))
-        return convertFontStyleIdent(*ident);
+        return convertFontSlopeIdent(*ident);
     const auto& pair = to<CssPairValue>(*m_style);
     const auto& ident = to<CssIdentValue>(*pair.first());
     assert(ident.value() == CssValueID::Oblique);
-    return convertFontStyleAngle(*pair.second());
+    return convertFontSlopeAngle(*pair.second());
 }
 
 FontVariationList FontDescriptionBuilder::variationSettings() const
@@ -350,7 +341,7 @@ FontDescription FontDescriptionBuilder::build() const
     description.data.size = size();
     description.data.request.weight = weight();
     description.data.request.width = stretch();
-    description.data.request.slope = style();
+    description.data.request.slope = slope();
     description.data.variations = variationSettings();
     return description;
 }
@@ -379,20 +370,18 @@ void StyleBuilder::merge(uint32_t specificity, uint32_t position, const CssPrope
 {
     for(const auto& property : properties) {
         CssPropertyData data(specificity, position, property);
-        auto predicate_func = [&property](const CssPropertyData& item) {
-            if(property.id() == CssPropertyID::Custom && item.id() == CssPropertyID::Custom) {
+        auto it = std::ranges::find_if(m_properties, [&property](const CssPropertyData& item) {
+            if (property.id() == CssPropertyID::Custom && item.id() == CssPropertyID::Custom) {
                 const auto& a = to<CssCustomPropertyValue>(*property.value());
                 const auto& b = to<CssCustomPropertyValue>(*item.value());
                 return a.name() == b.name();
             }
 
             return property.id() == item.id();
-        };
-
-        auto it = std::find_if(m_properties.begin(), m_properties.end(), predicate_func);
+        });
         if(it == m_properties.end()) {
             m_properties.push_back(std::move(data));
-        } else if(!data.isLessThan(*it)) {
+        } else if(it->isLessThan(data)) {
             *it = std::move(data);
         }
     }
@@ -428,20 +417,23 @@ void StyleBuilder::buildStyle(BoxStyle* newStyle)
         case CssPropertyID::FontStyle:
         case CssPropertyID::FontVariationSettings:
             continue;
-        default:
-            break;
         }
 
         auto value = property.value();
-        if(is<CssUnsetValue>(*value) || is<CssVariableReferenceValue>(*value))
+        switch (value->type()) {
+        case CssValueType::Unset:
+        case CssValueType::VariableReference:
             continue;
-        if(is<CssInitialValue>(*value)) {
+        case CssValueType::Initial:
             newStyle->reset(id);
             continue;
+        case CssValueType::Inherit:
+            value = m_parentStyle->get(id);
+            if (!value)
+                continue;
+            break;
         }
 
-        if(is<CssInheritValue>(*value) && !(value = m_parentStyle->get(id)))
-            continue;
         if(is<CssLengthValue>(*value) || is<CssCalcValue>(*value))
             value = newStyle->resolveLength(value);
         newStyle->set(id, std::move(value));
@@ -904,7 +896,7 @@ public:
 
     FontSelectionRange weight() const;
     FontSelectionRange stretch() const;
-    FontSelectionRange style() const;
+    FontSelectionRange slope() const;
 
     FontFeatureList featureSettings() const;
     FontVariationList variationSettings() const;
@@ -997,18 +989,18 @@ FontSelectionRange CssFontFaceBuilder::stretch() const
     return FontSelectionRange(startPercent.value(), endPercent.value());
 }
 
-FontSelectionRange CssFontFaceBuilder::style() const
+FontSelectionRange CssFontFaceBuilder::slope() const
 {
     if(m_style == nullptr)
         return FontSelectionRange(kNormalFontSlope);
     if(auto ident = to<CssIdentValue>(m_style))
-        return FontSelectionRange(convertFontStyleIdent(*ident));
+        return FontSelectionRange(convertFontSlopeIdent(*ident));
     const auto& list = to<CssListValue>(*m_style);
-    const auto& ident = to<CssIdentValue>(*list.at(0));
+    const auto& ident = to<CssIdentValue>(*list[0]);
     assert(list.size() == 3 && ident.value() == CssValueID::Oblique);
 
-    auto startAngle = convertFontStyleAngle(*list.at(1));
-    auto endAngle = convertFontStyleAngle(*list.at(2));
+    auto startAngle = convertFontSlopeAngle(*list[1]);
+    auto endAngle = convertFontSlopeAngle(*list[2]);
     if(startAngle > endAngle)
         return FontSelectionRange(endAngle, startAngle);
     return FontSelectionRange(startAngle, endAngle);
@@ -1067,12 +1059,12 @@ GlobalString CssFontFaceBuilder::family() const
 {
     if(auto family = to<CssCustomIdentValue>(m_family))
         return family->value();
-    return nullGlo;
+    return emptyGlo;
 }
 
 FontSelectionDescription CssFontFaceBuilder::description() const
 {
-    return FontSelectionDescription(weight(), stretch(), style());
+    return FontSelectionDescription(weight(), stretch(), slope());
 }
 
 static const HeapString& convertStringOrCustomIdent(const CssValue& value)
@@ -1088,7 +1080,7 @@ RefPtr<FontFace> CssFontFaceBuilder::build(Document* document) const
         return nullptr;
     for(const auto& value : to<CssListValue>(*m_src)) {
         const auto& list = to<CssListValue>(*value);
-        if(auto function = to<CssUnaryFunctionValue>(list.at(0))) {
+        if(auto function = to<CssUnaryFunctionValue>(list[0])) {
             assert(function->id() == CssFunctionID::Local);
             const auto& family = to<CssCustomIdentValue>(*function->value());
             if(!fontDataCache()->isFamilyAvailable(family.value()))
@@ -1096,9 +1088,9 @@ RefPtr<FontFace> CssFontFaceBuilder::build(Document* document) const
             return LocalFontFace::create(family.value(), featureSettings(), variationSettings(), unicodeRanges());
         }
 
-        const auto& url = to<CssUrlValue>(*list.at(0));
+        const auto& url = to<CssUrlValue>(*list[0]);
         if(list.size() == 2) {
-            const auto& function = to<CssUnaryFunctionValue>(*list.at(1));
+            const auto& function = to<CssUnaryFunctionValue>(*list[1]);
             assert(function.id() == CssFunctionID::Format);
             const auto& format = convertStringOrCustomIdent(*function.value());
             if(!FontResource::supportsFormat(format.value())) {
