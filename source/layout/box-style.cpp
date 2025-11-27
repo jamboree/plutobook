@@ -21,7 +21,7 @@ const Length Length::ZeroPercent(Length::Type::Percent);
 void CssPropertyMap::erase(CssPropertyID id) {
     auto idx = unsigned(id);
     const auto block = idx >> 5;
-    const auto bit = 1u << (idx & 32u);
+    const auto bit = 1u << (idx & 31u);
     if (m_bitset[block] & bit) {
         idx = std::popcount(m_bitset[block] & (bit - 1u));
         for (unsigned i = 0; i != block; ++i) {
@@ -35,15 +35,14 @@ void CssPropertyMap::erase(CssPropertyID id) {
 void CssPropertyMap::set(CssPropertyID id, RefPtr<CssValue> value) {
     auto idx = unsigned(id);
     const auto block = idx >> 5;
-    const auto bit = 1u << (idx & 32u);
+    const auto bit = 1u << (idx & 31u);
     idx = std::popcount(m_bitset[block] & (bit - 1u));
     for (unsigned i = 0; i != block; ++i) {
         idx += std::popcount(m_bitset[i]);
     }
     if (m_bitset[block] & bit) {
         m_values[idx] = std::move(value);
-    }
-    else {
+    } else {
         m_bitset[block] |= bit;
         m_values.insert(m_values.begin() + idx, std::move(value));
     }
@@ -52,7 +51,7 @@ void CssPropertyMap::set(CssPropertyID id, RefPtr<CssValue> value) {
 CssValue* CssPropertyMap::get(CssPropertyID id) const {
     auto idx = unsigned(id);
     const auto block = idx >> 5;
-    const auto bit = 1u << (idx & 32u);
+    const auto bit = 1u << (idx & 31u);
     if (m_bitset[block] & bit) {
         idx = std::popcount(m_bitset[block] & (bit - 1u));
         for (unsigned i = 0; i != block; ++i) {

@@ -500,6 +500,10 @@ namespace plutobook {
                                   StrHash, StrEqual>;
 
     struct CssPropertyMap {
+        CssPropertyMap() = default;
+        CssPropertyMap(const CssPropertyMap&) = delete;
+        CssPropertyMap& operator=(const CssPropertyMap&) = delete;
+
         void erase(CssPropertyID id);
 
         void set(CssPropertyID id, RefPtr<CssValue> value);
@@ -974,14 +978,22 @@ namespace plutobook {
     };
 
     inline bool BoxStyle::isDisplayBlockType(Display display) {
-        return display == Display::Block || display == Display::Flex ||
-               display == Display::ListItem || display == Display::Table;
+        switch (display) {
+        case Display::Block:
+        case Display::Flex:
+        case Display::ListItem:
+        case Display::Table: return true;
+        default: return false;
+        };
     }
 
     inline bool BoxStyle::isDisplayInlineType(Display display) {
-        return display == Display::Inline || display == Display::InlineBlock ||
-               display == Display::InlineFlex ||
-               display == Display::InlineTable;
+        switch (display) {
+        case Display::Inline:
+        case Display::InlineBlock:
+        case Display::InlineFlex:
+        case Display::InlineTable: return true;
+        default: return false;
+        }
     }
-
 } // namespace plutobook
