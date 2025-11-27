@@ -28,9 +28,9 @@ namespace plutobook {
 
         TargetCounterBox(const RefPtr<BoxStyle>& style,
                          const HeapString& fragment,
-                         const GlobalString& identifier,
+                         GlobalString identifier,
                          const HeapString& seperator,
-                         const GlobalString& listStyle);
+                         GlobalString listStyle);
 
         void build() final;
 

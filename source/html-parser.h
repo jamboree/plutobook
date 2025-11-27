@@ -38,20 +38,20 @@ public:
     void pop();
     void popHtmlHeadElement();
     void popHtmlBodyElement();
-    void popUntil(const GlobalString& tagName);
+    void popUntil(GlobalString tagName);
     void popUntil(const Element* element);
     void popUntilNumberedHeaderElement();
     void popUntilTableScopeMarker();
     void popUntilTableBodyScopeMarker();
     void popUntilTableRowScopeMarker();
     void popUntilForeignContentScopeMarker();
-    void popUntilPopped(const GlobalString& tagName);
+    void popUntilPopped(GlobalString tagName);
     void popUntilPopped(const Element* element);
     void popUntilNumberedHeaderElementPopped();
     void popAll();
 
     void generateImpliedEndTags();
-    void generateImpliedEndTagsExcept(const GlobalString& tagName);
+    void generateImpliedEndTagsExcept(GlobalString tagName);
 
     void removeHtmlHeadElement(const Element* element);
     void removeHtmlBodyElement();
@@ -59,7 +59,7 @@ public:
     void insertAfter(const Element* element, Element* item);
 
     Element* furthestBlockForFormattingElement(const Element* formattingElement) const;
-    Element* topmost(const GlobalString& tagName) const;
+    Element* topmost(GlobalString tagName) const;
     Element* previous(const Element* element) const;
     Element* top() const { return m_elements.back(); }
 
@@ -68,13 +68,13 @@ public:
     Element* bodyElement() const { return m_bodyElement; }
 
     template<bool isMarker(const Element*)>
-    bool inScopeTemplate(const GlobalString& tagName) const;
+    bool inScopeTemplate(GlobalString tagName) const;
     bool inScope(const Element* element) const;
-    bool inScope(const GlobalString& tagName) const;
-    bool inButtonScope(const GlobalString& tagName) const;
-    bool inListItemScope(const GlobalString& tagName) const;
-    bool inTableScope(const GlobalString& tagName) const;
-    bool inSelectScope(const GlobalString& tagName) const;
+    bool inScope(GlobalString tagName) const;
+    bool inButtonScope(GlobalString tagName) const;
+    bool inListItemScope(GlobalString tagName) const;
+    bool inTableScope(GlobalString tagName) const;
+    bool inSelectScope(GlobalString tagName) const;
     bool isNumberedHeaderElementInScope() const;
 
 private:
@@ -91,7 +91,7 @@ public:
     void appendMarker();
     void clearToLastMarker();
 
-    Element* closestElementInScope(const GlobalString& tagName);
+    Element* closestElementInScope(GlobalString tagName);
 };
 
 class HtmlDocument;
@@ -104,7 +104,7 @@ public:
 
 private:
     Element* createHtmlElement(const HtmlTokenView& token) const;
-    Element* createElement(const HtmlTokenView& token, const GlobalString& namespaceURI) const;
+    Element* createElement(const HtmlTokenView& token, GlobalString namespaceURI) const;
     Element* cloneElement(const Element* element) const;
     Element* currentElement() const { return m_openElements.top(); }
 
@@ -139,7 +139,7 @@ private:
     void insertSelfClosingHtmlElement(const HtmlTokenView& token);
     void insertHtmlElement(const HtmlTokenView& token);
     void insertHtmlFormattingElement(const HtmlTokenView& token);
-    void insertForeignElement(const HtmlTokenView& token, const GlobalString& namespaceURI);
+    void insertForeignElement(const HtmlTokenView& token, GlobalString namespaceURI);
     void insertTextNode(const std::string_view& data);
 
     enum class InsertionMode {
@@ -195,8 +195,8 @@ private:
     void handleAfterAfterFramesetMode(HtmlTokenView& token);
     void handleInForeignContentMode(HtmlTokenView& token);
 
-    void handleFakeStartTagToken(const GlobalString& tagName);
-    void handleFakeEndTagToken(const GlobalString& tagName);
+    void handleFakeStartTagToken(GlobalString tagName);
+    void handleFakeEndTagToken(GlobalString tagName);
 
     void handleFormattingEndTagToken(HtmlTokenView& token);
     void handleOtherFormattingEndTagToken(HtmlTokenView& token);

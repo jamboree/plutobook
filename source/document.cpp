@@ -314,7 +314,7 @@ void ContainerNode::finishParsingDocument()
     }
 }
 
-Element::Element(ClassKind type, Document* document, const GlobalString& namespaceURI, const GlobalString& tagName)
+Element::Element(ClassKind type, Document* document, GlobalString namespaceURI, GlobalString tagName)
     : ContainerNode(type, document)
     , m_namespaceURI(namespaceURI)
     , m_tagName(tagName)
@@ -326,7 +326,7 @@ const HeapString& Element::lang() const
     return getAttribute(langAttr);
 }
 
-const Attribute* Element::findAttribute(const GlobalString& name) const
+const Attribute* Element::findAttribute(GlobalString name) const
 {
     for(const auto& attribute : m_attributes) {
         if(name == attribute.name()) {
@@ -337,7 +337,7 @@ const Attribute* Element::findAttribute(const GlobalString& name) const
     return nullptr;
 }
 
-const Attribute* Element::findAttributePossiblyIgnoringCase(const GlobalString& name) const
+const Attribute* Element::findAttributePossiblyIgnoringCase(GlobalString name) const
 {
     if(m_isCaseSensitive)
         return findAttribute(name);
@@ -350,7 +350,7 @@ const Attribute* Element::findAttributePossiblyIgnoringCase(const GlobalString& 
     return nullptr;
 }
 
-bool Element::hasAttribute(const GlobalString& name) const
+bool Element::hasAttribute(GlobalString name) const
 {
     for(const auto& attribute : m_attributes) {
         if(name == attribute.name()) {
@@ -361,7 +361,7 @@ bool Element::hasAttribute(const GlobalString& name) const
     return false;
 }
 
-const HeapString& Element::getAttribute(const GlobalString& name) const
+const HeapString& Element::getAttribute(GlobalString name) const
 {
     for(const auto& attribute : m_attributes) {
         if(name == attribute.name()) {
@@ -372,7 +372,7 @@ const HeapString& Element::getAttribute(const GlobalString& name) const
     return emptyGlo;
 }
 
-Url Element::getUrlAttribute(const GlobalString& name) const
+Url Element::getUrlAttribute(GlobalString name) const
 {
     const auto& value = getAttribute(name);
     if(!value.empty())
@@ -393,7 +393,7 @@ void Element::setAttribute(const Attribute& attribute)
     setAttribute(attribute.name(), attribute.value());
 }
 
-void Element::setAttribute(const GlobalString& name, const HeapString& value)
+void Element::setAttribute(GlobalString name, const HeapString& value)
 {
     parseAttribute(name, value);
     for(auto& attribute : m_attributes) {
@@ -406,7 +406,7 @@ void Element::setAttribute(const GlobalString& name, const HeapString& value)
     m_attributes.emplace_front(name, value);
 }
 
-void Element::removeAttribute(const GlobalString& name)
+void Element::removeAttribute(GlobalString name)
 {
     parseAttribute(name, emptyGlo);
     m_attributes.remove_if([&name](const auto& attribute) {
@@ -414,7 +414,7 @@ void Element::removeAttribute(const GlobalString& name)
     });
 }
 
-void Element::parseAttribute(const GlobalString& name, const HeapString& value)
+void Element::parseAttribute(GlobalString name, const HeapString& value)
 {
     if(name == idAttr) {
         if(!m_id.empty())
@@ -622,7 +622,7 @@ TextNode* Document::createTextNode(const std::string_view& value)
     return new TextNode(this, createString(value));
 }
 
-Element* Document::createElement(const GlobalString& namespaceURI, const GlobalString& tagName)
+Element* Document::createElement(GlobalString namespaceURI, GlobalString tagName)
 {
     if(namespaceURI == xhtmlNs) {
         if(tagName == bodyTag)
@@ -781,14 +781,14 @@ void Document::removeElementById(const HeapString& id, Element* element)
     }
 }
 
-void Document::addRunningStyle(const GlobalString& name, RefPtr<BoxStyle> style)
+void Document::addRunningStyle(GlobalString name, RefPtr<BoxStyle> style)
 {
     assert(style->position() == Position::Running);
     style->setPosition(Position::Static);
     m_runningStyles.emplace(name, std::move(style));
 }
 
-RefPtr<BoxStyle> Document::getRunningStyle(const GlobalString& name) const
+RefPtr<BoxStyle> Document::getRunningStyle(GlobalString name) const
 {
     auto it = m_runningStyles.find(name);
     if(it == m_runningStyles.end())
@@ -802,7 +802,7 @@ void Document::addTargetCounters(const HeapString& id, const CounterMap& counter
     m_counterCache.emplace(id, counters);
 }
 
-HeapString Document::getTargetCounterText(const HeapString& fragment, const GlobalString& name, const GlobalString& listStyle, const HeapString& separator)
+HeapString Document::getTargetCounterText(const HeapString& fragment, GlobalString name, GlobalString listStyle, const HeapString& separator)
 {
     if(fragment.empty() || fragment.front() != '#')
         return emptyGlo;
@@ -812,7 +812,7 @@ HeapString Document::getTargetCounterText(const HeapString& fragment, const Glob
     return getCountersText(it->second, name, listStyle, separator);
 }
 
-HeapString Document::getCountersText(const CounterMap& counters, const GlobalString& name, const GlobalString& listStyle, const HeapString& separator)
+HeapString Document::getCountersText(const CounterMap& counters, GlobalString name, GlobalString listStyle, const HeapString& separator)
 {
     auto it = counters.find(name);
     if(it == counters.end())
@@ -938,27 +938,27 @@ RefPtr<BoxStyle> Document::pseudoStyleForElement(Element* element, PseudoType ps
     return m_styleSheet.pseudoStyleForElement(element, pseudoType, parentStyle);
 }
 
-RefPtr<BoxStyle> Document::styleForPage(const GlobalString& pageName, uint32_t pageIndex, PseudoType pseudoType) const
+RefPtr<BoxStyle> Document::styleForPage(GlobalString pageName, uint32_t pageIndex, PseudoType pseudoType) const
 {
     return m_styleSheet.styleForPage(pageName, pageIndex, pseudoType);
 }
 
-RefPtr<BoxStyle> Document::styleForPageMargin(const GlobalString& pageName, uint32_t pageIndex, PageMarginType marginType, const BoxStyle* pageStyle) const
+RefPtr<BoxStyle> Document::styleForPageMargin(GlobalString pageName, uint32_t pageIndex, PageMarginType marginType, const BoxStyle* pageStyle) const
 {
     return m_styleSheet.styleForPageMargin(pageName, pageIndex, marginType, pageStyle);
 }
 
-std::string Document::getCounterText(int value, const GlobalString& listType)
+std::string Document::getCounterText(int value, GlobalString listType)
 {
     return m_styleSheet.getCounterText(value, listType);
 }
 
-std::string Document::getMarkerText(int value, const GlobalString& listType)
+std::string Document::getMarkerText(int value, GlobalString listType)
 {
     return m_styleSheet.getMarkerText(value, listType);
 }
 
-RefPtr<FontData> Document::getFontData(const GlobalString& family, const FontDataDescription& description)
+RefPtr<FontData> Document::getFontData(GlobalString family, const FontDataDescription& description)
 {
     return m_styleSheet.getFontData(family, description);
 }

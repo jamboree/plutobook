@@ -14,7 +14,7 @@ CssFontFaceCache::CssFontFaceCache()
 {
 }
 
-RefPtr<FontData> CssFontFaceCache::get(const GlobalString& family, const FontDataDescription& description) const
+RefPtr<FontData> CssFontFaceCache::get(GlobalString family, const FontDataDescription& description) const
 {
     auto it = m_table.find(family);
     if(it == m_table.end())
@@ -34,7 +34,7 @@ RefPtr<FontData> CssFontFaceCache::get(const GlobalString& family, const FontDat
     return face->getFontData(description);
 }
 
-void CssFontFaceCache::add(const GlobalString& family, const FontSelectionDescription& description, RefPtr<FontFace> face)
+void CssFontFaceCache::add(GlobalString family, const FontSelectionDescription& description, RefPtr<FontFace> face)
 {
     auto& fontFace = m_table[family][description];
     if(fontFace == nullptr)
@@ -368,19 +368,21 @@ FontDescription StyleBuilder::fontDescription() const
 
 void StyleBuilder::merge(uint32_t specificity, uint32_t position, const CssPropertyList& properties)
 {
+    constexpr auto getKey = [](const CssProperty& item) {
+        std::pair<CssPropertyID, GlobalString> key;
+        key.first = item.id();
+        if (key.first == CssPropertyID::Custom) {
+            const auto& custom = to<CssCustomPropertyValue>(*item.value());
+            key.second = custom.name();
+        }
+        return key;
+    };
     for(const auto& property : properties) {
         CssPropertyData data(specificity, position, property);
-        auto it = std::ranges::find_if(m_properties, [&property](const CssPropertyData& item) {
-            if (property.id() == CssPropertyID::Custom && item.id() == CssPropertyID::Custom) {
-                const auto& a = to<CssCustomPropertyValue>(*property.value());
-                const auto& b = to<CssCustomPropertyValue>(*item.value());
-                return a.name() == b.name();
-            }
-
-            return property.id() == item.id();
-        });
-        if(it == m_properties.end()) {
-            m_properties.push_back(std::move(data));
+        const auto key = getKey(property);
+        auto it = std::ranges::lower_bound(m_properties, key, std::ranges::less{}, getKey);
+        if(it == m_properties.end() || getKey(*it) != key) {
+            m_properties.insert(it, std::move(data));
         } else if(it->isLessThan(data)) {
             *it = std::move(data);
         }
@@ -444,7 +446,7 @@ class ElementStyleBuilder final : public StyleBuilder {
 public:
     ElementStyleBuilder(Element* element, PseudoType pseudoType, const BoxStyle* parentStyle);
 
-    void add(const CssRuleDataList* rules);
+    void add(const CssRuleDataList& rules);
     RefPtr<BoxStyle> build();
 
 private:
@@ -457,11 +459,9 @@ ElementStyleBuilder::ElementStyleBuilder(Element* element, PseudoType pseudoType
 {
 }
 
-void ElementStyleBuilder::add(const CssRuleDataList* rules)
+void ElementStyleBuilder::add(const CssRuleDataList& rules)
 {
-    if(rules == nullptr)
-        return;
-    for(const auto& rule : *rules) {
+    for(const auto& rule : rules) {
         if(rule.match(m_element, m_pseudoType)) {
             merge(rule.specificity(), rule.position(), rule.properties());
         }
@@ -536,7 +536,7 @@ RefPtr<BoxStyle> ElementStyleBuilder::build()
 
 class PageStyleBuilder final : public StyleBuilder {
 public:
-    PageStyleBuilder(const GlobalString& pageName, uint32_t pageIndex, PageMarginType marginType, PseudoType pseudoType, const BoxStyle* parentStyle);
+    PageStyleBuilder(GlobalString pageName, uint32_t pageIndex, PageMarginType marginType, PseudoType pseudoType, const BoxStyle* parentStyle);
 
     void add(const CssPageRuleDataList& rules);
     RefPtr<BoxStyle> build();
@@ -547,7 +547,7 @@ private:
     PageMarginType m_marginType;
 };
 
-PageStyleBuilder::PageStyleBuilder(const GlobalString& pageName, uint32_t pageIndex, PageMarginType marginType, PseudoType pseudoType, const BoxStyle* parentStyle)
+PageStyleBuilder::PageStyleBuilder(GlobalString pageName, uint32_t pageIndex, PageMarginType marginType, PseudoType pseudoType, const BoxStyle* parentStyle)
     : StyleBuilder(parentStyle, pseudoType)
     , m_pageName(pageName)
     , m_pageIndex(pageIndex)
@@ -679,43 +679,50 @@ CssStyleSheet::CssStyleSheet(Document* document)
 RefPtr<BoxStyle> CssStyleSheet::styleForElement(Element* element, const BoxStyle* parentStyle) const
 {
     ElementStyleBuilder builder(element, PseudoType::None, parentStyle);
-    for(const auto& className : element->classNames())
-        builder.add(m_classRules.get(className));
-    for(const auto& attribute : element->attributes())
-        builder.add(m_attributeRules.get(element->foldCase(attribute.name())));
-    builder.add(m_tagRules.get(element->foldTagNameCase()));
-    builder.add(m_idRules.get(element->id()));
-    builder.add(&m_universalRules);
+    for (const auto& className : element->classNames()) {
+        if (const auto rules = m_classRules.get(className))
+            builder.add(*rules);
+    }
+    for (const auto& attribute : element->attributes()) {
+        if (const auto rules = m_attributeRules.get(element->foldCase(attribute.name())))
+            builder.add(*rules);
+    }
+    if (const auto rules = m_tagRules.get(element->foldTagNameCase()))
+        builder.add(*rules);
+    if (const auto rules = m_idRules.get(element->id()))
+        builder.add(*rules);
+    builder.add(m_universalRules);
     return builder.build();
 }
 
 RefPtr<BoxStyle> CssStyleSheet::pseudoStyleForElement(Element* element, PseudoType pseudoType, const BoxStyle* parentStyle) const
 {
     ElementStyleBuilder builder(element, pseudoType, parentStyle);
-    builder.add(m_pseudoRules.get(pseudoType));
+    if (const auto rules = m_pseudoRules.get(pseudoType))
+        builder.add(*rules);
     return builder.build();
 }
 
-RefPtr<BoxStyle> CssStyleSheet::styleForPage(const GlobalString& pageName, uint32_t pageIndex, PseudoType pseudoType) const
+RefPtr<BoxStyle> CssStyleSheet::styleForPage(GlobalString pageName, uint32_t pageIndex, PseudoType pseudoType) const
 {
     PageStyleBuilder builder(pageName, pageIndex, PageMarginType::None, pseudoType, m_document->rootStyle());
     builder.add(m_pageRules);
     return builder.build();
 }
 
-RefPtr<BoxStyle> CssStyleSheet::styleForPageMargin(const GlobalString& pageName, uint32_t pageIndex, PageMarginType marginType, const BoxStyle* pageStyle) const
+RefPtr<BoxStyle> CssStyleSheet::styleForPageMargin(GlobalString pageName, uint32_t pageIndex, PageMarginType marginType, const BoxStyle* pageStyle) const
 {
     PageStyleBuilder builder(pageName, pageIndex, marginType, pageStyle->pseudoType(), pageStyle);
     builder.add(m_pageRules);
     return builder.build();
 }
 
-RefPtr<FontData> CssStyleSheet::getFontData(const GlobalString& family, const FontDataDescription& description) const
+RefPtr<FontData> CssStyleSheet::getFontData(GlobalString family, const FontDataDescription& description) const
 {
     return m_fontFaceCache.get(family, description);
 }
 
-const CssCounterStyle& CssStyleSheet::getCounterStyle(const GlobalString& name)
+const CssCounterStyle& CssStyleSheet::getCounterStyle(GlobalString name)
 {
     auto counterStyleMap = userAgentCounterStyleMap();
     if(!m_counterStyleRules.empty()) {
@@ -729,12 +736,12 @@ const CssCounterStyle& CssStyleSheet::getCounterStyle(const GlobalString& name)
     return CssCounterStyle::defaultStyle();
 }
 
-std::string CssStyleSheet::getCounterText(int value, const GlobalString& listType)
+std::string CssStyleSheet::getCounterText(int value, GlobalString listType)
 {
     return getCounterStyle(listType).generateRepresentation(value);
 }
 
-std::string CssStyleSheet::getMarkerText(int value, const GlobalString& listType)
+std::string CssStyleSheet::getMarkerText(int value, GlobalString listType)
 {
     const auto& counterStyle = getCounterStyle(listType);
     std::string representation(counterStyle.prefix());

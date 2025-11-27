@@ -29,7 +29,7 @@ void Counters::pop()
     m_scopes.pop_back();
 }
 
-void Counters::reset(const GlobalString& name, int value)
+void Counters::reset(GlobalString name, int value)
 {
     auto& scopes = m_scopes.back();
     auto& values = m_values[name];
@@ -40,7 +40,7 @@ void Counters::reset(const GlobalString& name, int value)
     }
 }
 
-void Counters::increment(const GlobalString& name, int value)
+void Counters::increment(GlobalString name, int value)
 {
     auto& scopes = m_scopes.back();
     auto& values = m_values[name];
@@ -52,7 +52,7 @@ void Counters::increment(const GlobalString& name, int value)
     }
 }
 
-void Counters::set(const GlobalString& name, int value)
+void Counters::set(GlobalString name, int value)
 {
     auto& scopes = m_scopes.back();
     auto& values = m_values[name];
@@ -128,12 +128,12 @@ void Counters::update(const Box* box)
     }
 }
 
-HeapString Counters::counterText(const GlobalString& name, const GlobalString& listStyle, const HeapString& separator) const
+HeapString Counters::counterText(GlobalString name, GlobalString listStyle, const HeapString& separator) const
 {
     return m_document->getCountersText(m_values, name, listStyle, separator);
 }
 
-HeapString Counters::markerText(const GlobalString& listStyle) const
+HeapString Counters::markerText(GlobalString listStyle) const
 {
     int value = 0;
     auto it = m_values.find(listItemGlo);

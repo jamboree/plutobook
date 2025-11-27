@@ -68,9 +68,9 @@ namespace plutobook {
     public:
         explicit CssFontFaceCache();
 
-        RefPtr<FontData> get(const GlobalString& family,
+        RefPtr<FontData> get(GlobalString family,
                              const FontDataDescription& description) const;
-        void add(const GlobalString& family,
+        void add(GlobalString family,
                  const FontSelectionDescription& description,
                  RefPtr<FontFace> face);
 
@@ -98,20 +98,20 @@ namespace plutobook {
         RefPtr<BoxStyle>
         pseudoStyleForElement(Element* element, PseudoType pseudoType,
                               const BoxStyle* parentStyle) const;
-        RefPtr<BoxStyle> styleForPage(const GlobalString& pageName,
+        RefPtr<BoxStyle> styleForPage(GlobalString pageName,
                                       uint32_t pageIndex,
                                       PseudoType pseudoType) const;
-        RefPtr<BoxStyle> styleForPageMargin(const GlobalString& pageName,
+        RefPtr<BoxStyle> styleForPageMargin(GlobalString pageName,
                                             uint32_t pageIndex,
                                             PageMarginType marginType,
                                             const BoxStyle* pageStyle) const;
         RefPtr<FontData>
-        getFontData(const GlobalString& family,
+        getFontData(GlobalString family,
                     const FontDataDescription& description) const;
 
-        const CssCounterStyle& getCounterStyle(const GlobalString& name);
-        std::string getCounterText(int value, const GlobalString& listType);
-        std::string getMarkerText(int value, const GlobalString& listType);
+        const CssCounterStyle& getCounterStyle(GlobalString name);
+        std::string getCounterText(int value, GlobalString listType);
+        std::string getMarkerText(int value, GlobalString listType);
 
         void parseStyle(const std::string_view& content, CssStyleOrigin origin,
                         Url baseUrl);

@@ -18,7 +18,7 @@
 
 namespace plutobook {
 
-HtmlElement::HtmlElement(Document* document, const GlobalString& tagName)
+HtmlElement::HtmlElement(Document* document, GlobalString tagName)
     : Element(classKind, document, xhtmlNs, tagName)
 {
 }
@@ -175,7 +175,7 @@ static void addHtmlAttributeStyle(std::string& output, const std::string_view& n
     output += ';';
 }
 
-void HtmlElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
+void HtmlElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
 {
     if(name == hiddenAttr) {
         addHtmlAttributeStyle(output, "display", "none");
@@ -219,7 +219,7 @@ static std::optional<unsigned> parseHtmlNonNegativeInteger(std::string_view inpu
 }
 
 template<typename T>
-std::optional<T> HtmlElement::parseIntegerAttribute(const GlobalString& name) const
+std::optional<T> HtmlElement::parseIntegerAttribute(GlobalString name) const
 {
     const auto& value = getAttribute(name);
     if(!value.empty())
@@ -227,7 +227,7 @@ std::optional<T> HtmlElement::parseIntegerAttribute(const GlobalString& name) co
     return std::nullopt;
 }
 
-std::optional<unsigned> HtmlElement::parseNonNegativeIntegerAttribute(const GlobalString& name) const
+std::optional<unsigned> HtmlElement::parseNonNegativeIntegerAttribute(GlobalString name) const
 {
     return parseIntegerAttribute<unsigned>(name);
 }
@@ -291,7 +291,7 @@ HtmlBodyElement::HtmlBodyElement(Document* document)
 {
 }
 
-void HtmlBodyElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
+void HtmlBodyElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
 {
     if(name == textAttr) {
         addHtmlAttributeStyle(output, "color", value);
@@ -370,7 +370,7 @@ static void addHtmlFontSizeAttributeStyle(std::string& output, std::string_view 
     }
 }
 
-void HtmlFontElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
+void HtmlFontElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
 {
     if(name == sizeAttr) {
         addHtmlFontSizeAttributeStyle(output, value);
@@ -388,7 +388,7 @@ HtmlImageElement::HtmlImageElement(Document* document)
 {
 }
 
-void HtmlImageElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
+void HtmlImageElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
 {
     if(name == widthAttr) {
         addHtmlLengthAttributeStyle(output, "width", value);
@@ -447,7 +447,7 @@ HtmlHrElement::HtmlHrElement(Document* document)
 {
 }
 
-void HtmlHrElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
+void HtmlHrElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
 {
     if(name == widthAttr) {
         addHtmlLengthAttributeStyle(output, "width", value);
@@ -529,7 +529,7 @@ std::string_view listTypeAttributeToStyleName(const std::string_view& value)
     return value;
 }
 
-void HtmlLiElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
+void HtmlLiElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
 {
     if(name == typeAttr) {
         addHtmlAttributeStyle(output, "list-style-type", listTypeAttributeToStyleName(value));
@@ -548,7 +548,7 @@ int HtmlOlElement::start() const
     return parseIntegerAttribute(startAttr).value_or(1);
 }
 
-void HtmlOlElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
+void HtmlOlElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
 {
     if(name == typeAttr) {
         addHtmlAttributeStyle(output, "list-style-type", listTypeAttributeToStyleName(value));
@@ -562,7 +562,7 @@ HtmlTableElement::HtmlTableElement(Document* document)
 {
 }
 
-void HtmlTableElement::parseAttribute(const GlobalString& name, const HeapString& value)
+void HtmlTableElement::parseAttribute(GlobalString name, const HeapString& value)
 {
     if(name == cellpaddingAttr) {
         m_padding = parseHtmlNonNegativeInteger(value).value_or(0);
@@ -688,7 +688,7 @@ void HtmlTableElement::collectAdditionalAttributeStyle(std::string& output) cons
     }
 }
 
-void HtmlTableElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
+void HtmlTableElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
 {
     if(name == widthAttr) {
         addHtmlLengthAttributeStyle(output, "width", value);
@@ -747,7 +747,7 @@ HtmlTableElement::Frame HtmlTableElement::parseFrameAttribute(std::string_view v
     return Frame::Unset;
 }
 
-HtmlTablePartElement::HtmlTablePartElement(Document* document, const GlobalString& tagName)
+HtmlTablePartElement::HtmlTablePartElement(Document* document, GlobalString tagName)
     : HtmlElement(document, tagName)
 {
 }
@@ -760,7 +760,7 @@ HtmlTableElement* HtmlTablePartElement::findParentTable() const
     return static_cast<HtmlTableElement*>(parent);
 }
 
-void HtmlTablePartElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
+void HtmlTablePartElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
 {
     if(name == heightAttr) {
         addHtmlLengthAttributeStyle(output, "height", value);
@@ -775,7 +775,7 @@ void HtmlTablePartElement::collectAttributeStyle(std::string& output, const Glob
     }
 }
 
-HtmlTableSectionElement::HtmlTableSectionElement(Document* document, const GlobalString& tagName)
+HtmlTableSectionElement::HtmlTableSectionElement(Document* document, GlobalString tagName)
     : HtmlTablePartElement(document, tagName)
 {
 }
@@ -793,7 +793,7 @@ HtmlTableRowElement::HtmlTableRowElement(Document* document)
 {
 }
 
-HtmlTableColElement::HtmlTableColElement(Document* document, const GlobalString& tagName)
+HtmlTableColElement::HtmlTableColElement(Document* document, GlobalString tagName)
     : HtmlTablePartElement(document, tagName)
 {
 }
@@ -821,7 +821,7 @@ Box* HtmlTableColElement::createBox(const RefPtr<BoxStyle>& style)
     return box;
 }
 
-HtmlTableCellElement::HtmlTableCellElement(Document* document, const GlobalString& tagName)
+HtmlTableCellElement::HtmlTableCellElement(Document* document, GlobalString tagName)
     : HtmlTablePartElement(document, tagName)
 {
 }

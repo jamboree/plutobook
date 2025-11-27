@@ -17,15 +17,15 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::SvgElement;
 
-        SvgElement(Document* document, const GlobalString& tagName);
+        SvgElement(Document* document, GlobalString tagName);
 
-        void parseAttribute(const GlobalString& name,
+        void parseAttribute(GlobalString name,
                             const HeapString& value) override;
         void collectAttributeStyle(std::string& output,
-                                   const GlobalString& name,
+                                   GlobalString name,
                                    const HeapString& value) const override;
-        void addProperty(const GlobalString& name, SvgProperty& value);
-        SvgProperty* getProperty(const GlobalString& name) const;
+        void addProperty(GlobalString name, SvgProperty& value);
+        SvgProperty* getProperty(GlobalString name) const;
         Size currentViewportSize() const;
 
         SvgResourceContainerBox*
@@ -83,7 +83,7 @@ namespace plutobook {
 
     class SvgGraphicsElement : public SvgElement {
     public:
-        SvgGraphicsElement(Document* document, const GlobalString& tagName);
+        SvgGraphicsElement(Document* document, GlobalString tagName);
 
         const Transform& transform() const { return m_transform.value(); }
         SvgResourcePaintServerBox* getPainter(const std::string_view& id) const;
@@ -107,7 +107,7 @@ namespace plutobook {
                                         float& intrinsicHeight,
                                         double& intrinsicRatio);
         void collectAttributeStyle(std::string& output,
-                                   const GlobalString& name,
+                                   GlobalString name,
                                    const HeapString& value) const final;
         Box* createBox(const RefPtr<BoxStyle>& style) final;
 
@@ -198,7 +198,7 @@ namespace plutobook {
 
     class SvgGeometryElement : public SvgGraphicsElement {
     public:
-        SvgGeometryElement(Document* document, const GlobalString& tagName);
+        SvgGeometryElement(Document* document, GlobalString tagName);
 
         SvgResourceMarkerBox* getMarker(const std::string_view& id) const;
     };
@@ -217,7 +217,7 @@ namespace plutobook {
 
     class SvgShapeElement : public SvgGeometryElement {
     public:
-        SvgShapeElement(Document* document, const GlobalString& tagName);
+        SvgShapeElement(Document* document, GlobalString tagName);
 
         virtual Rect getPath(Path& path) const = 0;
 
@@ -300,7 +300,7 @@ namespace plutobook {
 
     class SvgPolyElement : public SvgShapeElement {
     public:
-        SvgPolyElement(Document* document, const GlobalString& tagName);
+        SvgPolyElement(Document* document, GlobalString tagName);
 
         const SvgPointList& points() const { return m_points; }
 
@@ -313,7 +313,7 @@ namespace plutobook {
     class SvgTextPositioningElement : public SvgGraphicsElement {
     public:
         SvgTextPositioningElement(Document* document,
-                                  const GlobalString& tagName);
+                                  GlobalString tagName);
 
         const SvgLengthList& x() const { return m_x; }
         const SvgLengthList& y() const { return m_y; }
@@ -559,7 +559,7 @@ namespace plutobook {
 
     class SvgGradientElement : public SvgElement, public SvgURIReference {
     public:
-        SvgGradientElement(Document* document, const GlobalString& tagName);
+        SvgGradientElement(Document* document, GlobalString tagName);
 
         const Transform& gradientTransform() const {
             return m_gradientTransform.value();

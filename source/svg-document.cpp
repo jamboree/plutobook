@@ -10,12 +10,12 @@
 
 namespace plutobook {
 
-SvgElement::SvgElement(Document* document, const GlobalString& tagName)
+SvgElement::SvgElement(Document* document, GlobalString tagName)
     : Element(classKind, document, svgNs, tagName)
 {
 }
 
-void SvgElement::parseAttribute(const GlobalString& name, const HeapString& value)
+void SvgElement::parseAttribute(GlobalString name, const HeapString& value)
 {
     if(auto property = getProperty(name)) {
         property->parse(value);
@@ -34,7 +34,7 @@ static void addSvgAttributeStyle(std::string& output, const std::string_view& na
     output += ';';
 }
 
-void SvgElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
+void SvgElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
 {
     static const boost::unordered_flat_set<GlobalString> presentationAttrs = {
         "alignment-baseline"_glo,
@@ -92,12 +92,12 @@ void SvgElement::collectAttributeStyle(std::string& output, const GlobalString& 
     }
 }
 
-void SvgElement::addProperty(const GlobalString& name, SvgProperty& value)
+void SvgElement::addProperty(GlobalString name, SvgProperty& value)
 {
     m_properties.emplace(name, &value);
 }
 
-SvgProperty* SvgElement::getProperty(const GlobalString& name) const
+SvgProperty* SvgElement::getProperty(GlobalString name) const
 {
     auto it = m_properties.find(name);
     if(it == m_properties.end())
@@ -151,7 +151,7 @@ SvgResourceMaskerBox* SvgElement::getMasker(const std::string_view& id) const
     return to<SvgResourceMaskerBox>(getResourceById(id));
 }
 
-SvgGraphicsElement::SvgGraphicsElement(Document* document, const GlobalString& tagName)
+SvgGraphicsElement::SvgGraphicsElement(Document* document, GlobalString tagName)
     : SvgElement(document, tagName)
 {
     addProperty(transformAttr, m_transform);
@@ -274,7 +274,7 @@ static void addSvgTransformAttributeStyle(std::string& output, const Transform& 
     output += ");";
 }
 
-void SvgSvgElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
+void SvgSvgElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
 {
     if(name == transformAttr && isSvgRootNode()) {
         addSvgTransformAttributeStyle(output, transform());
@@ -453,7 +453,7 @@ Box* SvgDefsElement::createBox(const RefPtr<BoxStyle>& style)
     return new SvgHiddenContainerBox(this, style);
 }
 
-SvgGeometryElement::SvgGeometryElement(Document* document, const GlobalString& tagName)
+SvgGeometryElement::SvgGeometryElement(Document* document, GlobalString tagName)
     : SvgGraphicsElement(document, tagName)
 {
 }
@@ -474,7 +474,7 @@ Box* SvgPathElement::createBox(const RefPtr<BoxStyle>& style)
     return new SvgPathBox(this, style);
 }
 
-SvgShapeElement::SvgShapeElement(Document* document, const GlobalString& tagName)
+SvgShapeElement::SvgShapeElement(Document* document, GlobalString tagName)
     : SvgGeometryElement(document, tagName)
 {
 }
@@ -605,7 +605,7 @@ Rect SvgEllipseElement::getPath(Path& path) const
     return Rect(cx - rx, cy - ry, rx + rx, ry + ry);
 }
 
-SvgPolyElement::SvgPolyElement(Document* document, const GlobalString& tagName)
+SvgPolyElement::SvgPolyElement(Document* document, GlobalString tagName)
     : SvgShapeElement(document, tagName)
 {
     addProperty(pointsAttr, m_points);
@@ -628,7 +628,7 @@ Rect SvgPolyElement::getPath(Path& path) const
     return path.boundingRect();
 }
 
-SvgTextPositioningElement::SvgTextPositioningElement(Document* document, const GlobalString& tagName)
+SvgTextPositioningElement::SvgTextPositioningElement(Document* document, GlobalString tagName)
     : SvgGraphicsElement(document, tagName)
     , m_x(SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Allow)
     , m_y(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
@@ -808,7 +808,7 @@ Box* SvgStopElement::createBox(const RefPtr<BoxStyle>& style)
     return new SvgGradientStopBox(this, style);
 }
 
-SvgGradientElement::SvgGradientElement(Document* document, const GlobalString& tagName)
+SvgGradientElement::SvgGradientElement(Document* document, GlobalString tagName)
     : SvgElement(document, tagName)
     , SvgURIReference(this)
     , m_gradientUnits(SvgUnitsTypeObjectBoundingBox)

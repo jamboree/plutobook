@@ -5175,7 +5175,7 @@ RefPtr<CssValue> CssParser::consumeCounterStyleAdditiveSymbols(CssTokenStream& i
     return CssListValue::create(std::move(values));
 }
 
-const GlobalString& CssParser::determineNamespace(const GlobalString& prefix) const
+GlobalString CssParser::determineNamespace(GlobalString prefix) const
 {
     if(prefix.isEmpty())
         return m_defaultNamespace;

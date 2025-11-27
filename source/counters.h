@@ -18,9 +18,9 @@ namespace plutobook {
         void push();
         void pop();
 
-        void reset(const GlobalString& name, int value);
-        void increment(const GlobalString& name, int value);
-        void set(const GlobalString& name, int value);
+        void reset(GlobalString name, int value);
+        void increment(GlobalString name, int value);
+        void set(GlobalString name, int value);
 
         void increaseQuoteDepth() { ++m_quoteDepth; }
         void decreaseQuoteDepth() { --m_quoteDepth; }
@@ -30,10 +30,10 @@ namespace plutobook {
 
         void update(const Box* box);
 
-        HeapString counterText(const GlobalString& name,
-                               const GlobalString& listStyle,
+        HeapString counterText(GlobalString name,
+                               GlobalString listStyle,
                                const HeapString& separator) const;
-        HeapString markerText(const GlobalString& listStyle) const;
+        HeapString markerText(GlobalString listStyle) const;
 
     private:
         Document* m_document;

@@ -255,7 +255,7 @@ namespace plutobook {
 
     class LocalFontFace final : public FontFace {
     public:
-        static RefPtr<LocalFontFace> create(const GlobalString& family,
+        static RefPtr<LocalFontFace> create(GlobalString family,
                                             FontFeatureList features,
                                             FontVariationList variations,
                                             UnicodeRangeList ranges);
@@ -264,7 +264,7 @@ namespace plutobook {
         getFontData(const FontDataDescription& description) final;
 
     private:
-        LocalFontFace(const GlobalString& family, FontFeatureList features,
+        LocalFontFace(GlobalString family, FontFeatureList features,
                       FontVariationList variations, UnicodeRangeList ranges)
             : FontFace(std::move(features), std::move(variations),
                        std::move(ranges)),
@@ -274,7 +274,7 @@ namespace plutobook {
     };
 
     inline RefPtr<LocalFontFace>
-    LocalFontFace::create(const GlobalString& family, FontFeatureList features,
+    LocalFontFace::create(GlobalString family, FontFeatureList features,
                           FontVariationList variations,
                           UnicodeRangeList ranges) {
         return adoptPtr(new LocalFontFace(family, std::move(features),
@@ -446,13 +446,13 @@ namespace plutobook {
     class FontDataCache {
     public:
         RefPtr<SimpleFontData>
-        getFontData(const GlobalString& family,
+        getFontData(GlobalString family,
                     const FontDataDescription& description);
         RefPtr<SimpleFontData>
         getFontData(uint32_t codepoint, bool preferColor,
                     const FontDataDescription& description);
 
-        bool isFamilyAvailable(const GlobalString& family);
+        bool isFamilyAvailable(GlobalString family);
 
         ~FontDataCache();
 

@@ -20,7 +20,7 @@ LeaderBox::LeaderBox(const RefPtr<BoxStyle>& style)
 {
 }
 
-TargetCounterBox::TargetCounterBox(const RefPtr<BoxStyle>& style, const HeapString& fragment, const GlobalString& identifier, const HeapString& seperator, const GlobalString& listStyle)
+TargetCounterBox::TargetCounterBox(const RefPtr<BoxStyle>& style, const HeapString& fragment, GlobalString identifier, const HeapString& seperator, GlobalString listStyle)
     : ContentBox(classKind, style)
     , m_fragment(fragment)
     , m_identifier(identifier)

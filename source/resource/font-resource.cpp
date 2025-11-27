@@ -594,7 +594,7 @@ constexpr bool isGenericFamilyName(const std::string_view& familyName)
         || equals(familyName, "emoji", false);
 }
 
-static RefPtr<SimpleFontData> createFontData(FcConfig* config, const GlobalString& family, const FontDataDescription& description)
+static RefPtr<SimpleFontData> createFontData(FcConfig* config, GlobalString family, const FontDataDescription& description)
 {
     auto pattern = FcPatternCreate();
     FcPatternAddDouble(pattern, FC_PIXEL_SIZE, description.size);
@@ -640,7 +640,7 @@ static RefPtr<SimpleFontData> createFontData(FcConfig* config, const GlobalStrin
     return nullptr;
 }
 
-RefPtr<SimpleFontData> FontDataCache::getFontData(const GlobalString& family, const FontDataDescription& description)
+RefPtr<SimpleFontData> FontDataCache::getFontData(GlobalString family, const FontDataDescription& description)
 {
     std::lock_guard guard(m_mutex);
     auto& fontData = m_table[family][description];
@@ -693,7 +693,7 @@ RefPtr<SimpleFontData> FontDataCache::getFontData(uint32_t codepoint, bool prefe
     return nullptr;
 }
 
-bool FontDataCache::isFamilyAvailable(const GlobalString& family)
+bool FontDataCache::isFamilyAvailable(GlobalString family)
 {
     std::lock_guard guard(m_mutex);
     for(auto nameSet : { FcSetSystem, FcSetApplication }) {

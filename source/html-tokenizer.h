@@ -221,7 +221,7 @@ namespace plutobook {
             }
         }
 
-        HtmlTokenView(HtmlToken::Type type, const GlobalString& tagName)
+        HtmlTokenView(HtmlToken::Type type, GlobalString tagName)
             : m_type(type), m_tagName(tagName) {}
 
         HtmlToken::Type type() const { return m_type; }
@@ -235,14 +235,14 @@ namespace plutobook {
         const std::string_view& systemIdentifier() const {
             return m_systemIdentifier;
         }
-        const GlobalString& tagName() const { return m_tagName; }
+        GlobalString tagName() const { return m_tagName; }
         const std::span<Attribute>& attributes() const { return m_attributes; }
         const std::string_view& data() const { return m_data; }
 
         bool hasCamelCase() const { return m_hasCamelCase; }
         void setHasCamelCase(bool value) { m_hasCamelCase = value; }
 
-        const Attribute* findAttribute(const GlobalString& name) const {
+        const Attribute* findAttribute(GlobalString name) const {
             assert(m_type == HtmlToken::Type::StartTag ||
                    m_type == HtmlToken::Type::EndTag);
             for (const auto& attribute : m_attributes) {
@@ -254,7 +254,7 @@ namespace plutobook {
             return nullptr;
         }
 
-        bool hasAttribute(const GlobalString& name) const {
+        bool hasAttribute(GlobalString name) const {
             assert(m_type == HtmlToken::Type::StartTag ||
                    m_type == HtmlToken::Type::EndTag);
             for (const auto& attribute : m_attributes) {
@@ -266,7 +266,7 @@ namespace plutobook {
             return false;
         }
 
-        void adjustTagName(const GlobalString& newName) {
+        void adjustTagName(GlobalString newName) {
             assert(m_type == HtmlToken::Type::StartTag ||
                    m_type == HtmlToken::Type::EndTag);
             m_tagName = newName;

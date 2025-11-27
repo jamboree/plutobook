@@ -11,7 +11,7 @@ namespace plutobook {
         static constexpr ClassKind classKind = ClassKind::Page;
 
         static std::unique_ptr<PageBox>
-        create(const RefPtr<BoxStyle>& style, const GlobalString& pageName,
+        create(const RefPtr<BoxStyle>& style, GlobalString pageName,
                uint32_t pageIndex, float pageWidth, float pageHeight,
                float pageScale);
 
@@ -19,7 +19,7 @@ namespace plutobook {
 
         Rect borderBoundingBox() const final;
 
-        const GlobalString& pageName() const { return m_pageName; }
+        GlobalString pageName() const { return m_pageName; }
         uint32_t pageIndex() const { return m_pageIndex; }
         float pageWidth() const { return m_pageWidth; }
         float pageHeight() const { return m_pageHeight; }
@@ -46,7 +46,7 @@ namespace plutobook {
         const char* name() const final { return "PageBox"; }
 
     private:
-        PageBox(const RefPtr<BoxStyle>& style, const GlobalString& pageName,
+        PageBox(const RefPtr<BoxStyle>& style, GlobalString pageName,
                 uint32_t pageIndex, float pageWidth, float pageHeight,
                 float pageScale);
         GlobalString m_pageName;

@@ -11,9 +11,9 @@ namespace plutobook {
     public:
         RefCounted() = default;
 
-        void ref() { ++m_refCount; }
+        void ref() { m_refCount.fetch_add(1u, std::memory_order::relaxed); }
         void deref() {
-            if (--m_refCount == 0) {
+            if (m_refCount.fetch_sub(1u, std::memory_order::acq_rel) == 1u) {
                 delete static_cast<T*>(this);
             }
         }

@@ -261,11 +261,11 @@ namespace plutobook {
         RefPtr<CssValue>
         consumeCounterStyleAdditiveSymbols(CssTokenStream& input);
 
-        const GlobalString& defaultNamespace() const {
+        GlobalString defaultNamespace() const {
             return m_defaultNamespace;
         }
-        const GlobalString&
-        determineNamespace(const GlobalString& prefix) const;
+        GlobalString
+        determineNamespace(GlobalString prefix) const;
 
         const CssParserContext& m_context;
         boost::unordered_flat_map<GlobalString, GlobalString> m_namespaces;

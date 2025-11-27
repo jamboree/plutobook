@@ -319,12 +319,12 @@ bool CssVariableData::resolveVar(CssTokenStream input, const BoxStyle* style, Cs
     return data->resolve(style, tokens, references);
 }
 
-RefPtr<CssCustomPropertyValue> CssCustomPropertyValue::create(const GlobalString& name, RefPtr<CssVariableData> value)
+RefPtr<CssCustomPropertyValue> CssCustomPropertyValue::create(GlobalString name, RefPtr<CssVariableData> value)
 {
     return adoptPtr(new CssCustomPropertyValue(name, std::move(value)));
 }
 
-CssCustomPropertyValue::CssCustomPropertyValue(const GlobalString& name, RefPtr<CssVariableData> value)
+CssCustomPropertyValue::CssCustomPropertyValue(GlobalString name, RefPtr<CssVariableData> value)
     : CssValue(classKind), m_name(name), m_value(std::move(value))
 {
 }
@@ -920,7 +920,7 @@ bool CssRuleData::matchPseudoClassNthLastOfTypeSelector(const Element* element, 
     return selector.matchnth(index + 1);
 }
 
-bool CssPageRuleData::match(const GlobalString& pageName, uint32_t pageIndex, PseudoType pseudoType) const
+bool CssPageRuleData::match(GlobalString pageName, uint32_t pageIndex, PseudoType pseudoType) const
 {
     if(m_selector) {
         for(const auto& sel : *m_selector) {
@@ -933,7 +933,7 @@ bool CssPageRuleData::match(const GlobalString& pageName, uint32_t pageIndex, Ps
     return true;
 }
 
-bool CssPageRuleData::matchSelector(const GlobalString& pageName, uint32_t pageIndex, PseudoType pseudoType, const CssSimpleSelector& selector)
+bool CssPageRuleData::matchSelector(GlobalString pageName, uint32_t pageIndex, PseudoType pseudoType, const CssSimpleSelector& selector)
 {
     switch(selector.matchType()) {
     case CssSimpleSelector::MatchType::PseudoPageName:
@@ -1228,19 +1228,19 @@ bool CssCounterStyle::needsNegativeSign(int value) const
     return false;
 }
 
-const GlobalString& CssCounterStyle::name() const
+GlobalString CssCounterStyle::name() const
 {
     return m_rule->name();
 }
 
-const GlobalString& CssCounterStyle::extendsName() const
+GlobalString CssCounterStyle::extendsName() const
 {
     if(m_extends)
         return m_extends->value();
     return emptyGlo;
 }
 
-const GlobalString& CssCounterStyle::fallbackName() const
+GlobalString CssCounterStyle::fallbackName() const
 {
     static const GlobalString defaultFallback("decimal");
     if(m_fallback)
@@ -1350,7 +1350,7 @@ std::unique_ptr<CssCounterStyleMap> CssCounterStyleMap::create(const CssRuleList
     return std::unique_ptr<CssCounterStyleMap>(new CssCounterStyleMap(rules, parent));
 }
 
-CssCounterStyle* CssCounterStyleMap::findCounterStyle(const GlobalString& name) const
+CssCounterStyle* CssCounterStyleMap::findCounterStyle(GlobalString name) const
 {
     auto it = m_counterStyles.find(name);
     if(it != m_counterStyles.end())

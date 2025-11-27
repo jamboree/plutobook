@@ -6,6 +6,7 @@
 #include "geometry.h"
 
 #include "plutobook.hpp"
+#include <bit>
 
 namespace plutobook {
 
@@ -16,6 +17,64 @@ const Length Length::MaxContent(Length::Type::MaxContent);
 const Length Length::FitContent(Length::Type::FitContent);
 const Length Length::ZeroFixed(Length::Type::Fixed);
 const Length Length::ZeroPercent(Length::Type::Percent);
+
+void CssPropertyMap::erase(CssPropertyID id) {
+    auto idx = unsigned(id);
+    const auto block = idx >> 5;
+    const auto bit = 1u << (idx & 32u);
+    if (m_bitset[block] & bit) {
+        idx = std::popcount(m_bitset[block] & (bit - 1u));
+        for (unsigned i = 0; i != block; ++i) {
+            idx += std::popcount(m_bitset[i]);
+        }
+        m_bitset[block] &= ~bit;
+        m_values.erase(m_values.begin() + idx);
+    }
+}
+
+void CssPropertyMap::set(CssPropertyID id, RefPtr<CssValue> value) {
+    auto idx = unsigned(id);
+    const auto block = idx >> 5;
+    const auto bit = 1u << (idx & 32u);
+    idx = std::popcount(m_bitset[block] & (bit - 1u));
+    for (unsigned i = 0; i != block; ++i) {
+        idx += std::popcount(m_bitset[i]);
+    }
+    if (m_bitset[block] & bit) {
+        m_values[idx] = std::move(value);
+    }
+    else {
+        m_bitset[block] |= bit;
+        m_values.insert(m_values.begin() + idx, std::move(value));
+    }
+}
+
+CssValue* CssPropertyMap::get(CssPropertyID id) const {
+    auto idx = unsigned(id);
+    const auto block = idx >> 5;
+    const auto bit = 1u << (idx & 32u);
+    if (m_bitset[block] & bit) {
+        idx = std::popcount(m_bitset[block] & (bit - 1u));
+        for (unsigned i = 0; i != block; ++i) {
+            idx += std::popcount(m_bitset[i]);
+        }
+        return m_values[idx].get();
+    }
+    return nullptr;
+}
+
+template<class Fn>
+void CssPropertyMap::foreach(Fn fn) const {
+    auto p = m_values.data();
+    unsigned offset = 0;
+    for (auto bits : m_bitset) {
+        for (unsigned idx = 0; bits; bits >>= ++idx, ++p) {
+            idx += std::countr_zero(bits);
+            fn(CssPropertyID(offset + idx), *p);
+        }
+        offset += 32u;
+    }
+}
 
 RefPtr<BoxStyle> BoxStyle::create(Node* node, PseudoType pseudoType, Display display)
 {
@@ -1646,7 +1705,7 @@ CssVariableData* BoxStyle::getCustom(const std::string_view& name) const
     return it->second.get();
 }
 
-void BoxStyle::setCustom(const GlobalString& name, RefPtr<CssVariableData> value)
+void BoxStyle::setCustom(GlobalString name, RefPtr<CssVariableData> value)
 {
     m_customProperties.insert_or_assign(name, std::move(value));
 }
@@ -1742,7 +1801,7 @@ void BoxStyle::set(CssPropertyID id, RefPtr<CssValue> value)
         break;
     }
 
-    m_properties.insert_or_assign(id, std::move(value));
+    m_properties.set(id, std::move(value));
 }
 
 void BoxStyle::reset(CssPropertyID id)
@@ -1857,8 +1916,8 @@ void BoxStyle::inheritFrom(const BoxStyle* parentStyle)
     m_borderCollapse = parentStyle->borderCollapse();
     m_color = parentStyle->color();
     m_customProperties = parentStyle->customProperties();
-    for(const auto& [id, value] : parentStyle->properties()) {
-        switch(id) {
+    parentStyle->properties().foreach([this](CssPropertyID id, const RefPtr<CssValue>& value) {
+        switch (id) {
         case CssPropertyID::BorderCollapse:
         case CssPropertyID::CaptionSide:
         case CssPropertyID::ClipRule:
@@ -1919,12 +1978,12 @@ void BoxStyle::inheritFrom(const BoxStyle* parentStyle)
         case CssPropertyID::WordBreak:
         case CssPropertyID::WordSpacing:
         case CssPropertyID::WritingMode:
-            m_properties.insert_or_assign(id, value);
+            m_properties.set(id, value);
             break;
         default:
             break;
         }
-    }
+    });
 }
 
 float BoxStyle::exFontSize() const
@@ -1974,33 +2033,13 @@ private:
 
 FontFeaturesBuilder::FontFeaturesBuilder(const CssPropertyMap& properties)
 {
-    for(const auto& [id, value] : properties) {
-        switch(id) {
-        case CssPropertyID::FontKerning:
-            m_kerning = value;
-            break;
-        case CssPropertyID::FontVariantLigatures:
-            m_variantLigatures = value;
-            break;
-        case CssPropertyID::FontVariantPosition:
-            m_variantPosition = value;
-            break;
-        case CssPropertyID::FontVariantCaps:
-            m_variantCaps = value;
-            break;
-        case CssPropertyID::FontVariantNumeric:
-            m_variantNumeric = value;
-            break;
-        case CssPropertyID::FontVariantEastAsian:
-            m_variantEastAsian = value;
-            break;
-        case CssPropertyID::FontFeatureSettings:
-            m_featureSettings = value;
-            break;
-        default:
-            break;
-        }
-    }
+    m_kerning = properties.get(CssPropertyID::FontKerning);
+    m_variantLigatures = properties.get(CssPropertyID::FontVariantLigatures);
+    m_variantPosition = properties.get(CssPropertyID::FontVariantPosition);
+    m_variantCaps = properties.get(CssPropertyID::FontVariantCaps);
+    m_variantNumeric = properties.get(CssPropertyID::FontVariantNumeric);
+    m_variantEastAsian = properties.get(CssPropertyID::FontVariantEastAsian);
+    m_featureSettings = properties.get(CssPropertyID::FontFeatureSettings);
 }
 
 FontFeatureList FontFeaturesBuilder::build() const

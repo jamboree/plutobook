@@ -4,7 +4,7 @@
 
 namespace plutobook {
 
-inline bool isNumberedHeaderTag(const GlobalString& tagName)
+inline bool isNumberedHeaderTag(GlobalString tagName)
 {
     using enum GlobalStringId;
     switch (tagName.asId()) {
@@ -20,7 +20,7 @@ inline bool isNumberedHeaderTag(const GlobalString& tagName)
     }
 }
 
-inline bool isImpliedEndTag(const GlobalString& tagName)
+inline bool isImpliedEndTag(GlobalString tagName)
 {
     using enum GlobalStringId;
     switch (tagName.asId()) {
@@ -38,7 +38,7 @@ inline bool isImpliedEndTag(const GlobalString& tagName)
     };
 }
 
-inline bool isFosterRedirectingTag(const GlobalString& tagName)
+inline bool isFosterRedirectingTag(GlobalString tagName)
 {
     using enum GlobalStringId;
     switch (tagName.asId()) {
@@ -57,7 +57,7 @@ inline bool isNumberedHeaderElement(const Element* element)
     return isNumberedHeaderTag(element->tagName());
 }
 
-inline bool isSvgTag(const GlobalString& tagName)
+inline bool isSvgTag(GlobalString tagName)
 {
     using enum GlobalStringId;
     switch (tagName.asId()) {
@@ -70,7 +70,7 @@ inline bool isSvgTag(const GlobalString& tagName)
     };
 }
 
-inline bool isMathmlTag(const GlobalString& tagName)
+inline bool isMathmlTag(GlobalString tagName)
 {
     using enum GlobalStringId;
     switch (tagName.asId()) {
@@ -246,10 +246,16 @@ inline bool isTableScopeMarker(const Element* element)
 
 inline bool isTableBodyScopeMarker(const Element* element)
 {
-    return element->tagName() == tbodyTag
-        || element->tagName() == tfootTag
-        || element->tagName() == theadTag
-        || element->tagName() == htmlTag;
+    using enum GlobalStringId;
+    switch (element->tagName().asId()) {
+    case tbodyTag:
+    case tfootTag:
+    case theadTag:
+    case htmlTag:
+        return true;
+    default:
+        return false;
+    };
 }
 
 inline bool isTableRowScopeMarker(const Element* element)
@@ -387,7 +393,7 @@ void HtmlElementStack::popHtmlBodyElement()
     m_elements.pop_back();
 }
 
-void HtmlElementStack::popUntil(const GlobalString& tagName)
+void HtmlElementStack::popUntil(GlobalString tagName)
 {
     while(tagName != top()->tagName()) {
         pop();
@@ -436,7 +442,7 @@ void HtmlElementStack::popUntilForeignContentScopeMarker()
     }
 }
 
-void HtmlElementStack::popUntilPopped(const GlobalString& tagName)
+void HtmlElementStack::popUntilPopped(GlobalString tagName)
 {
     popUntil(tagName);
     pop();
@@ -469,7 +475,7 @@ void HtmlElementStack::generateImpliedEndTags()
     }
 }
 
-void HtmlElementStack::generateImpliedEndTagsExcept(const GlobalString& tagName)
+void HtmlElementStack::generateImpliedEndTagsExcept(GlobalString tagName)
 {
     while(top()->tagName() != tagName && isImpliedEndTag(top()->tagName())) {
         pop();
@@ -519,7 +525,7 @@ Element* HtmlElementStack::furthestBlockForFormattingElement(const Element* form
     return nullptr;
 }
 
-Element* HtmlElementStack::topmost(const GlobalString& tagName) const
+Element* HtmlElementStack::topmost(GlobalString tagName) const
 {
     auto it = m_elements.rbegin();
     auto end = m_elements.rend();
@@ -539,7 +545,7 @@ Element* HtmlElementStack::previous(const Element* element) const
 }
 
 template<bool isMarker(const Element*)>
-bool HtmlElementStack::inScopeTemplate(const GlobalString& tagName) const
+bool HtmlElementStack::inScopeTemplate(GlobalString tagName) const
 {
     auto it = m_elements.rbegin();
     auto end = m_elements.rend();
@@ -572,27 +578,27 @@ bool HtmlElementStack::inScope(const Element* element) const
     return false;
 }
 
-bool HtmlElementStack::inScope(const GlobalString& tagName) const
+bool HtmlElementStack::inScope(GlobalString tagName) const
 {
     return inScopeTemplate<isScopeMarker>(tagName);
 }
 
-bool HtmlElementStack::inButtonScope(const GlobalString& tagName) const
+bool HtmlElementStack::inButtonScope(GlobalString tagName) const
 {
     return inScopeTemplate<isButtonScopeMarker>(tagName);
 }
 
-bool HtmlElementStack::inListItemScope(const GlobalString& tagName) const
+bool HtmlElementStack::inListItemScope(GlobalString tagName) const
 {
     return inScopeTemplate<isListItemScopeMarker>(tagName);
 }
 
-bool HtmlElementStack::inTableScope(const GlobalString& tagName) const
+bool HtmlElementStack::inTableScope(GlobalString tagName) const
 {
     return inScopeTemplate<isTableScopeMarker>(tagName);
 }
 
-bool HtmlElementStack::inSelectScope(const GlobalString& tagName) const
+bool HtmlElementStack::inSelectScope(GlobalString tagName) const
 {
     return inScopeTemplate<isSelectScopeMarker>(tagName);
 }
@@ -654,7 +660,7 @@ void HtmlFormattingElementList::clearToLastMarker()
     }
 }
 
-Element* HtmlFormattingElementList::closestElementInScope(const GlobalString& tagName)
+Element* HtmlFormattingElementList::closestElementInScope(GlobalString tagName)
 {
     auto it = m_elements.rbegin();
     auto end = m_elements.rend();
@@ -709,7 +715,7 @@ Element* HtmlParser::createHtmlElement(const HtmlTokenView& token) const
     return createElement(token, xhtmlNs);
 }
 
-Element* HtmlParser::createElement(const HtmlTokenView& token, const GlobalString& namespaceURI) const
+Element* HtmlParser::createElement(const HtmlTokenView& token, GlobalString namespaceURI) const
 {
     auto element = m_document->createElement(namespaceURI, token.tagName());
     element->setIsCaseSensitive(!token.hasCamelCase());
@@ -1019,7 +1025,7 @@ void HtmlParser::insertHtmlFormattingElement(const HtmlTokenView& token)
     m_activeFormattingElements.append(element);
 }
 
-void HtmlParser::insertForeignElement(const HtmlTokenView& token, const GlobalString& namespaceURI)
+void HtmlParser::insertForeignElement(const HtmlTokenView& token, GlobalString namespaceURI)
 {
     auto element = createElement(token, namespaceURI);
     insertElement(element);
@@ -2795,13 +2801,13 @@ void HtmlParser::handleInForeignContentMode(HtmlTokenView& token)
     }
 }
 
-void HtmlParser::handleFakeStartTagToken(const GlobalString& tagName)
+void HtmlParser::handleFakeStartTagToken(GlobalString tagName)
 {
     HtmlTokenView token(HtmlToken::Type::StartTag, tagName);
     handleToken(token, m_insertionMode);
 }
 
-void HtmlParser::handleFakeEndTagToken(const GlobalString& tagName)
+void HtmlParser::handleFakeEndTagToken(GlobalString tagName)
 {
     HtmlTokenView token(HtmlToken::Type::EndTag, tagName);
     handleToken(token, m_insertionMode);

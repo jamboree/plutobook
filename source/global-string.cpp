@@ -13,7 +13,7 @@ struct GlobalStringTable {
         Hash(const GlobalStringTable& map) noexcept : m_map(map) {}
 
         std::size_t operator()(unsigned id) const {
-            return operator()(std::string_view(m_map.m_strings[id]));
+            return operator()(m_map.m_strings[id]);
         }
 
         const GlobalStringTable& m_map;
@@ -28,7 +28,7 @@ struct GlobalStringTable {
         bool operator()(unsigned a, unsigned b) const { return a == b; }
 
         bool operator()(std::string_view a, unsigned b) const {
-            return a == std::string_view(m_map.m_strings[b]);
+            return a == m_map.m_strings[b];
         }
 
         const GlobalStringTable& m_map;
@@ -98,24 +98,22 @@ GlobalString GlobalString::foldCase() const
         return *this;
     }
 
-    constexpr auto kBufferSize = 128;
-    if(size <= kBufferSize) {
-        char buffer[kBufferSize];
-        for(size_t i = 0; i < index; i++)
-            buffer[i] = data[i];
-        for(size_t i = index; i < size; i++) {
-            buffer[i] = toLower(data[i]);
-        }
-
-        return GlobalString({buffer, size});
+    char smallBuf[128];
+    std::unique_ptr<char[]> largeBuf;
+    char* buffer;
+    if (size > sizeof(smallBuf)) {
+        largeBuf.reset(new char[size]);
+        buffer = largeBuf.get();
+    } else {
+        buffer = smallBuf;
     }
 
-    std::string value(data, size);
-    for(size_t i = index; i < size; i++) {
-        value[i] = toLower(data[i]);
+    std::memcpy(buffer, data, index);
+    for (size_t i = index; i != size; ++i) {
+        buffer[i] = toLower(data[i]);
     }
 
-    return GlobalString(value);
+    return GlobalString({buffer, size});
 }
 
 } // namespace plutobook

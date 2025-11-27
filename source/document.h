@@ -40,15 +40,15 @@ namespace plutobook {
 
         bool isRootNode() const;
         bool isSvgRootNode() const;
-        bool isOfType(const GlobalString& namespaceURI,
-                      const GlobalString& tagName) const;
+        bool isOfType(GlobalString namespaceURI,
+                      GlobalString tagName) const;
 
         bool inHtmlDocument() const;
         bool inSvgDocument() const;
         bool inXmlDocument() const;
 
-        const GlobalString& namespaceURI() const;
-        const GlobalString& tagName() const;
+        GlobalString namespaceURI() const;
+        GlobalString tagName() const;
 
         void reparent(ContainerNode* newParent);
         void remove();
@@ -158,11 +158,11 @@ namespace plutobook {
     class Attribute {
     public:
         Attribute() = default;
-        Attribute(const GlobalString& name, const HeapString& value)
+        Attribute(GlobalString name, const HeapString& value)
             : m_name(name), m_value(value) {}
 
-        const GlobalString& name() const { return m_name; }
-        void setName(const GlobalString& name) { m_name = name; }
+        GlobalString name() const { return m_name; }
+        void setName(GlobalString name) { m_name = name; }
 
         const HeapString& value() const { return m_value; }
         void setValue(const HeapString& value) { m_value = value; }
@@ -183,40 +183,40 @@ namespace plutobook {
     class Element : public ContainerNode {
     public:
         Element(ClassKind type, Document* document,
-                const GlobalString& namespaceURI, const GlobalString& tagName);
+                GlobalString namespaceURI, GlobalString tagName);
 
-        bool isOfType(const GlobalString& namespaceURI,
-                      const GlobalString& tagName) const {
+        bool isOfType(GlobalString namespaceURI,
+                      GlobalString tagName) const {
             return m_namespaceURI == namespaceURI && m_tagName == tagName;
         }
 
-        GlobalString foldCase(const GlobalString& name) const;
+        GlobalString foldCase(GlobalString name) const;
         GlobalString foldTagNameCase() const { return foldCase(m_tagName); }
 
-        const GlobalString& namespaceURI() const { return m_namespaceURI; }
-        const GlobalString& tagName() const { return m_tagName; }
+        GlobalString namespaceURI() const { return m_namespaceURI; }
+        GlobalString tagName() const { return m_tagName; }
         const AttributeList& attributes() const { return m_attributes; }
 
         const HeapString& lang() const;
         const HeapString& id() const { return m_id; }
         const ClassNameList& classNames() const { return m_classNames; }
 
-        const Attribute* findAttribute(const GlobalString& name) const;
+        const Attribute* findAttribute(GlobalString name) const;
         const Attribute*
-        findAttributePossiblyIgnoringCase(const GlobalString& name) const;
-        bool hasAttribute(const GlobalString& name) const;
-        const HeapString& getAttribute(const GlobalString& name) const;
-        Url getUrlAttribute(const GlobalString& name) const;
+        findAttributePossiblyIgnoringCase(GlobalString name) const;
+        bool hasAttribute(GlobalString name) const;
+        const HeapString& getAttribute(GlobalString name) const;
+        Url getUrlAttribute(GlobalString name) const;
 
         void setAttributes(const AttributeList& attributes);
         void setAttribute(const Attribute& attribute);
-        void setAttribute(const GlobalString& name, const HeapString& value);
-        void removeAttribute(const GlobalString& name);
+        void setAttribute(GlobalString name, const HeapString& value);
+        void removeAttribute(GlobalString name);
 
-        virtual void parseAttribute(const GlobalString& name,
+        virtual void parseAttribute(GlobalString name,
                                     const HeapString& value);
         virtual void collectAttributeStyle(std::string& output,
-                                           const GlobalString& name,
+                                           GlobalString name,
                                            const HeapString& value) const {}
         virtual void
         collectAdditionalAttributeStyle(std::string& output) const {}
@@ -258,24 +258,24 @@ namespace plutobook {
 
     extern template bool is<Element>(const Node& value);
 
-    inline GlobalString Element::foldCase(const GlobalString& name) const {
+    inline GlobalString Element::foldCase(GlobalString name) const {
         return m_isCaseSensitive ? name : name.foldCase();
     }
 
-    inline bool Node::isOfType(const GlobalString& namespaceURI,
-                               const GlobalString& tagName) const {
+    inline bool Node::isOfType(GlobalString namespaceURI,
+                               GlobalString tagName) const {
         if (auto element = to<Element>(this))
             return element->isOfType(namespaceURI, tagName);
         return false;
     }
 
-    inline const GlobalString& Node::namespaceURI() const {
+    inline GlobalString Node::namespaceURI() const {
         if (auto element = to<Element>(this))
             return element->namespaceURI();
         return emptyGlo;
     }
 
-    inline const GlobalString& Node::tagName() const {
+    inline GlobalString Node::tagName() const {
         if (auto element = to<Element>(this))
             return element->tagName();
         return emptyGlo;
@@ -355,8 +355,8 @@ namespace plutobook {
         bool setContainerSize(float containerWidth, float containerHeight);
 
         TextNode* createTextNode(const std::string_view& value);
-        Element* createElement(const GlobalString& namespaceURI,
-                               const GlobalString& tagName);
+        Element* createElement(GlobalString namespaceURI,
+                               GlobalString tagName);
 
         Element* rootElement() const { return m_rootElement; }
         Element* bodyElement() const;
@@ -368,19 +368,19 @@ namespace plutobook {
         void addElementById(const HeapString& id, Element* element);
         void removeElementById(const HeapString& id, Element* element);
 
-        void addRunningStyle(const GlobalString& name, RefPtr<BoxStyle> style);
-        RefPtr<BoxStyle> getRunningStyle(const GlobalString& name) const;
+        void addRunningStyle(GlobalString name, RefPtr<BoxStyle> style);
+        RefPtr<BoxStyle> getRunningStyle(GlobalString name) const;
 
         void addTargetCounters(const HeapString& id,
                                const CounterMap& counters);
 
         HeapString getTargetCounterText(const HeapString& fragment,
-                                        const GlobalString& name,
-                                        const GlobalString& listStyle,
+                                        GlobalString name,
+                                        GlobalString listStyle,
                                         const HeapString& separator);
         HeapString getCountersText(const CounterMap& counters,
-                                   const GlobalString& name,
-                                   const GlobalString& listStyle,
+                                   GlobalString name,
+                                   GlobalString listStyle,
                                    const HeapString& separator);
 
         void runJavaScript(const std::string_view& script);
@@ -401,18 +401,18 @@ namespace plutobook {
         pseudoStyleForElement(Element* element, PseudoType pseudoType,
                               const BoxStyle* parentStyle) const;
 
-        RefPtr<BoxStyle> styleForPage(const GlobalString& pageName,
+        RefPtr<BoxStyle> styleForPage(GlobalString pageName,
                                       uint32_t pageIndex,
                                       PseudoType pseudoType) const;
-        RefPtr<BoxStyle> styleForPageMargin(const GlobalString& pageName,
+        RefPtr<BoxStyle> styleForPageMargin(GlobalString pageName,
                                             uint32_t pageIndex,
                                             PageMarginType marginType,
                                             const BoxStyle* pageStyle) const;
 
-        std::string getCounterText(int value, const GlobalString& listType);
-        std::string getMarkerText(int value, const GlobalString& listType);
+        std::string getCounterText(int value, GlobalString listType);
+        std::string getMarkerText(int value, GlobalString listType);
 
-        RefPtr<FontData> getFontData(const GlobalString& family,
+        RefPtr<FontData> getFontData(GlobalString family,
                                      const FontDataDescription& description);
         RefPtr<Font> createFont(const FontDescription& description);
 

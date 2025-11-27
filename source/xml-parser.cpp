@@ -57,12 +57,12 @@ bool XmlParser::parse(const std::string_view& content)
 
 class QualifiedName {
 public:
-    QualifiedName(const GlobalString& namespaceURI, const GlobalString& localName)
+    QualifiedName(GlobalString namespaceURI, GlobalString localName)
         : m_namespaceURI(namespaceURI), m_localName(localName)
     {}
 
-    const GlobalString& namespaceURI() const { return m_namespaceURI; }
-    const GlobalString& localName() const { return m_localName; }
+    GlobalString namespaceURI() const { return m_namespaceURI; }
+    GlobalString localName() const { return m_localName; }
 
     static QualifiedName parse(const std::string_view& name);
 

@@ -3,6 +3,7 @@
 #include "pointer.h"
 #include "global-string.h"
 #include "css-tokenizer.h"
+#include "css-property-id.h"
 #include "color.h"
 #include "url.h"
 
@@ -312,223 +313,6 @@ namespace plutobook {
 
     using CssValueList = std::vector<RefPtr<CssValue>>;
 
-    enum class CssPropertyID : uint16_t {
-        Unknown,
-        Custom,
-        AdditiveSymbols,
-        AlignContent,
-        AlignItems,
-        AlignSelf,
-        AlignmentBaseline,
-        Background,
-        BackgroundAttachment,
-        BackgroundClip,
-        BackgroundColor,
-        BackgroundImage,
-        BackgroundOrigin,
-        BackgroundPosition,
-        BackgroundRepeat,
-        BackgroundSize,
-        BaselineShift,
-        Border,
-        BorderBottom,
-        BorderBottomColor,
-        BorderBottomLeftRadius,
-        BorderBottomRightRadius,
-        BorderBottomStyle,
-        BorderBottomWidth,
-        BorderCollapse,
-        BorderColor,
-        BorderHorizontalSpacing,
-        BorderLeft,
-        BorderLeftColor,
-        BorderLeftStyle,
-        BorderLeftWidth,
-        BorderRadius,
-        BorderRight,
-        BorderRightColor,
-        BorderRightStyle,
-        BorderRightWidth,
-        BorderSpacing,
-        BorderStyle,
-        BorderTop,
-        BorderTopColor,
-        BorderTopLeftRadius,
-        BorderTopRightRadius,
-        BorderTopStyle,
-        BorderTopWidth,
-        BorderVerticalSpacing,
-        BorderWidth,
-        Bottom,
-        BoxSizing,
-        BreakAfter,
-        BreakBefore,
-        BreakInside,
-        CaptionSide,
-        Clear,
-        Clip,
-        ClipPath,
-        ClipRule,
-        Color,
-        ColumnBreakAfter,
-        ColumnBreakBefore,
-        ColumnBreakInside,
-        ColumnCount,
-        ColumnFill,
-        ColumnGap,
-        ColumnRule,
-        ColumnRuleColor,
-        ColumnRuleStyle,
-        ColumnRuleWidth,
-        ColumnSpan,
-        ColumnWidth,
-        Columns,
-        Content,
-        CounterIncrement,
-        CounterReset,
-        CounterSet,
-        Cx,
-        Cy,
-        Direction,
-        Display,
-        DominantBaseline,
-        EmptyCells,
-        Fallback,
-        Fill,
-        FillOpacity,
-        FillRule,
-        Flex,
-        FlexBasis,
-        FlexDirection,
-        FlexFlow,
-        FlexGrow,
-        FlexShrink,
-        FlexWrap,
-        Float,
-        Font,
-        FontFamily,
-        FontFeatureSettings,
-        FontKerning,
-        FontSize,
-        FontStretch,
-        FontStyle,
-        FontVariant,
-        FontVariantCaps,
-        FontVariantEastAsian,
-        FontVariantEmoji,
-        FontVariantLigatures,
-        FontVariantNumeric,
-        FontVariantPosition,
-        FontVariationSettings,
-        FontWeight,
-        Gap,
-        Height,
-        Hyphens,
-        JustifyContent,
-        Left,
-        LetterSpacing,
-        LineHeight,
-        ListStyle,
-        ListStyleImage,
-        ListStylePosition,
-        ListStyleType,
-        Margin,
-        MarginBottom,
-        MarginLeft,
-        MarginRight,
-        MarginTop,
-        Marker,
-        MarkerEnd,
-        MarkerMid,
-        MarkerStart,
-        Mask,
-        MaskType,
-        MaxHeight,
-        MaxWidth,
-        MinHeight,
-        MinWidth,
-        MixBlendMode,
-        Negative,
-        ObjectFit,
-        ObjectPosition,
-        Opacity,
-        Order,
-        Orientation,
-        Orphans,
-        Outline,
-        OutlineColor,
-        OutlineOffset,
-        OutlineStyle,
-        OutlineWidth,
-        Overflow,
-        OverflowWrap,
-        Pad,
-        Padding,
-        PaddingBottom,
-        PaddingLeft,
-        PaddingRight,
-        PaddingTop,
-        Page,
-        PageBreakAfter,
-        PageBreakBefore,
-        PageBreakInside,
-        PageScale,
-        PaintOrder,
-        Position,
-        Prefix,
-        Quotes,
-        R,
-        Range,
-        Right,
-        RowGap,
-        Rx,
-        Ry,
-        Size,
-        Src,
-        StopColor,
-        StopOpacity,
-        Stroke,
-        StrokeDasharray,
-        StrokeDashoffset,
-        StrokeLinecap,
-        StrokeLinejoin,
-        StrokeMiterlimit,
-        StrokeOpacity,
-        StrokeWidth,
-        Suffix,
-        Symbols,
-        System,
-        TabSize,
-        TableLayout,
-        TextAlign,
-        TextAnchor,
-        TextDecoration,
-        TextDecorationColor,
-        TextDecorationLine,
-        TextDecorationStyle,
-        TextIndent,
-        TextOrientation,
-        TextOverflow,
-        TextTransform,
-        Top,
-        Transform,
-        TransformOrigin,
-        UnicodeBidi,
-        UnicodeRange,
-        VectorEffect,
-        VerticalAlign,
-        Visibility,
-        WhiteSpace,
-        Widows,
-        Width,
-        WordBreak,
-        WordSpacing,
-        WritingMode,
-        X,
-        Y,
-        ZIndex
-    };
-
     enum class CssStyleOrigin : uint8_t {
         UserAgent,
         PresentationAttribute,
@@ -615,18 +399,18 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::CustomIdent;
 
-        static RefPtr<CssCustomIdentValue> create(const GlobalString& value);
+        static RefPtr<CssCustomIdentValue> create(GlobalString value);
 
-        const GlobalString& value() const { return m_value; }
+        GlobalString value() const { return m_value; }
 
     private:
-        CssCustomIdentValue(const GlobalString& value)
+        CssCustomIdentValue(GlobalString value)
             : CssValue(classKind), m_value(value) {}
         GlobalString m_value;
     };
 
     inline RefPtr<CssCustomIdentValue>
-    CssCustomIdentValue::create(const GlobalString& value) {
+    CssCustomIdentValue::create(GlobalString value) {
         return adoptPtr(new CssCustomIdentValue(value));
     }
 
@@ -657,13 +441,13 @@ namespace plutobook {
         static constexpr ClassKind classKind = ClassKind::CustomProperty;
 
         static RefPtr<CssCustomPropertyValue>
-        create(const GlobalString& name, RefPtr<CssVariableData> value);
+        create(GlobalString name, RefPtr<CssVariableData> value);
 
-        const GlobalString& name() const { return m_name; }
+        GlobalString name() const { return m_name; }
         const RefPtr<CssVariableData>& value() const { return m_value; }
 
     private:
-        CssCustomPropertyValue(const GlobalString& name,
+        CssCustomPropertyValue(GlobalString name,
                                RefPtr<CssVariableData> value);
         GlobalString m_name;
         RefPtr<CssVariableData> m_value;
@@ -921,14 +705,14 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::Attr;
 
-        static RefPtr<CssAttrValue> create(const GlobalString& name,
+        static RefPtr<CssAttrValue> create(GlobalString name,
                                            const HeapString& fallback);
 
-        const GlobalString& name() const { return m_name; }
+        GlobalString name() const { return m_name; }
         const HeapString& fallback() const { return m_fallback; }
 
     private:
-        CssAttrValue(const GlobalString& name, const HeapString& fallback)
+        CssAttrValue(GlobalString name, const HeapString& fallback)
             : CssValue(classKind), m_name(name), m_fallback(fallback) {}
 
         GlobalString m_name;
@@ -936,7 +720,7 @@ namespace plutobook {
     };
 
     inline RefPtr<CssAttrValue>
-    CssAttrValue::create(const GlobalString& name, const HeapString& fallback) {
+    CssAttrValue::create(GlobalString name, const HeapString& fallback) {
         return adoptPtr(new CssAttrValue(name, fallback));
     }
 
@@ -1035,17 +819,17 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::Counter;
 
-        static RefPtr<CssCounterValue> create(const GlobalString& identifier,
-                                              const GlobalString& listStyle,
+        static RefPtr<CssCounterValue> create(GlobalString identifier,
+                                              GlobalString listStyle,
                                               const HeapString& separator);
 
-        const GlobalString& identifier() const { return m_identifier; }
-        const GlobalString& listStyle() const { return m_listStyle; }
+        GlobalString identifier() const { return m_identifier; }
+        GlobalString listStyle() const { return m_listStyle; }
         const HeapString& separator() const { return m_separator; }
 
     private:
-        CssCounterValue(const GlobalString& identifier,
-                        const GlobalString& listStyle,
+        CssCounterValue(GlobalString identifier,
+                        GlobalString listStyle,
                         const HeapString& separator)
             : CssValue(classKind), m_identifier(identifier),
               m_listStyle(listStyle), m_separator(separator) {}
@@ -1056,8 +840,8 @@ namespace plutobook {
     };
 
     inline RefPtr<CssCounterValue>
-    CssCounterValue::create(const GlobalString& identifier,
-                            const GlobalString& listStyle,
+    CssCounterValue::create(GlobalString identifier,
+                            GlobalString listStyle,
                             const HeapString& separator) {
         return adoptPtr(new CssCounterValue(identifier, listStyle, separator));
     }
@@ -1066,14 +850,14 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::FontFeature;
 
-        static RefPtr<CssFontFeatureValue> create(const GlobalString& tag,
+        static RefPtr<CssFontFeatureValue> create(GlobalString tag,
                                                   int value);
 
-        const GlobalString& tag() const { return m_tag; }
+        GlobalString tag() const { return m_tag; }
         int value() const { return m_value; }
 
     private:
-        CssFontFeatureValue(const GlobalString& tag, int value)
+        CssFontFeatureValue(GlobalString tag, int value)
             : CssValue(classKind), m_tag(tag), m_value(value) {}
 
         GlobalString m_tag;
@@ -1081,7 +865,7 @@ namespace plutobook {
     };
 
     inline RefPtr<CssFontFeatureValue>
-    CssFontFeatureValue::create(const GlobalString& tag, int value) {
+    CssFontFeatureValue::create(GlobalString tag, int value) {
         return adoptPtr(new CssFontFeatureValue(tag, value));
     }
 
@@ -1089,14 +873,14 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::FontVariation;
 
-        static RefPtr<CssFontVariationValue> create(const GlobalString& tag,
+        static RefPtr<CssFontVariationValue> create(GlobalString tag,
                                                     float value);
 
-        const GlobalString& tag() const { return m_tag; }
+        GlobalString tag() const { return m_tag; }
         float value() const { return m_value; }
 
     private:
-        CssFontVariationValue(const GlobalString& tag, float value)
+        CssFontVariationValue(GlobalString tag, float value)
             : CssValue(classKind), m_tag(tag), m_value(value) {}
 
         GlobalString m_tag;
@@ -1104,7 +888,7 @@ namespace plutobook {
     };
 
     inline RefPtr<CssFontVariationValue>
-    CssFontVariationValue::create(const GlobalString& tag, float value) {
+    CssFontVariationValue::create(GlobalString tag, float value) {
         return adoptPtr(new CssFontVariationValue(tag, value));
     }
 
@@ -1372,7 +1156,7 @@ namespace plutobook {
 
         explicit CssSimpleSelector(MatchType matchType)
             : m_matchType(matchType) {}
-        CssSimpleSelector(MatchType matchType, const GlobalString& name)
+        CssSimpleSelector(MatchType matchType, GlobalString name)
             : m_matchType(matchType), m_name(name) {}
         CssSimpleSelector(MatchType matchType, const HeapString& value)
             : m_matchType(matchType), m_value(value) {}
@@ -1382,7 +1166,7 @@ namespace plutobook {
             : m_matchType(matchType), m_subSelectors(std::move(subSelectors)) {}
         CssSimpleSelector(MatchType matchType,
                           AttributeCaseType attributeCaseType,
-                          const GlobalString& name, const HeapString& value)
+                          GlobalString name, const HeapString& value)
             : m_matchType(matchType), m_attributeCaseType(attributeCaseType),
               m_name(name), m_value(value) {}
 
@@ -1391,7 +1175,7 @@ namespace plutobook {
             return m_attributeCaseType;
         }
         const MatchPattern& matchPattern() const { return m_matchPattern; }
-        const GlobalString& name() const { return m_name; }
+        GlobalString name() const { return m_name; }
         const HeapString& value() const { return m_value; }
         const CssSelectorList& subSelectors() const { return m_subSelectors; }
         bool isCaseSensitive() const {
@@ -1583,14 +1367,14 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::Namespace;
 
-        static RefPtr<CssNamespaceRule> create(const GlobalString& prefix,
-                                               const GlobalString& uri);
+        static RefPtr<CssNamespaceRule> create(GlobalString prefix,
+                                               GlobalString uri);
 
-        const GlobalString& prefix() const { return m_prefix; }
-        const GlobalString& uri() const { return m_uri; }
+        GlobalString prefix() const { return m_prefix; }
+        GlobalString uri() const { return m_uri; }
 
     private:
-        CssNamespaceRule(const GlobalString& prefix, const GlobalString& uri)
+        CssNamespaceRule(GlobalString prefix, GlobalString uri)
             : CssRule(classKind), m_prefix(prefix), m_uri(uri) {}
 
         GlobalString m_prefix;
@@ -1598,8 +1382,8 @@ namespace plutobook {
     };
 
     inline RefPtr<CssNamespaceRule>
-    CssNamespaceRule::create(const GlobalString& prefix,
-                             const GlobalString& uri) {
+    CssNamespaceRule::create(GlobalString prefix,
+                             GlobalString uri) {
         return adoptPtr(new CssNamespaceRule(prefix, uri));
     }
 
@@ -1627,14 +1411,14 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::CounterStyle;
 
-        static RefPtr<CssCounterStyleRule> create(const GlobalString& name,
+        static RefPtr<CssCounterStyleRule> create(GlobalString name,
                                                   CssPropertyList properties);
 
-        const GlobalString& name() const { return m_name; }
+        GlobalString name() const { return m_name; }
         const CssPropertyList& properties() const { return m_properties; }
 
     private:
-        CssCounterStyleRule(const GlobalString& name,
+        CssCounterStyleRule(GlobalString name,
                             CssPropertyList properties)
             : CssRule(classKind), m_name(name),
               m_properties(std::move(properties)) {}
@@ -1644,7 +1428,7 @@ namespace plutobook {
     };
 
     inline RefPtr<CssCounterStyleRule>
-    CssCounterStyleRule::create(const GlobalString& name,
+    CssCounterStyleRule::create(GlobalString name,
                                 CssPropertyList properties) {
         return adoptPtr(new CssCounterStyleRule(name, std::move(properties)));
     }
@@ -1883,11 +1667,11 @@ namespace plutobook {
         const uint32_t specificity() const { return m_specificity; }
         const uint32_t position() const { return m_position; }
 
-        bool match(const GlobalString& pageName, uint32_t pageIndex,
+        bool match(GlobalString pageName, uint32_t pageIndex,
                    PseudoType pseudoType) const;
 
     private:
-        static bool matchSelector(const GlobalString& pageName,
+        static bool matchSelector(GlobalString pageName,
                                   uint32_t pageIndex, PseudoType pseudoType,
                                   const CssSimpleSelector& selector);
         RefPtr<CssPageRule> m_rule;
@@ -1907,9 +1691,9 @@ namespace plutobook {
         bool rangeContains(int value) const;
         bool needsNegativeSign(int value) const;
 
-        const GlobalString& name() const;
-        const GlobalString& extendsName() const;
-        const GlobalString& fallbackName() const;
+        GlobalString name() const;
+        GlobalString extendsName() const;
+        GlobalString fallbackName() const;
         const CssValueID system() const;
 
         const HeapString& prefix() const;
@@ -1947,7 +1731,7 @@ namespace plutobook {
         static std::unique_ptr<CssCounterStyleMap>
         create(const CssRuleList& rules, const CssCounterStyleMap* parent);
 
-        CssCounterStyle* findCounterStyle(const GlobalString& name) const;
+        CssCounterStyle* findCounterStyle(GlobalString name) const;
 
     private:
         CssCounterStyleMap(const CssRuleList& rules,

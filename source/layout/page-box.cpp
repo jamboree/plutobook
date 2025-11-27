@@ -11,7 +11,7 @@
 
 namespace plutobook {
 
-std::unique_ptr<PageBox> PageBox::create(const RefPtr<BoxStyle>& style, const GlobalString& pageName, uint32_t pageIndex, float pageWidth, float pageHeight, float pageScale)
+std::unique_ptr<PageBox> PageBox::create(const RefPtr<BoxStyle>& style, GlobalString pageName, uint32_t pageIndex, float pageWidth, float pageHeight, float pageScale)
 {
     return std::unique_ptr<PageBox>(new PageBox(style, pageName, pageIndex, pageWidth, pageHeight, pageScale));
 }
@@ -431,7 +431,7 @@ void PageBox::paintContents(const PaintInfo& info, const Point& offset, PaintPha
     }
 }
 
-PageBox::PageBox(const RefPtr<BoxStyle>& style, const GlobalString& pageName, uint32_t pageIndex, float pageWidth, float pageHeight, float pageScale)
+PageBox::PageBox(const RefPtr<BoxStyle>& style, GlobalString pageName, uint32_t pageIndex, float pageWidth, float pageHeight, float pageScale)
     : BlockBox(classKind, nullptr, style)
     , m_pageName(pageName)
     , m_pageIndex(pageIndex)
