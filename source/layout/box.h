@@ -334,35 +334,39 @@ namespace plutobook {
             return containingBlockHeightForContent(containingBlock());
         }
 
-        float marginTop() const { return m_marginTop; }
-        float marginBottom() const { return m_marginBottom; }
-        float marginLeft() const { return m_marginLeft; }
-        float marginRight() const { return m_marginRight; }
+        float margin(Edge edge) const {
+            return m_margin[std::to_underlying(edge)];
+        }
 
-        float marginWidth() const { return m_marginLeft + m_marginRight; }
-        float marginHeight() const { return m_marginTop + m_marginBottom; }
+        float marginWidth() const {
+            return margin(Edge::Left) + margin(Edge::Right);
+        }
+        float marginHeight() const {
+            return margin(Edge::Top) + margin(Edge::Bottom);
+        }
 
-        void setMarginTop(float value) { m_marginTop = value; }
-        void setMarginBottom(float value) { m_marginBottom = value; }
-        void setMarginLeft(float value) { m_marginLeft = value; }
-        void setMarginRight(float value) { m_marginRight = value; }
+        void setMargin(float value, Edge edge) {
+            m_margin[std::to_underlying(edge)] = value;
+        }
 
         void updateVerticalMargins(const BlockBox* container);
         void updateHorizontalMargins(const BlockBox* container);
         void updateMarginWidths(const BlockBox* container);
 
-        float paddingTop() const { return m_paddingTop; }
-        float paddingBottom() const { return m_paddingBottom; }
-        float paddingLeft() const { return m_paddingLeft; }
-        float paddingRight() const { return m_paddingRight; }
+        float padding(Edge edge) const {
+            return m_padding[std::to_underlying(edge)];
+        }
 
-        float paddingWidth() const { return paddingLeft() + paddingRight(); }
-        float paddingHeight() const { return paddingTop() + paddingBottom(); }
+        float paddingWidth() const {
+            return padding(Edge::Left) + padding(Edge::Right);
+        }
+        float paddingHeight() const {
+            return padding(Edge::Top) + padding(Edge::Bottom);
+        }
 
-        void setPaddingTop(float value) { m_paddingTop = value; }
-        void setPaddingBottom(float value) { m_paddingBottom = value; }
-        void setPaddingLeft(float value) { m_paddingLeft = value; }
-        void setPaddingRight(float value) { m_paddingRight = value; }
+        void setPadding(float value, Edge edge) {
+            m_padding[std::to_underlying(edge)] = value;
+        }
 
         void updateVerticalPaddings(const BlockBox* container);
         void updateHorizontalPaddings(const BlockBox* container);
@@ -372,23 +376,17 @@ namespace plutobook {
                                          float& borderLeft,
                                          float& borderRight) const;
 
-        float borderTop() const;
-        float borderBottom() const;
-        float borderLeft() const;
-        float borderRight() const;
+        float border(Edge edge) const;
 
-        float borderWidth() const { return borderLeft() + borderRight(); }
-        float borderHeight() const { return borderTop() + borderBottom(); }
+        float borderWidth() const {
+            return border(Edge::Left) + border(Edge::Right);
+        }
+        float borderHeight() const {
+            return border(Edge::Top) + border(Edge::Bottom);
+        }
 
-        float borderAndPaddingTop() const { return borderTop() + paddingTop(); }
-        float borderAndPaddingBottom() const {
-            return borderBottom() + paddingBottom();
-        }
-        float borderAndPaddingLeft() const {
-            return borderLeft() + paddingLeft();
-        }
-        float borderAndPaddingRight() const {
-            return borderRight() + paddingRight();
+        float borderAndPadding(Edge edge) const {
+            return border(edge) + padding(edge);
         }
 
         float borderAndPaddingWidth() const {
@@ -399,24 +397,30 @@ namespace plutobook {
         }
 
         float marginStart(Direction direction) const {
-            return direction == Direction::Ltr ? m_marginLeft : m_marginRight;
+            return direction == Direction::Ltr ? margin(Edge::Left)
+                                               : margin(Edge::Right);
         }
         float marginEnd(Direction direction) const {
-            return direction == Direction::Ltr ? m_marginRight : m_marginLeft;
+            return direction == Direction::Ltr ? margin(Edge::Right)
+                                               : margin(Edge::Left);
         }
 
         float borderStart(Direction direction) const {
-            return direction == Direction::Ltr ? borderLeft() : borderRight();
+            return direction == Direction::Ltr ? border(Edge::Left)
+                                               : border(Edge::Right);
         }
         float borderEnd(Direction direction) const {
-            return direction == Direction::Ltr ? borderRight() : borderLeft();
+            return direction == Direction::Ltr ? border(Edge::Right)
+                                               : border(Edge::Left);
         }
 
         float paddingStart(Direction direction) const {
-            return direction == Direction::Ltr ? paddingLeft() : paddingRight();
+            return direction == Direction::Ltr ? padding(Edge::Left)
+                                               : padding(Edge::Right);
         }
         float paddingEnd(Direction direction) const {
-            return direction == Direction::Ltr ? paddingRight() : paddingLeft();
+            return direction == Direction::Ltr ? padding(Edge::Right)
+                                               : padding(Edge::Left);
         }
 
         float marginStart() const { return marginStart(style()->direction()); }
@@ -437,20 +441,9 @@ namespace plutobook {
     private:
         std::unique_ptr<BoxLayer> m_layer;
 
-        float m_marginTop{0};
-        float m_marginBottom{0};
-        float m_marginLeft{0};
-        float m_marginRight{0};
-
-        float m_paddingTop{0};
-        float m_paddingBottom{0};
-        float m_paddingLeft{0};
-        float m_paddingRight{0};
-
-        mutable float m_borderTop{-1};
-        mutable float m_borderBottom{-1};
-        mutable float m_borderLeft{-1};
-        mutable float m_borderRight{-1};
+        float m_margin[4] = {};
+        float m_padding[4] = {};
+        mutable float m_border[4] = {-1, -1, -1, -1};
 
         friend class BoxFrame;
     };
@@ -502,24 +495,24 @@ namespace plutobook {
         float borderBoxHeight() const { return m_height; }
 
         float paddingBoxWidth() const {
-            return borderBoxWidth() - borderLeft() - borderRight();
+            return borderBoxWidth() - borderWidth();
         }
         float paddingBoxHeight() const {
-            return borderBoxHeight() - borderTop() - borderBottom();
+            return borderBoxHeight() - borderHeight();
         }
 
         float contentBoxWidth() const {
-            return paddingBoxWidth() - paddingLeft() - paddingRight();
+            return paddingBoxWidth() - paddingWidth();
         }
         float contentBoxHeight() const {
-            return paddingBoxHeight() - paddingTop() - paddingBottom();
+            return paddingBoxHeight() - paddingHeight();
         }
 
         float marginBoxWidth() const {
-            return borderBoxWidth() + marginLeft() + marginRight();
+            return borderBoxWidth() + marginWidth();
         }
         float marginBoxHeight() const {
-            return borderBoxHeight() + marginTop() + marginBottom();
+            return borderBoxHeight() + marginHeight();
         }
 
         Size borderBoxSize() const {
@@ -539,17 +532,17 @@ namespace plutobook {
             return Rect(0, 0, borderBoxWidth(), borderBoxHeight());
         }
         Rect paddingBoxRect() const {
-            return Rect(borderLeft(), borderTop(), paddingBoxWidth(),
-                        paddingBoxHeight());
+            return Rect(border(Edge::Left), border(Edge::Top),
+                        paddingBoxWidth(), paddingBoxHeight());
         }
         Rect contentBoxRect() const {
-            return Rect(borderLeft() + paddingLeft(),
-                        borderTop() + paddingTop(), contentBoxWidth(),
-                        contentBoxHeight());
+            return Rect(border(Edge::Left) + padding(Edge::Left),
+                        border(Edge::Top) + padding(Edge::Top),
+                        contentBoxWidth(), contentBoxHeight());
         }
         Rect marginBoxRect() const {
-            return Rect(-marginLeft(), -marginRight(), marginBoxWidth(),
-                        marginBoxHeight());
+            return Rect(-margin(Edge::Left), -margin(Edge::Right),
+                        marginBoxWidth(), marginBoxHeight());
         }
 
         Rect visualOverflowRect() const override;

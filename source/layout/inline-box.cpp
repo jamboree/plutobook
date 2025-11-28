@@ -80,9 +80,9 @@ Point InlineBox::relativePositionedInlineOffset(const BoxModel* child) const
     const auto* childStyle = child->style();
 
     Point offset;
-    if(!childStyle->left().isAuto() || !childStyle->right().isAuto())
+    if(!childStyle->inset(Edge::Left).isAuto() || !childStyle->inset(Edge::Right).isAuto())
         offset.x = firstLine->x();
-    if(!childStyle->top().isAuto() || !childStyle->bottom().isAuto()) {
+    if(!childStyle->inset(Edge::Top).isAuto() || !childStyle->inset(Edge::Bottom).isAuto()) {
         offset.y = firstLine->y();
     }
 

@@ -66,9 +66,11 @@ template<class Fn>
 void CssPropertyMap::foreach(Fn fn) const {
     auto p = m_values.data();
     unsigned offset = 0;
-    for (auto bits : m_bitset) {
-        for (unsigned idx = 0; bits; bits >>= ++idx, ++p) {
-            idx += std::countr_zero(bits);
+    for (const auto bits : m_bitset) {
+        auto rest = bits;
+        for (unsigned idx = 0; rest; rest = bits >> ++idx, ++p) {
+            idx += std::countr_zero(rest);
+            const auto id = CssPropertyID(offset + idx);
             fn(CssPropertyID(offset + idx), *p);
         }
         offset += 32u;
@@ -189,34 +191,14 @@ const FontVariationList& BoxStyle::fontVariationSettings() const
     return m_font->variationSettings();
 }
 
-Length BoxStyle::left() const
-{
-    auto value = get(CssPropertyID::Left);
-    if(value == nullptr)
-        return Length::Auto;
-    return convertLengthOrPercentOrAuto(*value);
+inline CssPropertyID edgeProperty(CssPropertyID id, Edge edge) {
+    return CssPropertyID(std::to_underlying(id) + std::to_underlying(edge));
 }
 
-Length BoxStyle::right() const
+Length BoxStyle::inset(Edge edge) const
 {
-    auto value = get(CssPropertyID::Right);
-    if(value == nullptr)
-        return Length::Auto;
-    return convertLengthOrPercentOrAuto(*value);
-}
-
-Length BoxStyle::top() const
-{
-    auto value = get(CssPropertyID::Top);
-    if(value == nullptr)
-        return Length::Auto;
-    return convertLengthOrPercentOrAuto(*value);
-}
-
-Length BoxStyle::bottom() const
-{
-    auto value = get(CssPropertyID::Bottom);
-    if(value == nullptr)
+    auto value = get(edgeProperty(CssPropertyID::Top, edge));
+    if (value == nullptr)
         return Length::Auto;
     return convertLengthOrPercentOrAuto(*value);
 }
@@ -269,10 +251,10 @@ Length BoxStyle::maxHeight() const
     return convertWidthOrHeightLength(*value);
 }
 
-Length BoxStyle::marginLeft() const
+Length BoxStyle::margin(Edge edge) const
 {
-    auto value = get(CssPropertyID::MarginLeft);
-    if(value == nullptr)
+    auto value = get(edgeProperty(CssPropertyID::MarginTop, edge));
+    if (value == nullptr)
         return Length::ZeroFixed;
     return convertLengthOrPercentOrAuto(*value);
 }

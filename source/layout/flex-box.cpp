@@ -554,7 +554,7 @@ void FlexBox::layout(FragmentBuilder* fragmentainer)
                 auto child = item.box();
                 auto childStyle = child->style();
                 if(isHorizontalFlow()) {
-                    if(childStyle->marginLeft().isAuto())
+                    if(childStyle->margin(Edge::Left).isAuto())
                         ++autoMarginCount;
                     if(childStyle->marginRight().isAuto()) {
                         ++autoMarginCount;
@@ -610,7 +610,7 @@ void FlexBox::layout(FragmentBuilder* fragmentainer)
             if(autoMarginCount > 0) {
                 auto childStyle = child->style();
                 if(isHorizontalFlow()) {
-                    if(childStyle->marginLeft().isAuto())
+                    if(childStyle->margin(Edge::Left).isAuto())
                         child->setMarginLeft(autoMarginOffset);
                     if(childStyle->marginRight().isAuto()) {
                         child->setMarginRight(autoMarginOffset);
@@ -797,7 +797,7 @@ void FlexBox::layout(FragmentBuilder* fragmentainer)
                     continue;
                 }
             } else {
-                auto marginLeftLength = childStyle->marginLeft();
+                auto marginLeftLength = childStyle->margin(Edge::Left);
                 auto marginRightLength = childStyle->marginRight();
                 if(marginLeftLength.isAuto() || marginRightLength.isAuto()) {
                     float autoMarginOffset = 0;

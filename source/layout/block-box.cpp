@@ -69,7 +69,7 @@ std::optional<float> BlockBox::availableHeight() const
         return std::nullopt;
     if(isAnonymous())
         return containingBlockHeightForContent();
-    if(isPositioned() && style()->height().isAuto() && !(style()->top().isAuto() || style()->bottom().isAuto())) {
+    if(isPositioned() && style()->height().isAuto() && !(style()->inset(Edge::Top).isAuto() || style()->inset(Edge::Bottom).isAuto())) {
         float y = 0;
         float height = borderAndPaddingHeight();
         float marginTop = 0;
@@ -126,7 +126,7 @@ float BlockBox::computeWidthUsing(const Length& widthLength, const BlockBox* con
         return computeIntrinsicWidthUsing(widthLength, containerWidth);
     if(!widthLength.isAuto())
         return adjustBorderBoxWidth(widthLength.calc(containerWidth));
-    auto marginLeft = style()->marginLeft().calcMin(containerWidth);
+    auto marginLeft = style()->margin(Edge::Left).calcMin(containerWidth);
     auto marginRight = style()->marginRight().calcMin(containerWidth);
     auto width = containerWidth - marginLeft - marginRight;
     if(auto block = to<BlockFlowBox>(container); block && block->containsFloats() && shrinkToAvoidFloats())
@@ -270,11 +270,11 @@ void BlockBox::computePositionedWidth(float& x, float& width, float& marginLeft,
     auto containerWidth = containingBlockWidthForPositioned(container);
     auto containerDirection = container->style()->direction();
 
-    auto marginLeftLength = style()->marginLeft();
+    auto marginLeftLength = style()->margin(Edge::Left);
     auto marginRightLength = style()->marginRight();
 
-    auto leftLength = style()->left();
-    auto rightLength = style()->right();
+    auto leftLength = style()->inset(Edge::Left);
+    auto rightLength = style()->inset(Edge::Right);
     computeHorizontalStaticDistance(leftLength, rightLength, container, containerWidth);
 
     auto widthLength = style()->width();
@@ -386,8 +386,8 @@ void BlockBox::computePositionedHeight(float& y, float& height, float& marginTop
     auto marginTopLength = style()->marginTop();
     auto marginBottomLength = style()->marginBottom();
 
-    auto topLength = style()->top();
-    auto bottomLength = style()->bottom();
+    auto topLength = style()->inset(Edge::Top);
+    auto bottomLength = style()->inset(Edge::Bottom);
     computeVerticalStaticDistance(topLength, bottomLength, container);
 
     auto heightLength = style()->height();
@@ -1430,7 +1430,7 @@ void BlockFlowBox::determineHorizontalPosition(BoxFrame* child) const
         auto offsetX = borderLeft() + paddingLeft() + child->marginLeft();
         if(containsFloats() && child->avoidsFloats()) {
             auto startOffset = startOffsetForLine(child->y());
-            if(child->style()->marginLeft().isAuto())
+            if(child->style()->margin(Edge::Left).isAuto())
                 offsetX = std::max(offsetX, startOffset + child->marginLeft());
             else if(startOffset > borderAndPaddingLeft()) {
                 offsetX = std::max(offsetX, startOffset);

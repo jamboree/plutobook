@@ -11,6 +11,10 @@
 #include <boost/unordered/unordered_flat_map.hpp>
 
 namespace plutobook {
+    enum class Corner : uint8_t { TopLeft, TopRight, BottomRight, BottomLeft };
+
+    enum class Edge : uint8_t { Top, Right, Bottom, Left };
+
     enum class Display : uint8_t {
         None,
         Block,
@@ -596,10 +600,7 @@ namespace plutobook {
         Visibility visibility() const { return m_visibility; }
         const Color& color() const { return m_color; }
 
-        Length left() const;
-        Length right() const;
-        Length top() const;
-        Length bottom() const;
+        Length inset(Edge edge) const;
         Length width() const;
         Length height() const;
         Length minWidth() const;
@@ -607,26 +608,30 @@ namespace plutobook {
         Length maxWidth() const;
         Length maxHeight() const;
 
-        Length marginLeft() const;
+        Length margin(Edge edge) const;
         Length marginRight() const;
         Length marginTop() const;
         Length marginBottom() const;
 
+        Length padding(Edge edge) const;
         Length paddingLeft() const;
         Length paddingRight() const;
         Length paddingTop() const;
         Length paddingBottom() const;
 
+        LineStyle borderStyle(Edge edge) const;
         LineStyle borderLeftStyle() const;
         LineStyle borderRightStyle() const;
         LineStyle borderTopStyle() const;
         LineStyle borderBottomStyle() const;
 
+        Color borderColor(Edge edge) const;
         Color borderLeftColor() const;
         Color borderRightColor() const;
         Color borderTopColor() const;
         Color borderBottomColor() const;
 
+        float borderWidth(Edge edge) const;
         float borderLeftWidth() const;
         float borderRightWidth() const;
         float borderTopWidth() const;
@@ -635,6 +640,7 @@ namespace plutobook {
         void getBorderEdgeInfo(BorderEdge edges[], bool includeLeftEdge,
                                bool includeRightEdge) const;
 
+        LengthSize borderRadius(Corner corner) const;
         LengthSize borderTopLeftRadius() const;
         LengthSize borderTopRightRadius() const;
         LengthSize borderBottomLeftRadius() const;

@@ -85,11 +85,11 @@ void ReplacedBox::computePositionedReplacedWidth(float& x, float& width, float& 
     auto containerWidth = containingBlockWidthForPositioned(container);
     auto containerDirection = container->style()->direction();
 
-    auto marginLeftLength = style()->marginLeft();
+    auto marginLeftLength = style()->margin(Edge::Left);
     auto marginRightLength = style()->marginRight();
 
-    auto leftLength = style()->left();
-    auto rightLength = style()->right();
+    auto leftLength = style()->inset(Edge::Left);
+    auto rightLength = style()->inset(Edge::Right);
     computeHorizontalStaticDistance(leftLength, rightLength, container, containerWidth);
     if(leftLength.isAuto() || rightLength.isAuto()) {
         if(marginLeftLength.isAuto())
@@ -165,8 +165,8 @@ void ReplacedBox::computePositionedReplacedHeight(float& y, float& height, float
     auto marginTopLength = style()->marginTop();
     auto marginBottomLength = style()->marginBottom();
 
-    auto topLength = style()->top();
-    auto bottomLength = style()->bottom();
+    auto topLength = style()->inset(Edge::Top);
+    auto bottomLength = style()->inset(Edge::Bottom);
     computeVerticalStaticDistance(topLength, bottomLength, container);
     if(topLength.isAuto() || bottomLength.isAuto()) {
         if(marginTopLength.isAuto())
@@ -276,7 +276,7 @@ float ReplacedBox::constrainReplacedHeight(float height) const
 float ReplacedBox::availableReplacedWidth() const
 {
     auto containerWidth = containingBlockWidthForContent();
-    auto marginLeft = style()->marginLeft().calcMin(containerWidth);
+    auto marginLeft = style()->margin(Edge::Left).calcMin(containerWidth);
     auto marginRight = style()->marginRight().calcMin(containerWidth);
     return containerWidth - marginLeft - marginRight - borderAndPaddingWidth();
 }

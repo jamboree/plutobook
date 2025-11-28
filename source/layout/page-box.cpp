@@ -523,7 +523,7 @@ void PageMarginBox::updateMargins(const Size& availableSize)
 {
     auto marginTopLength = style()->marginTop();
     auto marginBottomLength = style()->marginBottom();
-    auto marginLeftLength = style()->marginLeft();
+    auto marginLeftLength = style()->margin(Edge::Left);
     auto marginRightLength = style()->marginRight();
 
     auto marginTop = marginTopLength.calcMin(availableSize.h);
@@ -575,7 +575,7 @@ void PageMarginBox::updateAutoMargins(const Size& availableSize)
         auto availableSpace = std::max(0.f, availableSize.w - marginBoxWidth());
 
         auto marginRightLength = style()->marginRight();
-        auto marginLeftLength = style()->marginLeft();
+        auto marginLeftLength = style()->margin(Edge::Left);
 
         float autoMarginOffset = 0.f;
         if(marginLeftLength.isAuto() && marginRightLength.isAuto())
@@ -642,7 +642,7 @@ void PageLayout::layout()
     auto pageWidth = pageStyle->width().calc(pageSize.width() / units::px);
     auto pageHeight = pageStyle->height().calc(pageSize.height() / units::px);
 
-    auto marginLeftLength = pageStyle->marginLeft();
+    auto marginLeftLength = pageStyle->margin(Edge::Left);
     auto marginRightLength = pageStyle->marginRight();
     auto marginTopLength = pageStyle->marginTop();
     auto marginBottomLength = pageStyle->marginBottom();
