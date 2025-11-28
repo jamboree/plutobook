@@ -1163,10 +1163,10 @@ void BoxFrame::updateOverflowRect()
         borderRect.inflate(outlineEdge.width() + style()->outlineOffset());
     }
 
-    m_overflowTop = std::min(0.f, borderRect.y);
-    m_overflowBottom = std::max(m_height, borderRect.bottom());
-    m_overflowLeft = std::min(0.f, borderRect.x);
-    m_overflowRight = std::max(m_width, borderRect.right());
+    m_overflow[TopEdge] = std::min(0.f, borderRect.y);
+    m_overflow[BottomEdge] = std::max(m_height, borderRect.bottom());
+    m_overflow[LeftEdge] = std::min(0.f, borderRect.x);
+    m_overflow[RightEdge] = std::max(m_width, borderRect.right());
 }
 
 void BoxFrame::addOverflowRect(const BoxFrame* child, float dx, float dy)
@@ -1180,10 +1180,10 @@ void BoxFrame::addOverflowRect(const BoxFrame* child, float dx, float dy)
 
 void BoxFrame::addOverflowRect(float top, float bottom, float left, float right)
 {
-    m_overflowTop = std::min(top, m_overflowTop);
-    m_overflowBottom = std::max(bottom, m_overflowBottom);
-    m_overflowLeft = std::min(left, m_overflowLeft);
-    m_overflowRight = std::max(right, m_overflowRight);
+    m_overflow[TopEdge] = std::min(top, m_overflow[TopEdge]);
+    m_overflow[BottomEdge] = std::max(bottom, m_overflow[BottomEdge]);
+    m_overflow[LeftEdge] = std::min(left, m_overflow[LeftEdge]);
+    m_overflow[RightEdge] = std::max(right, m_overflow[RightEdge]);
 }
 
 void BoxFrame::addOverflowRect(const Rect& overflowRect)

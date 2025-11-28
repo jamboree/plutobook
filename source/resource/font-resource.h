@@ -6,7 +6,6 @@
 #include <vector>
 #include <forward_list>
 #include <boost/unordered/unordered_flat_map.hpp>
-#include <boost/unordered/unordered_node_map.hpp>
 #include <mutex>
 
 typedef struct hb_font_t hb_font_t;
@@ -441,8 +440,6 @@ namespace plutobook {
         return adoptPtr(new SegmentedFontData(std::move(fonts)));
     }
 
-    class FontDataSet;
-
     class FontDataCache {
     public:
         RefPtr<SimpleFontData>
@@ -457,13 +454,12 @@ namespace plutobook {
         ~FontDataCache();
 
     private:
+        using FontDataKey = std::pair<GlobalString, FontDataDescription>;
+
         FontDataCache();
         FcConfig* m_config;
         std::mutex m_mutex;
-        boost::unordered_node_map<
-            GlobalString, boost::unordered_flat_map<FontDataDescription,
-                                                    RefPtr<SimpleFontData>>>
-            m_table;
+        boost::unordered_flat_map<FontDataKey, RefPtr<SimpleFontData>> m_table;
         friend FontDataCache* fontDataCache();
     };
 

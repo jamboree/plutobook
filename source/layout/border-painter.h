@@ -1,66 +1,81 @@
-#ifndef PLUTOBOOK_BORDERPAINTER_H
-#define PLUTOBOOK_BORDERPAINTER_H
+#pragma once
 
 #include "geometry.h"
 #include "box-style.h"
 
 namespace plutobook {
+    class GraphicsContext;
+    class PaintInfo;
 
-class GraphicsContext;
-class PaintInfo;
+    enum class BorderPainterType { Border, Outline };
 
-enum class BorderPainterType {
-    Border,
-    Outline
-};
+    using BorderEdgeFlags = unsigned int;
 
-using BorderEdgeFlags = unsigned int;
+    class BorderPainter {
+    public:
+        static void paintBorder(const PaintInfo& info, const Rect& borderRect,
+                                const BoxStyle* style, bool includeLeftEdge,
+                                bool includeRightEdge);
+        static void paintOutline(const PaintInfo& info, const Rect& borderRect,
+                                 const BoxStyle* style);
 
-class BorderPainter {
-public:
-    static void paintBorder(const PaintInfo& info, const Rect& borderRect, const BoxStyle* style, bool includeLeftEdge, bool includeRightEdge);
-    static void paintOutline(const PaintInfo& info, const Rect& borderRect, const BoxStyle* style);
+        static void paintBoxSide(GraphicsContext& context, Edge side,
+                                 LineStyle style, const Color& color,
+                                 const Rect& rect);
 
-    static void paintBoxSide(GraphicsContext& context, BoxSide side, LineStyle style, const Color& color, const Rect& rect);
+    private:
+        BorderPainter(BorderPainterType type, const Rect& borderRect,
+                      const BoxStyle* style, bool includeLeftEdge,
+                      bool includeRightEdge);
 
-private:
-    BorderPainter(BorderPainterType type, const Rect& borderRect, const BoxStyle* style, bool includeLeftEdge, bool includeRightEdge);
+        void paint(const PaintInfo& info) const;
 
-    void paint(const PaintInfo& info) const;
+        void paintTranslucentSides(GraphicsContext& context,
+                                   BorderEdgeFlags visibleEdgeSet) const;
+        void paintSides(GraphicsContext& context,
+                        BorderEdgeFlags visibleEdgeSet,
+                        const Color* commonColor = nullptr) const;
+        void paintSide(GraphicsContext& context, Edge side, Edge adjacentSide1,
+                       Edge adjacentSide2, const Color& color,
+                       const Rect& rect) const;
+        void paintSide(GraphicsContext& context, Edge side, Edge adjacentSide1,
+                       Edge adjacentSide2, const Color& color,
+                       const Path& path) const;
+        void paintBoxSide(GraphicsContext& context, Edge side, LineStyle style,
+                          const Color& color, float thickness,
+                          const Path& path) const;
+        void clipBoxSide(GraphicsContext& context, Edge side) const;
 
-    void paintTranslucentSides(GraphicsContext& context, BorderEdgeFlags visibleEdgeSet) const;
-    void paintSides(GraphicsContext& context, BorderEdgeFlags visibleEdgeSet, const Color* commonColor = nullptr) const;
-    void paintSide(GraphicsContext& context, BoxSide side, BoxSide adjacentSide1, BoxSide adjacentSide2, const Color& color, const Rect& rect) const;
-    void paintSide(GraphicsContext& context, BoxSide side, BoxSide adjacentSide1, BoxSide adjacentSide2, const Color& color, const Path& path) const;
-    void paintBoxSide(GraphicsContext& context, BoxSide side, LineStyle style, const Color& color, float thickness, const Path& path) const;
-    void clipBoxSide(GraphicsContext& context, BoxSide side) const;
+        BorderEdge m_edges[4];
 
-    BorderEdge m_edges[4];
+        BorderEdgeFlags m_visibleEdgeSet{0};
+        unsigned m_visibleEdgeCount{0};
+        unsigned m_firstVisibleEdge{0};
 
-    BorderEdgeFlags m_visibleEdgeSet{0};
-    unsigned m_visibleEdgeCount{0};
-    unsigned m_firstVisibleEdge{0};
+        bool m_isUniformStyle{true};
+        bool m_isUniformColor{true};
 
-    bool m_isUniformStyle{true};
-    bool m_isUniformColor{true};
+        bool m_isOpaque{true};
+        bool m_isRounded{false};
 
-    bool m_isOpaque{true};
-    bool m_isRounded{false};
+        RoundedRect m_inner;
+        RoundedRect m_outer;
+    };
 
-    RoundedRect m_inner;
-    RoundedRect m_outer;
-};
+    inline void BorderPainter::paintBorder(const PaintInfo& info,
+                                           const Rect& borderRect,
+                                           const BoxStyle* style,
+                                           bool includeLeftEdge,
+                                           bool includeRightEdge) {
+        BorderPainter(BorderPainterType::Border, borderRect, style,
+                      includeLeftEdge, includeRightEdge)
+            .paint(info);
+    }
 
-inline void BorderPainter::paintBorder(const PaintInfo& info, const Rect& borderRect, const BoxStyle* style, bool includeLeftEdge, bool includeRightEdge)
-{
-    BorderPainter(BorderPainterType::Border, borderRect, style, includeLeftEdge, includeRightEdge).paint(info);
-}
-
-inline void BorderPainter::paintOutline(const PaintInfo& info, const Rect& borderRect, const BoxStyle* style)
-{
-    BorderPainter(BorderPainterType::Outline, borderRect, style, true, true).paint(info);
-}
-
+    inline void BorderPainter::paintOutline(const PaintInfo& info,
+                                            const Rect& borderRect,
+                                            const BoxStyle* style) {
+        BorderPainter(BorderPainterType::Outline, borderRect, style, true, true)
+            .paint(info);
+    }
 } // namespace plutobook
-
-#endif // PLUTOBOOK_BORDERPAINTER_H

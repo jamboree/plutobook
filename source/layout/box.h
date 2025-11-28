@@ -532,17 +532,17 @@ namespace plutobook {
             return Rect(0, 0, borderBoxWidth(), borderBoxHeight());
         }
         Rect paddingBoxRect() const {
-            return Rect(border(LeftEdge), border(TopEdge),
-                        paddingBoxWidth(), paddingBoxHeight());
+            return Rect(border(LeftEdge), border(TopEdge), paddingBoxWidth(),
+                        paddingBoxHeight());
         }
         Rect contentBoxRect() const {
             return Rect(border(LeftEdge) + padding(LeftEdge),
-                        border(TopEdge) + padding(TopEdge),
-                        contentBoxWidth(), contentBoxHeight());
+                        border(TopEdge) + padding(TopEdge), contentBoxWidth(),
+                        contentBoxHeight());
         }
         Rect marginBoxRect() const {
-            return Rect(-margin(LeftEdge), -margin(RightEdge),
-                        marginBoxWidth(), marginBoxHeight());
+            return Rect(-margin(LeftEdge), -margin(RightEdge), marginBoxWidth(),
+                        marginBoxHeight());
         }
 
         Rect visualOverflowRect() const override;
@@ -619,10 +619,7 @@ namespace plutobook {
             return std::nullopt;
         }
 
-        float overflowTop() const { return m_overflowTop; }
-        float overflowBottom() const { return m_overflowBottom; }
-        float overflowLeft() const { return m_overflowLeft; }
-        float overflowRight() const { return m_overflowRight; }
+        float overflow(Edge edge) const { return m_overflow[edge]; }
 
         virtual void updateOverflowRect();
 
@@ -648,10 +645,7 @@ namespace plutobook {
         float m_overrideWidth{-1};
         float m_overrideHeight{-1};
 
-        float m_overflowTop{0};
-        float m_overflowBottom{0};
-        float m_overflowLeft{0};
-        float m_overflowRight{0};
+        float m_overflow[4] = {};
 
         mutable float m_minPreferredWidth{-1};
         mutable float m_maxPreferredWidth{-1};
@@ -681,9 +675,9 @@ namespace plutobook {
 
     inline Rect BoxFrame::visualOverflowRect() const {
         if (!isOverflowHidden())
-            return Rect(m_overflowLeft, m_overflowTop,
-                        m_overflowRight - m_overflowLeft,
-                        m_overflowBottom - m_overflowTop);
+            return Rect(m_overflow[LeftEdge], m_overflow[TopEdge],
+                        m_overflow[RightEdge] - m_overflow[LeftEdge],
+                        m_overflow[BottomEdge] - m_overflow[TopEdge]);
         return borderBoxRect();
     }
 

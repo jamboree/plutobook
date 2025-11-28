@@ -828,8 +828,7 @@ namespace plutobook {
         const HeapString& separator() const { return m_separator; }
 
     private:
-        CssCounterValue(GlobalString identifier,
-                        GlobalString listStyle,
+        CssCounterValue(GlobalString identifier, GlobalString listStyle,
                         const HeapString& separator)
             : CssValue(classKind), m_identifier(identifier),
               m_listStyle(listStyle), m_separator(separator) {}
@@ -840,8 +839,7 @@ namespace plutobook {
     };
 
     inline RefPtr<CssCounterValue>
-    CssCounterValue::create(GlobalString identifier,
-                            GlobalString listStyle,
+    CssCounterValue::create(GlobalString identifier, GlobalString listStyle,
                             const HeapString& separator) {
         return adoptPtr(new CssCounterValue(identifier, listStyle, separator));
     }
@@ -850,8 +848,7 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::FontFeature;
 
-        static RefPtr<CssFontFeatureValue> create(GlobalString tag,
-                                                  int value);
+        static RefPtr<CssFontFeatureValue> create(GlobalString tag, int value);
 
         GlobalString tag() const { return m_tag; }
         int value() const { return m_value; }
@@ -947,22 +944,16 @@ namespace plutobook {
                                            RefPtr<CssValue> bottom,
                                            RefPtr<CssValue> left);
 
-        const RefPtr<CssValue>& top() const { return m_top; }
-        const RefPtr<CssValue>& right() const { return m_right; }
-        const RefPtr<CssValue>& bottom() const { return m_bottom; }
-        const RefPtr<CssValue>& left() const { return m_left; }
+        const RefPtr<CssValue>& position(Edge edge) const {
+            return m_position[edge];
+        }
 
     private:
         CssRectValue(RefPtr<CssValue> top, RefPtr<CssValue> right,
                      RefPtr<CssValue> bottom, RefPtr<CssValue> left)
-            : CssValue(classKind), m_top(std::move(top)),
-              m_right(std::move(right)), m_bottom(std::move(bottom)),
-              m_left(std::move(left)) {}
+            : CssValue(classKind), m_position{top, right, bottom, left} {}
 
-        RefPtr<CssValue> m_top;
-        RefPtr<CssValue> m_right;
-        RefPtr<CssValue> m_bottom;
-        RefPtr<CssValue> m_left;
+        RefPtr<CssValue> m_position[4];
     };
 
     inline RefPtr<CssRectValue> CssRectValue::create(RefPtr<CssValue> top,
@@ -1382,8 +1373,7 @@ namespace plutobook {
     };
 
     inline RefPtr<CssNamespaceRule>
-    CssNamespaceRule::create(GlobalString prefix,
-                             GlobalString uri) {
+    CssNamespaceRule::create(GlobalString prefix, GlobalString uri) {
         return adoptPtr(new CssNamespaceRule(prefix, uri));
     }
 
@@ -1418,8 +1408,7 @@ namespace plutobook {
         const CssPropertyList& properties() const { return m_properties; }
 
     private:
-        CssCounterStyleRule(GlobalString name,
-                            CssPropertyList properties)
+        CssCounterStyleRule(GlobalString name, CssPropertyList properties)
             : CssRule(classKind), m_name(name),
               m_properties(std::move(properties)) {}
 
@@ -1428,8 +1417,7 @@ namespace plutobook {
     };
 
     inline RefPtr<CssCounterStyleRule>
-    CssCounterStyleRule::create(GlobalString name,
-                                CssPropertyList properties) {
+    CssCounterStyleRule::create(GlobalString name, CssPropertyList properties) {
         return adoptPtr(new CssCounterStyleRule(name, std::move(properties)));
     }
 
@@ -1671,8 +1659,8 @@ namespace plutobook {
                    PseudoType pseudoType) const;
 
     private:
-        static bool matchSelector(GlobalString pageName,
-                                  uint32_t pageIndex, PseudoType pseudoType,
+        static bool matchSelector(GlobalString pageName, uint32_t pageIndex,
+                                  PseudoType pseudoType,
                                   const CssSimpleSelector& selector);
         RefPtr<CssPageRule> m_rule;
         const CssPageSelector* m_selector;

@@ -11,15 +11,6 @@
 #include <boost/unordered/unordered_flat_map.hpp>
 
 namespace plutobook {
-    enum Corner : uint8_t {
-        TopLeftCorner,
-        TopRightCorner,
-        BottomRightCorner,
-        BottomLeftCorner
-    };
-
-    enum Edge : uint8_t { TopEdge, RightEdge, BottomEdge, LeftEdge };
-
     enum class Display : uint8_t {
         None,
         Block,
@@ -350,18 +341,12 @@ namespace plutobook {
             : LengthBox(value, value, value, value) {}
         LengthBox(const Length& left, const Length& right, const Length& top,
                   const Length& bottom)
-            : m_left(left), m_right(right), m_top(top), m_bottom(bottom) {}
+            : m_position{top, right, bottom, left} {}
 
-        const Length& left() const { return m_left; }
-        const Length& right() const { return m_right; }
-        const Length& top() const { return m_top; }
-        const Length& bottom() const { return m_bottom; }
+        const Length& position(Edge edge) const { return m_position[edge]; }
 
     private:
-        Length m_left;
-        Length m_right;
-        Length m_top;
-        Length m_bottom;
+        Length m_position[4];
     };
 
     class BackgroundSize {
@@ -382,8 +367,6 @@ namespace plutobook {
         Length m_width = Length::Auto;
         Length m_height = Length::Auto;
     };
-
-    enum BoxSide { BoxSideTop = 0, BoxSideRight, BoxSideBottom, BoxSideLeft };
 
     class BorderEdge {
     public:

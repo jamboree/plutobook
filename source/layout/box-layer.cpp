@@ -113,27 +113,27 @@ void BoxLayer::paintLayerContents(BoxLayer* rootLayer, GraphicsContext& context,
     auto clipping = m_box->isOverflowHidden() && !m_box->isSvgRootBox();
     if(m_box->isPositioned()) {
         auto clip = m_box->style()->clip();
-        if(!clip.left().isAuto()) {
-            auto value = clip.left().calc(m_borderRect.w);
+        if(!clip.position(LeftEdge).isAuto()) {
+            auto value = clip.position(LeftEdge).calc(m_borderRect.w);
             clipRect.x += value;
             clipRect.w -= value;
             clipping = true;
         }
 
-        if(!clip.right().isAuto()) {
-            clipRect.w -= m_borderRect.w - clip.right().calc(m_borderRect.w);
+        if(!clip.position(RightEdge).isAuto()) {
+            clipRect.w -= m_borderRect.w - clip.position(RightEdge).calc(m_borderRect.w);
             clipping = true;
         }
 
-        if(!clip.top().isAuto()) {
-            auto value = clip.top().calc(m_borderRect.h);
+        if(!clip.position(TopEdge).isAuto()) {
+            auto value = clip.position(TopEdge).calc(m_borderRect.h);
             clipRect.y += value;
             clipRect.h -= value;
             clipping = true;
         }
 
-        if(!clip.bottom().isAuto()) {
-            clipRect.h -= m_borderRect.h - clip.bottom().calc(m_borderRect.h);
+        if(!clip.position(BottomEdge).isAuto()) {
+            clipRect.h -= m_borderRect.h - clip.position(BottomEdge).calc(m_borderRect.h);
             clipping = true;
         }
     }

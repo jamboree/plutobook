@@ -7,19 +7,19 @@
 namespace plutobook {
 
 enum BorderEdgeFlag {
-    TopBorderEdge = 1 << BoxSideTop,
-    RightBorderEdge = 1 << BoxSideRight,
-    BottomBorderEdge = 1 << BoxSideBottom,
-    LeftBorderEdge = 1 << BoxSideLeft,
+    TopBorderEdge = 1 << TopEdge,
+    RightBorderEdge = 1 << RightEdge,
+    BottomBorderEdge = 1 << BottomEdge,
+    LeftBorderEdge = 1 << LeftEdge,
     AllBorderEdges = TopBorderEdge | BottomBorderEdge | LeftBorderEdge | RightBorderEdge
 };
 
-constexpr BorderEdgeFlag edgeFlagForSide(BoxSide side)
+constexpr BorderEdgeFlag edgeFlagForSide(Edge side)
 {
     return BorderEdgeFlag(1 << side);
 }
 
-constexpr bool includesEdge(BorderEdgeFlags flags, BoxSide side)
+constexpr bool includesEdge(BorderEdgeFlags flags, Edge side)
 {
     return flags & edgeFlagForSide(side);
 }
@@ -29,11 +29,11 @@ constexpr bool includesAdjacentEdges(BorderEdgeFlags flags)
     return (flags & (TopBorderEdge | BottomBorderEdge)) && (flags & (LeftBorderEdge | RightBorderEdge));
 }
 
-static void paintDashedOrDottedBoxSide(GraphicsContext& context, BoxSide side, LineStyle style, const Color& color, float x1, float y1, float x2, float y2, float thickness, float length)
+static void paintDashedOrDottedBoxSide(GraphicsContext& context, Edge side, LineStyle style, const Color& color, float x1, float y1, float x2, float y2, float thickness, float length)
 {
     auto cornerWidth = style == LineStyle::Dotted ? thickness : std::min(2.f * thickness, std::max(thickness, length / 3.f));
     context.setColor(color);
-    if(side == BoxSideLeft || side == BoxSideRight) {
+    if(side == LeftEdge || side == RightEdge) {
         context.fillRect(Rect(x1, y1, thickness, cornerWidth));
         context.fillRect(Rect(x1, y2 - cornerWidth, thickness, cornerWidth));
     } else {
@@ -61,7 +61,7 @@ static void paintDashedOrDottedBoxSide(GraphicsContext& context, BoxSide side, L
 
     Point p1(x1, y1);
     Point p2(x2, y2);
-    if(side == BoxSideLeft || side == BoxSideRight) {
+    if(side == LeftEdge || side == RightEdge) {
         auto centerOffset = (p2.x - p1.x) / 2.f;
         p1.translate(centerOffset, cornerWidth);
         p2.translate(-centerOffset, -cornerWidth);
@@ -81,25 +81,25 @@ static void paintDashedOrDottedBoxSide(GraphicsContext& context, BoxSide side, L
     context.strokePath(path, strokeData);
 }
 
-static void paintDoubleBoxSide(GraphicsContext& context, BoxSide side, const Color& color, float x1, float y1, float x2, float y2, float thickness, float length)
+static void paintDoubleBoxSide(GraphicsContext& context, Edge side, const Color& color, float x1, float y1, float x2, float y2, float thickness, float length)
 {
     auto thirdOfThickness = std::ceil(thickness / 3.f);
     context.setColor(color);
     switch(side) {
-    case BoxSideTop:
-    case BoxSideBottom:
+    case TopEdge:
+    case BottomEdge:
         context.fillRect(Rect(x1, y1, length, thirdOfThickness));
         context.fillRect(Rect(x1, y2 - thirdOfThickness, length, thirdOfThickness));
         break;
-    case BoxSideLeft:
-    case BoxSideRight:
+    case LeftEdge:
+    case RightEdge:
         context.fillRect(Rect(x1, y1, thirdOfThickness, length));
         context.fillRect(Rect(x2 - thirdOfThickness, y1, thirdOfThickness, length));
         break;
     }
 }
 
-static void paintRidgeOrGrooveBoxSide(GraphicsContext& context, BoxSide side, LineStyle style, const Color& color, float x1, float y1, float x2, float y2, float thickness, float length)
+static void paintRidgeOrGrooveBoxSide(GraphicsContext& context, Edge side, LineStyle style, const Color& color, float x1, float y1, float x2, float y2, float thickness, float length)
 {
     LineStyle s1;
     LineStyle s2;
@@ -113,19 +113,19 @@ static void paintRidgeOrGrooveBoxSide(GraphicsContext& context, BoxSide side, Li
 
     auto secondOfThickness = std::ceil(thickness / 2.f);
     switch(side) {
-    case BoxSideTop:
+    case TopEdge:
         BorderPainter::paintBoxSide(context, side, s1, color, Rect(x1, y1, length, secondOfThickness));
         BorderPainter::paintBoxSide(context, side, s2, color, Rect(x1, y2 - secondOfThickness, length, secondOfThickness));
         break;
-    case BoxSideLeft:
+    case LeftEdge:
         BorderPainter::paintBoxSide(context, side, s1, color, Rect(x1, y1, secondOfThickness, length));
         BorderPainter::paintBoxSide(context, side, s2, color, Rect(x2 - secondOfThickness, y1, secondOfThickness, length));
         break;
-    case BoxSideBottom:
+    case BottomEdge:
         BorderPainter::paintBoxSide(context, side, s2, color, Rect(x1, y1, length, secondOfThickness));
         BorderPainter::paintBoxSide(context, side, s1, color, Rect(x1, y2 - secondOfThickness, length, secondOfThickness));
         break;
-    case BoxSideRight:
+    case RightEdge:
         BorderPainter::paintBoxSide(context, side, s2, color, Rect(x1, y1, secondOfThickness, length));
         BorderPainter::paintBoxSide(context, side, s1, color, Rect(x2 - secondOfThickness, y1, secondOfThickness, length));
         break;
@@ -138,9 +138,9 @@ static void paintSolidBoxSide(GraphicsContext& context, const Color& color, floa
     context.fillRect(Rect(x1, y1, x2 - x1, y2 - y1));
 }
 
-static void paintInsetOrOutsetBoxSide(GraphicsContext& context, BoxSide side, LineStyle style, const Color& color, float x1, float y1, float x2, float y2)
+static void paintInsetOrOutsetBoxSide(GraphicsContext& context, Edge side, LineStyle style, const Color& color, float x1, float y1, float x2, float y2)
 {
-    if((side == BoxSideTop || side == BoxSideLeft) == (style == LineStyle::Inset)) {
+    if((side == TopEdge || side == LeftEdge) == (style == LineStyle::Inset)) {
         context.setColor(color.darken());
     } else {
         context.setColor(color.lighten());
@@ -149,7 +149,7 @@ static void paintInsetOrOutsetBoxSide(GraphicsContext& context, BoxSide side, Li
     context.fillRect(Rect(x1, y1, x2 - x1, y2 - y1));
 }
 
-void BorderPainter::paintBoxSide(GraphicsContext& context, BoxSide side, LineStyle style, const Color& color, const Rect& rect)
+void BorderPainter::paintBoxSide(GraphicsContext& context, Edge side, LineStyle style, const Color& color, const Rect& rect)
 {
     auto x1 = rect.x;
     auto x2 = rect.x + rect.w;
@@ -158,7 +158,7 @@ void BorderPainter::paintBoxSide(GraphicsContext& context, BoxSide side, LineSty
 
     float thickness;
     float length;
-    if(side == BoxSideTop || side == BoxSideBottom) {
+    if(side == TopEdge || side == BottomEdge) {
         thickness = y2 - y1;
         length = x2 - x1;
     } else {
@@ -196,10 +196,10 @@ void BorderPainter::paintBoxSide(GraphicsContext& context, BoxSide side, LineSty
 
 static RectOutsets edgeOutsets(const BorderEdge edges[4], float scale)
 {
-    auto topWidth = edges[BoxSideTop].width() * scale;
-    auto rightWidth = edges[BoxSideRight].width() * scale;
-    auto bottomWidth = edges[BoxSideBottom].width() * scale;
-    auto leftWidth = edges[BoxSideLeft].width() * scale;
+    auto topWidth = edges[TopEdge].width() * scale;
+    auto rightWidth = edges[RightEdge].width() * scale;
+    auto bottomWidth = edges[BottomEdge].width() * scale;
+    auto leftWidth = edges[LeftEdge].width() * scale;
 
     return RectOutsets(topWidth, rightWidth, bottomWidth, leftWidth);
 }
@@ -216,7 +216,7 @@ BorderPainter::BorderPainter(BorderPainterType type, const Rect& borderRect, con
         }
     }
 
-    for(auto side : { BoxSideTop, BoxSideRight, BoxSideBottom, BoxSideLeft }) {
+    for(auto side : { TopEdge, RightEdge, BottomEdge, LeftEdge }) {
         const auto& edge = m_edges[side];
         if(edge.isRenderable()) {
             assert(edge.color().alpha() > 0);
@@ -270,23 +270,23 @@ void BorderPainter::paint(const PaintInfo& info) const
 
         if(!m_isRounded && firstEdge.style() == LineStyle::Solid) {
             Path path;
-            for(auto side : { BoxSideTop, BoxSideRight, BoxSideBottom, BoxSideLeft }) {
+            for(auto side : { TopEdge, RightEdge, BottomEdge, LeftEdge }) {
                 const auto& edge = m_edges[side];
                 if(edge.isRenderable()) {
                     Rect sideRect(m_outer.rect());
                     switch(side) {
-                    case BoxSideTop:
+                    case TopEdge:
                         sideRect.h = edge.width();
                         break;
-                    case BoxSideRight:
+                    case RightEdge:
                         sideRect.x = sideRect.right() - edge.width();
                         sideRect.w = edge.width();
                         break;
-                    case BoxSideBottom:
+                    case BottomEdge:
                         sideRect.y = sideRect.bottom() - edge.width();
                         sideRect.h = edge.width();
                         break;
-                    case BoxSideLeft:
+                    case LeftEdge:
                         sideRect.w = edge.width();
                         break;
                     }
@@ -323,7 +323,7 @@ void BorderPainter::paintTranslucentSides(GraphicsContext& context, BorderEdgeFl
     while(visibleEdgeSet) {
         Color commonColor;
         BorderEdgeFlags commonColorEdgeSet = 0;
-        for(auto side : { BoxSideTop, BoxSideBottom, BoxSideLeft, BoxSideRight }) {
+        for(auto side : { TopEdge, BottomEdge, LeftEdge, RightEdge }) {
             if(includesEdge(visibleEdgeSet, side)) {
                 const auto& edge = m_edges[side];
                 if(commonColorEdgeSet == 0) {
@@ -367,7 +367,7 @@ void BorderPainter::paintSides(GraphicsContext& context, BorderEdgeFlags visible
     }
 
     const auto& innerRadii = m_inner.radii();
-    for(auto side : { BoxSideTop, BoxSideBottom, BoxSideLeft, BoxSideRight }) {
+    for(auto side : { TopEdge, BottomEdge, LeftEdge, RightEdge }) {
         const auto& edge = m_edges[side];
         if(!edge.isRenderable() || !includesEdge(visibleEdgeSet, side))
             continue;
@@ -377,45 +377,45 @@ void BorderPainter::paintSides(GraphicsContext& context, BorderEdgeFlags visible
         }
 
         Rect sideRect(m_outer.rect());
-        if(side == BoxSideTop) {
+        if(side == TopEdge) {
             if(m_isRounded && (borderStyleHasInnerDetail(edge.style()) || borderWillArcInnerEdge(innerRadii.tl, innerRadii.tr))) {
-                paintSide(context, side, BoxSideLeft, BoxSideRight, color, path);
+                paintSide(context, side, LeftEdge, RightEdge, color, path);
             } else {
                 sideRect.h = edge.width();
-                paintSide(context, side, BoxSideLeft, BoxSideRight, color, sideRect);
+                paintSide(context, side, LeftEdge, RightEdge, color, sideRect);
             }
-        } else if(side == BoxSideBottom) {
+        } else if(side == BottomEdge) {
             if(m_isRounded && (borderStyleHasInnerDetail(edge.style()) || borderWillArcInnerEdge(innerRadii.bl, innerRadii.br))) {
-                paintSide(context, side, BoxSideLeft, BoxSideRight, color, path);
+                paintSide(context, side, LeftEdge, RightEdge, color, path);
             } else {
                 sideRect.y = sideRect.bottom() - edge.width();
                 sideRect.h = edge.width();
-                paintSide(context, side, BoxSideLeft, BoxSideRight, color, sideRect);
+                paintSide(context, side, LeftEdge, RightEdge, color, sideRect);
             }
-        } else if(side == BoxSideLeft) {
+        } else if(side == LeftEdge) {
             if(m_isRounded && (borderStyleHasInnerDetail(edge.style()) || borderWillArcInnerEdge(innerRadii.bl, innerRadii.tl))) {
-                paintSide(context, side, BoxSideTop, BoxSideBottom, color, path);
+                paintSide(context, side, TopEdge, BottomEdge, color, path);
             } else {
                 sideRect.w = edge.width();
-                paintSide(context, side, BoxSideTop, BoxSideBottom, color, sideRect);
+                paintSide(context, side, TopEdge, BottomEdge, color, sideRect);
             }
-        } else if(side == BoxSideRight) {
+        } else if(side == RightEdge) {
             if(m_isRounded && (borderStyleHasInnerDetail(edge.style()) || borderWillArcInnerEdge(innerRadii.br, innerRadii.tr))) {
-                paintSide(context, side, BoxSideTop, BoxSideBottom, color, path);
+                paintSide(context, side, TopEdge, BottomEdge, color, path);
             } else {
                 sideRect.x = sideRect.right() - edge.width();
                 sideRect.w = edge.width();
-                paintSide(context, side, BoxSideTop, BoxSideBottom, color, sideRect);
+                paintSide(context, side, TopEdge, BottomEdge, color, sideRect);
             }
         }
     }
 }
 
-constexpr bool borderStyleHasUnmatchedColorsAtCorner(BoxSide side, BoxSide adjacentSide, LineStyle style)
+constexpr bool borderStyleHasUnmatchedColorsAtCorner(Edge side, Edge adjacentSide, LineStyle style)
 {
     if(style == LineStyle::Inset || style == LineStyle::Outset) {
-        BorderEdgeFlags topRightFlags = edgeFlagForSide(BoxSideTop) | edgeFlagForSide(BoxSideRight);
-        BorderEdgeFlags bottomLeftFlags = edgeFlagForSide(BoxSideBottom) | edgeFlagForSide(BoxSideLeft);
+        BorderEdgeFlags topRightFlags = edgeFlagForSide(TopEdge) | edgeFlagForSide(RightEdge);
+        BorderEdgeFlags bottomLeftFlags = edgeFlagForSide(BottomEdge) | edgeFlagForSide(LeftEdge);
         BorderEdgeFlags flags = edgeFlagForSide(side) | edgeFlagForSide(adjacentSide);
         return flags == topRightFlags || flags == bottomLeftFlags;
     }
@@ -423,10 +423,10 @@ constexpr bool borderStyleHasUnmatchedColorsAtCorner(BoxSide side, BoxSide adjac
     return style == LineStyle::Groove || style == LineStyle::Ridge;
 }
 
-void BorderPainter::paintSide(GraphicsContext& context, BoxSide side, BoxSide adjacentSide1, BoxSide adjacentSide2, const Color& color, const Rect& rect) const
+void BorderPainter::paintSide(GraphicsContext& context, Edge side, Edge adjacentSide1, Edge adjacentSide2, const Color& color, const Rect& rect) const
 {
     const auto& edge = m_edges[side];
-    auto joinRequiresMitre = [&](BoxSide side, BoxSide adjacentSide) {
+    auto joinRequiresMitre = [&](Edge side, Edge adjacentSide) {
         const auto& adjacentEdge = m_edges[adjacentSide];
         if(!adjacentEdge.width())
             return false;
@@ -449,7 +449,7 @@ void BorderPainter::paintSide(GraphicsContext& context, BoxSide side, BoxSide ad
     }
 }
 
-void BorderPainter::paintSide(GraphicsContext& context, BoxSide side, BoxSide adjacentSide1, BoxSide adjacentSide2, const Color& color, const Path& path) const
+void BorderPainter::paintSide(GraphicsContext& context, Edge side, Edge adjacentSide1, Edge adjacentSide2, const Color& color, const Path& path) const
 {
     const auto& edge = m_edges[side];
     const auto& adjacentEdge1 = m_edges[adjacentSide1];
@@ -462,7 +462,7 @@ void BorderPainter::paintSide(GraphicsContext& context, BoxSide side, BoxSide ad
     context.restore();
 }
 
-void BorderPainter::paintBoxSide(GraphicsContext& context, BoxSide side, LineStyle style, const Color& color, float thickness, const Path& path) const
+void BorderPainter::paintBoxSide(GraphicsContext& context, Edge side, LineStyle style, const Color& color, float thickness, const Path& path) const
 {
     switch(style) {
     case LineStyle::Dashed:
@@ -522,7 +522,7 @@ void BorderPainter::paintBoxSide(GraphicsContext& context, BoxSide side, LineSty
         break;
     case LineStyle::Inset:
     case LineStyle::Outset:
-        if((side == BoxSideTop || side == BoxSideLeft) == (style == LineStyle::Inset)) {
+        if((side == TopEdge || side == LeftEdge) == (style == LineStyle::Inset)) {
             context.setColor(color.darken());
         } else {
             context.setColor(color.lighten());
@@ -551,7 +551,7 @@ static void findIntersection(const Point& p1, const Point& p2, const Point& d1, 
     intersection.y = p1.y + param * pyLength;
 }
 
-void BorderPainter::clipBoxSide(GraphicsContext& context, BoxSide side) const
+void BorderPainter::clipBoxSide(GraphicsContext& context, Edge side) const
 {
     const auto& outerRect = m_outer.rect();
     const auto& innerRect = m_inner.rect();
@@ -559,7 +559,7 @@ void BorderPainter::clipBoxSide(GraphicsContext& context, BoxSide side) const
 
     Point quad[4];
     switch(side) {
-    case BoxSideTop:
+    case TopEdge:
         quad[0] = outerRect.topLeft();
         quad[1] = innerRect.topLeft();
         quad[2] = innerRect.topRight();
@@ -569,7 +569,7 @@ void BorderPainter::clipBoxSide(GraphicsContext& context, BoxSide side) const
         if(!innerRadii.tr.isZero())
             findIntersection(outerRect.topRight(), innerRect.topRight(), innerRect.topLeft(), innerRect.bottomRight(), quad[2]);
         break;
-    case BoxSideLeft:
+    case LeftEdge:
         quad[0] = outerRect.topLeft();
         quad[1] = innerRect.topLeft();
         quad[2] = innerRect.bottomLeft();
@@ -579,7 +579,7 @@ void BorderPainter::clipBoxSide(GraphicsContext& context, BoxSide side) const
         if(!innerRadii.bl.isZero())
             findIntersection(outerRect.bottomLeft(), innerRect.bottomLeft(), innerRect.topLeft(), innerRect.bottomRight(), quad[2]);
         break;
-    case BoxSideBottom:
+    case BottomEdge:
         quad[0] = outerRect.bottomLeft();
         quad[1] = innerRect.bottomLeft();
         quad[2] = innerRect.bottomRight();
@@ -589,7 +589,7 @@ void BorderPainter::clipBoxSide(GraphicsContext& context, BoxSide side) const
         if(!innerRadii.br.isZero())
             findIntersection(outerRect.bottomRight(), innerRect.bottomRight(), innerRect.topRight(), innerRect.bottomLeft(), quad[2]);
         break;
-    case BoxSideRight:
+    case RightEdge:
         quad[0] = outerRect.topRight();
         quad[1] = innerRect.topRight();
         quad[2] = innerRect.bottomRight();

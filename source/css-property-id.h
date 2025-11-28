@@ -1,6 +1,15 @@
 #pragma once
 
 namespace plutobook {
+    enum Corner : uint8_t {
+        TopLeftCorner,
+        TopRightCorner,
+        BottomRightCorner,
+        BottomLeftCorner
+    };
+
+    enum Edge : uint8_t { TopEdge, RightEdge, BottomEdge, LeftEdge };
+
     enum class CssPropertyID : uint16_t {
         Unknown,
         AdditiveSymbols,

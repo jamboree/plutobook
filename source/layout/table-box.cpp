@@ -1768,7 +1768,7 @@ void TableCellBox::paintCollapsedBorders(const PaintInfo& info, const Point& off
 
     struct Border {
         const TableCollapsedBorderEdge* edge = nullptr;
-        BoxSide side;
+        Edge side;
         float x1;
         float y1;
         float x2;
@@ -1790,7 +1790,7 @@ void TableCellBox::paintCollapsedBorders(const PaintInfo& info, const Point& off
     Border borders[4];
     if(topEdge.isRenderable()) {
         borders[0].edge = &topEdge;
-        borders[0].side = BoxSideTop;
+        borders[0].side = TopEdge;
         borders[0].x1 = borderRect.x;
         borders[0].y1 = borderRect.y;
         borders[0].x2 = borderRect.right();
@@ -1799,7 +1799,7 @@ void TableCellBox::paintCollapsedBorders(const PaintInfo& info, const Point& off
 
     if(bottomEdge.isRenderable()) {
         borders[1].edge = &bottomEdge;
-        borders[1].side = BoxSideBottom;
+        borders[1].side = BottomEdge;
         borders[1].x1 = borderRect.x;
         borders[1].y1 = borderRect.bottom() - bottomEdge.width();
         borders[1].x2 = borderRect.right();
@@ -1808,7 +1808,7 @@ void TableCellBox::paintCollapsedBorders(const PaintInfo& info, const Point& off
 
     if(leftEdge.isRenderable()) {
         borders[2].edge = &leftEdge;
-        borders[2].side = BoxSideLeft;
+        borders[2].side = LeftEdge;
         borders[2].x1 = borderRect.x;
         borders[2].y1 = borderRect.y;
         borders[2].x2 = borderRect.x + leftEdge.width();
@@ -1817,7 +1817,7 @@ void TableCellBox::paintCollapsedBorders(const PaintInfo& info, const Point& off
 
     if(rightEdge.isRenderable()) {
         borders[3].edge = &rightEdge;
-        borders[3].side = BoxSideRight;
+        borders[3].side = RightEdge;
         borders[3].x1 = borderRect.right() - rightEdge.width();
         borders[3].y1 = borderRect.y;
         borders[3].x2 = borderRect.right();

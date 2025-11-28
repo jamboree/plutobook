@@ -94,9 +94,9 @@ static void layoutCornerPageMargin(PageMarginBox* cornerBox, const Rect& cornerR
     cornerBox->setY(cornerRect.y + cornerBox->margin(TopEdge));
 }
 
-constexpr bool isHorizontalEdge(BoxSide side) { return side == BoxSideTop || side == BoxSideBottom; }
+constexpr bool isHorizontalEdge(Edge side) { return side == TopEdge || side == BottomEdge; }
 
-static void layoutEdgePageMargin(PageMarginBox* edgeBox, const Rect& edgeRect, BoxSide edgeSide, float mainAxisSize)
+static void layoutEdgePageMargin(PageMarginBox* edgeBox, const Rect& edgeRect, Edge edgeSide, float mainAxisSize)
 {
     if(edgeBox == nullptr) {
         return;
@@ -177,7 +177,7 @@ private:
     float m_marginSize = 0.f;
 };
 
-static PreferredSizeInfo computeEdgePreferredSize(PageMarginBox* edgeBox, const Rect& edgeRect, BoxSide edgeSide)
+static PreferredSizeInfo computeEdgePreferredSize(PageMarginBox* edgeBox, const Rect& edgeRect, Edge edgeSide)
 {
     if(edgeBox == nullptr) {
         return PreferredSizeInfo();
@@ -303,7 +303,7 @@ static void resolveTwoEdgePageMarginLengths(const std::array<PreferredSizeInfo, 
     }
 }
 
-static void layoutEdgePageMargins(PageMarginBox* edgeStartBox, PageMarginBox* edgeCenterBox, PageMarginBox* edgeEndBox, const Rect& edgeRect, BoxSide edgeSide)
+static void layoutEdgePageMargins(PageMarginBox* edgeStartBox, PageMarginBox* edgeCenterBox, PageMarginBox* edgeEndBox, const Rect& edgeRect, Edge edgeSide)
 {
     if(edgeStartBox == nullptr && edgeCenterBox == nullptr && edgeEndBox == nullptr)
         return;
@@ -397,16 +397,16 @@ void PageBox::layout(FragmentBuilder* fragmentainer)
     Rect leftEdgeRect(0, topHeight, leftWidth, m_pageHeight - topHeight - bottomHeight);
 
     layoutCornerPageMargin(margins[PageMarginType::TopLeftCorner], topLeftCornerRect);
-    layoutEdgePageMargins(margins[PageMarginType::TopLeft], margins[PageMarginType::TopCenter], margins[PageMarginType::TopRight], topEdgeRect, BoxSideTop);
+    layoutEdgePageMargins(margins[PageMarginType::TopLeft], margins[PageMarginType::TopCenter], margins[PageMarginType::TopRight], topEdgeRect, TopEdge);
 
     layoutCornerPageMargin(margins[PageMarginType::TopRightCorner], topRightCornerRect);
-    layoutEdgePageMargins(margins[PageMarginType::RightTop], margins[PageMarginType::RightMiddle], margins[PageMarginType::RightBottom], rightEdgeRect, BoxSideRight);
+    layoutEdgePageMargins(margins[PageMarginType::RightTop], margins[PageMarginType::RightMiddle], margins[PageMarginType::RightBottom], rightEdgeRect, RightEdge);
 
     layoutCornerPageMargin(margins[PageMarginType::BottomRightCorner], bottomRightCornerRect);
-    layoutEdgePageMargins(margins[PageMarginType::BottomLeft], margins[PageMarginType::BottomCenter], margins[PageMarginType::BottomRight], bottomEdgeRect, BoxSideBottom);
+    layoutEdgePageMargins(margins[PageMarginType::BottomLeft], margins[PageMarginType::BottomCenter], margins[PageMarginType::BottomRight], bottomEdgeRect, BottomEdge);
 
     layoutCornerPageMargin(margins[PageMarginType::BottomLeftCorner], bottomLeftCornerRect);
-    layoutEdgePageMargins(margins[PageMarginType::LeftTop], margins[PageMarginType::LeftMiddle], margins[PageMarginType::LeftBottom], leftEdgeRect, BoxSideLeft);
+    layoutEdgePageMargins(margins[PageMarginType::LeftTop], margins[PageMarginType::LeftMiddle], margins[PageMarginType::LeftBottom], leftEdgeRect, LeftEdge);
 
     updateOverflowRect();
     updateLayerPosition();

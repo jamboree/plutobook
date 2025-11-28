@@ -643,10 +643,10 @@ static RefPtr<SimpleFontData> createFontData(FcConfig* config, GlobalString fami
 RefPtr<SimpleFontData> FontDataCache::getFontData(GlobalString family, const FontDataDescription& description)
 {
     std::lock_guard guard(m_mutex);
-    auto& fontData = m_table[family][description];
-    if(fontData == nullptr)
-        fontData = createFontData(m_config, family, description);
-    return fontData;
+    auto [it, inserted] = m_table.try_emplace(FontDataKey(family, description));
+    if(inserted)
+        it->second = createFontData(m_config, family, description);
+    return it->second;
 }
 
 RefPtr<SimpleFontData> FontDataCache::getFontData(uint32_t codepoint, bool preferColor, const FontDataDescription& description)

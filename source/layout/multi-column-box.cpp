@@ -85,7 +85,7 @@ void MultiColumnRowBox::paintColumnRules(GraphicsContext& context, const Point& 
     auto columnDirection = style()->direction();
     auto columnOffset = columnDirection == Direction::Ltr ? 0.f : width();
     auto ruleOffset = columnDirection == Direction::Ltr ? 0.f : width();
-    auto boxSide = columnDirection == Direction::Ltr ? BoxSideLeft : BoxSideRight;
+    auto boxSide = columnDirection == Direction::Ltr ? LeftEdge : RightEdge;
     for(uint32_t columnIndex = 0; columnIndex < columnCount; ++columnIndex) {
         if(columnDirection == Direction::Ltr) {
             ruleOffset += columnWidth + columnGap / 2.f;

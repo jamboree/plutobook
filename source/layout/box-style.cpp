@@ -293,14 +293,14 @@ float BoxStyle::borderWidth(Edge edge) const
 
 void BoxStyle::getBorderEdgeInfo(BorderEdge edges[], bool includeLeftEdge, bool includeRightEdge) const
 {
-    edges[BoxSideTop] = BorderEdge(borderWidth(TopEdge), borderColor(TopEdge), borderStyle(TopEdge));
+    edges[TopEdge] = BorderEdge(borderWidth(TopEdge), borderColor(TopEdge), borderStyle(TopEdge));
     if(includeRightEdge) {
-        edges[BoxSideRight] = BorderEdge(borderWidth(RightEdge), borderColor(RightEdge), borderStyle(RightEdge));
+        edges[RightEdge] = BorderEdge(borderWidth(RightEdge), borderColor(RightEdge), borderStyle(RightEdge));
     }
 
-    edges[BoxSideBottom] = BorderEdge(borderWidth(BottomEdge), borderColor(BottomEdge), borderStyle(BottomEdge));
+    edges[BottomEdge] = BorderEdge(borderWidth(BottomEdge), borderColor(BottomEdge), borderStyle(BottomEdge));
     if(includeLeftEdge) {
-        edges[BoxSideLeft] = BorderEdge(borderWidth(LeftEdge), borderColor(LeftEdge), borderStyle(LeftEdge));
+        edges[LeftEdge] = BorderEdge(borderWidth(LeftEdge), borderColor(LeftEdge), borderStyle(LeftEdge));
     }
 }
 
@@ -795,10 +795,10 @@ LengthBox BoxStyle::clip() const
     if(value == nullptr || value->id() == CssValueID::Auto)
         return LengthBox(Length::Auto);
     const auto& rect = to<CssRectValue>(*value);
-    auto left = convertLengthOrPercentOrAuto(*rect.left());
-    auto right = convertLengthOrPercentOrAuto(*rect.right());
-    auto top = convertLengthOrPercentOrAuto(*rect.top());
-    auto bottom = convertLengthOrPercentOrAuto(*rect.bottom());
+    auto left = convertLengthOrPercentOrAuto(*rect.position(LeftEdge));
+    auto right = convertLengthOrPercentOrAuto(*rect.position(RightEdge));
+    auto top = convertLengthOrPercentOrAuto(*rect.position(TopEdge));
+    auto bottom = convertLengthOrPercentOrAuto(*rect.position(BottomEdge));
     return LengthBox(left, right, top, bottom);
 }
 
