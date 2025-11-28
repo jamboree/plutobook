@@ -3,7 +3,7 @@
 #include "heap-string.h"
 
 namespace plutobook {
-    enum class GlobalStringId {
+    enum class GlobalStringId : unsigned {
         emptyGlo = 0,
 #define GLOBAL_STRING(id, str) id,
 #include "global-string.inc"
@@ -25,7 +25,7 @@ namespace plutobook {
 
         const HeapString& value() const;
 
-        bool isEmpty() const { return m_index == 0; }
+        constexpr bool isEmpty() const { return m_index == 0; }
 
         constexpr GlobalStringId asId() const {
             return GlobalStringId(m_index);

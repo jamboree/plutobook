@@ -7,6 +7,7 @@
 #include "box-style.h"
 
 #include "plutobook.hpp"
+#include <span>
 
 namespace plutobook {
 
@@ -73,7 +74,7 @@ using CssPropertyDataList = std::vector<CssPropertyData>;
 
 class FontDescriptionBuilder {
 public:
-    FontDescriptionBuilder(const BoxStyle* parentStyle, const CssPropertyDataList& properties);
+    FontDescriptionBuilder(const BoxStyle* parentStyle, std::span<const CssPropertyData> properties);
 
     FontFamilyList family() const;
     FontSelectionValue size() const;
@@ -94,7 +95,7 @@ private:
     RefPtr<CssValue> m_variationSettings;
 };
 
-FontDescriptionBuilder::FontDescriptionBuilder(const BoxStyle* parentStyle, const CssPropertyDataList& properties)
+FontDescriptionBuilder::FontDescriptionBuilder(const BoxStyle* parentStyle, std::span<const CssPropertyData> properties)
     : m_parentStyle(parentStyle)
 {
     for(const auto& property : properties) {
@@ -352,38 +353,59 @@ protected:
         : m_parentStyle(parentStyle), m_pseudoType(pseudoType)
     {}
 
+    std::span<const CssPropertyData> properties() const {
+        return {m_allProperties.data(), m_propertyCount};
+    }
+
+    std::span<const CssPropertyData> customProperties() const {
+        return {m_allProperties.data() + m_propertyCount, m_allProperties.size() - m_propertyCount};
+    }
+
     FontDescription fontDescription() const;
     void merge(uint32_t specificity, uint32_t position, const CssPropertyList& properties);
     void buildStyle(BoxStyle* newStyle);
 
-    CssPropertyDataList m_properties;
+    CssPropertyDataList m_allProperties; // normal + custom
     const BoxStyle* m_parentStyle;
+    unsigned m_propertyCount = 0;
     PseudoType m_pseudoType;
 };
 
 FontDescription StyleBuilder::fontDescription() const
 {
-    return FontDescriptionBuilder(m_parentStyle, m_properties).build();
+    return FontDescriptionBuilder(m_parentStyle, properties()).build();
 }
 
 void StyleBuilder::merge(uint32_t specificity, uint32_t position, const CssPropertyList& properties)
 {
-    constexpr auto getKey = [](const CssProperty& item) {
-        std::pair<CssPropertyID, GlobalString> key;
-        key.first = item.id();
-        if (key.first == CssPropertyID::Custom) {
-            const auto& custom = to<CssCustomPropertyValue>(*item.value());
-            key.second = custom.name();
-        }
-        return key;
-    };
     for(const auto& property : properties) {
         CssPropertyData data(specificity, position, property);
-        const auto key = getKey(property);
-        auto it = std::ranges::lower_bound(m_properties, key, std::ranges::less{}, getKey);
-        if(it == m_properties.end() || getKey(*it) != key) {
-            m_properties.insert(it, std::move(data));
-        } else if(it->isLessThan(data)) {
+        auto it = m_allProperties.begin();
+        const auto mid = it + m_propertyCount;
+        if (property.id() == CssPropertyID::Custom) {
+            constexpr auto getKey = [](const CssProperty& item) {
+                const auto& custom = to<CssCustomPropertyValue>(*item.value());
+                return custom.name();
+            };
+            const auto key = getKey(property);
+            it = std::ranges::lower_bound(mid, m_allProperties.end(), key, std::ranges::less{}, getKey);
+            if (it == m_allProperties.end() || getKey(*it) != key) {
+                m_allProperties.insert(it, std::move(data));
+                continue;
+            }
+        } else {
+            constexpr auto getKey = [](const CssProperty& item) {
+                return item.id();
+            };
+            const auto key = getKey(property);
+            it = std::ranges::lower_bound(it, mid, key, std::ranges::less{}, getKey);
+            if (it == mid || getKey(*it) != key) {
+                m_allProperties.insert(it, std::move(data));
+                ++m_propertyCount;
+                continue;
+            }
+        }
+        if (it->isLessThan(data)) {
             *it = std::move(data);
         }
     }
@@ -392,13 +414,14 @@ void StyleBuilder::merge(uint32_t specificity, uint32_t position, const CssPrope
 void StyleBuilder::buildStyle(BoxStyle* newStyle)
 {
     CssPropertyDataList variables;
-    for(const auto& property : m_properties) {
+    for(const auto& property : properties()) {
         if(is<CssVariableReferenceValue>(*property.value())) {
             variables.push_back(property);
-        } else if(property.id() == CssPropertyID::Custom) {
-            const auto& custom = to<CssCustomPropertyValue>(*property.value());
-            newStyle->setCustom(custom.name(), custom.value());
         }
+    }
+    for (const auto& property : customProperties()) {
+        const auto& custom = to<CssCustomPropertyValue>(*property.value());
+        newStyle->setCustom(custom.name(), custom.value());
     }
 
     for(const auto& variable : variables) {
@@ -408,10 +431,9 @@ void StyleBuilder::buildStyle(BoxStyle* newStyle)
 
     newStyle->setFontDescription(fontDescription());
 
-    for(const auto& property : m_properties) {
+    for(const auto& property : properties()) {
         const auto id = property.id();
         switch(id) {
-        case CssPropertyID::Custom:
         case CssPropertyID::FontFamily:
         case CssPropertyID::FontSize:
         case CssPropertyID::FontWeight:
@@ -475,7 +497,7 @@ RefPtr<BoxStyle> ElementStyleBuilder::build()
         merge(0, 0, m_element->inlineStyle());
     }
 
-    if(m_properties.empty()) {
+    if(m_allProperties.empty()) {
         if(m_pseudoType == PseudoType::None) {
             if(m_element->isRootNode() || m_parentStyle->isDisplayFlex())
                 return BoxStyle::create(m_element, m_parentStyle, m_pseudoType, Display::Block);
@@ -574,7 +596,7 @@ void PageStyleBuilder::add(const CssPageRuleDataList& rules)
 
 RefPtr<BoxStyle> PageStyleBuilder::build()
 {
-    if(m_properties.empty()) {
+    if(m_allProperties.empty()) {
         if(m_marginType == PageMarginType::None)
             return BoxStyle::create(m_parentStyle, m_pseudoType, Display::Block);
         return nullptr;
