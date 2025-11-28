@@ -250,7 +250,7 @@ float ReplacedLineBox::lineHeight() const
 float ReplacedLineBox::baselinePosition() const
 {
     if(auto baseline = box()->inlineBlockBaseline())
-        return baseline.value() + box()->marginTop();
+        return baseline.value() + box()->margin(TopEdge);
     return lineHeight();
 }
 
@@ -312,42 +312,42 @@ void FlowLineBox::addChild(LineBox* child)
 float FlowLineBox::marginLeft() const
 {
     if(m_hasLeftEdge)
-        return box()->marginLeft();
+        return box()->margin(LeftEdge);
     return 0.f;
 }
 
 float FlowLineBox::marginRight() const
 {
     if(m_hasRightEdge)
-        return box()->marginRight();
+        return box()->margin(RightEdge);
     return 0.f;
 }
 
 float FlowLineBox::paddingLeft() const
 {
     if(m_hasLeftEdge)
-        return box()->paddingLeft();
+        return box()->padding(LeftEdge);
     return 0.f;
 }
 
 float FlowLineBox::paddingRight() const
 {
     if(m_hasRightEdge)
-        return box()->paddingRight();
+        return box()->padding(RightEdge);
     return 0.f;
 }
 
 float FlowLineBox::borderLeft() const
 {
     if(m_hasLeftEdge)
-        return box()->borderLeft();
+        return box()->border(LeftEdge);
     return 0.f;
 }
 
 float FlowLineBox::borderRight() const
 {
     if(m_hasRightEdge)
-        return box()->borderRight();
+        return box()->border(RightEdge);
     return 0.f;
 }
 
@@ -465,20 +465,20 @@ float FlowLineBox::placeInHorizontalDirection(float offsetX, const BlockFlowBox*
         auto& box = to<BoxFrame>(*child->box());
         if(box.isOutsideListMarkerBox()) {
             if(block->style()->direction() == Direction::Ltr) {
-                line.setX(-box.width() - box.marginRight());
+                line.setX(-box.width() - box.margin(RightEdge));
             } else {
-                line.setX(block->width() + box.marginLeft());
+                line.setX(block->width() + box.margin(LeftEdge));
             }
 
             box.setX(line.x());
             continue;
         }
 
-        offsetX += box.marginLeft();
+        offsetX += box.margin(LeftEdge);
         line.setX(offsetX);
         box.setX(line.x());
         offsetX += line.width();
-        offsetX += box.marginRight();
+        offsetX += box.margin(RightEdge);
     }
 
     offsetX += paddingRight() + borderRight();
@@ -518,14 +518,14 @@ void FlowLineBox::placeInVerticalDirection(float y, float maxHeight, float maxAs
 
         if (is<ReplacedLineBox>(*child)) {
             auto& box = to<BoxFrame>(*child->box());
-            child->setY(child->y() + box.marginTop());
+            child->setY(child->y() + box.margin(TopEdge));
             box.setY(child->y());
         } else {
             assert(is<TextLineBox>(*child) || is<FlowLineBox>(*child));
             auto top = child->baselinePosition() - child->style()->fontAscent();
             if (is<FlowLineBox>(*child)) {
                 const auto& box = to<BoxModel>(*child->box());
-                top -= box.borderTop() + box.paddingTop();
+                top -= box.border(TopEdge) + box.padding(TopEdge);
             }
 
             child->setY(top + child->y());

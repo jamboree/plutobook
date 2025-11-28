@@ -142,8 +142,8 @@ float FlexItem::marginBoxCrossBaseline() const
 {
     assert(isHorizontalFlow());
     if(auto baseline = m_box->firstLineBaseline())
-        return baseline.value() + m_box->marginTop();
-    return m_box->height() + m_box->marginTop();
+        return baseline.value() + m_box->margin(TopEdge);
+    return m_box->height() + m_box->margin(TopEdge);
 }
 
 float FlexItem::borderBoxMainSize() const
@@ -168,14 +168,14 @@ float FlexItem::marginStart() const
     case FlexDirection::RowReverse:
         return m_box->marginEnd(direction());
     case FlexDirection::Column:
-        return m_box->marginTop();
+        return m_box->margin(TopEdge);
     case FlexDirection::ColumnReverse:
-        return m_box->marginBottom();
+        return m_box->margin(BottomEdge);
     default:
         assert(false);
     }
 
-    return m_box->marginLeft();
+    return m_box->margin(LeftEdge);
 }
 
 float FlexItem::marginEnd() const
@@ -186,27 +186,27 @@ float FlexItem::marginEnd() const
     case FlexDirection::RowReverse:
         return m_box->marginStart(direction());
     case FlexDirection::Column:
-        return m_box->marginBottom();
+        return m_box->margin(BottomEdge);
     case FlexDirection::ColumnReverse:
-        return m_box->marginTop();
+        return m_box->margin(TopEdge);
     default:
         assert(false);
     }
 
-    return m_box->marginRight();
+    return m_box->margin(RightEdge);
 }
 
 float FlexItem::marginBefore() const
 {
     if(isHorizontalFlow())
-        return m_box->marginTop();
+        return m_box->margin(TopEdge);
     return m_box->marginStart(direction());
 }
 
 float FlexItem::marginAfter() const
 {
     if(isHorizontalFlow())
-        return m_box->marginBottom();
+        return m_box->margin(BottomEdge);
     return m_box->marginEnd(direction());
 }
 
@@ -357,9 +357,9 @@ float FlexBox::borderAndPaddingStart() const
     case FlexDirection::RowReverse:
         return borderEnd() + paddingEnd();
     case FlexDirection::Column:
-        return borderTop() + paddingTop();
+        return border(TopEdge) + padding(TopEdge);
     case FlexDirection::ColumnReverse:
-        return borderBottom() + paddingBottom();
+        return border(BottomEdge) + padding(BottomEdge);
     default:
         assert(false);
     }
@@ -375,9 +375,9 @@ float FlexBox::borderAndPaddingEnd() const
     case FlexDirection::RowReverse:
         return borderStart() + paddingStart();
     case FlexDirection::Column:
-        return borderBottom() + paddingBottom();
+        return border(BottomEdge) + padding(BottomEdge);
     case FlexDirection::ColumnReverse:
-        return borderTop() + paddingTop();
+        return border(TopEdge) + padding(TopEdge);
     default:
         assert(false);
     }
@@ -388,14 +388,14 @@ float FlexBox::borderAndPaddingEnd() const
 float FlexBox::borderAndPaddingBefore() const
 {
     if(isHorizontalFlow())
-        return borderTop() + paddingTop();
+        return border(TopEdge) + padding(TopEdge);
     return borderStart() + paddingStart();
 }
 
 float FlexBox::borderAndPaddingAfter() const
 {
     if(isHorizontalFlow())
-        return borderBottom() + paddingBottom();
+        return border(BottomEdge) + padding(BottomEdge);
     return borderEnd() + paddingEnd();
 }
 
@@ -554,15 +554,15 @@ void FlexBox::layout(FragmentBuilder* fragmentainer)
                 auto child = item.box();
                 auto childStyle = child->style();
                 if(isHorizontalFlow()) {
-                    if(childStyle->margin(Edge::Left).isAuto())
+                    if(childStyle->margin(LeftEdge).isAuto())
                         ++autoMarginCount;
-                    if(childStyle->marginRight().isAuto()) {
+                    if(childStyle->margin(RightEdge).isAuto()) {
                         ++autoMarginCount;
                     }
                 } else {
-                    if(childStyle->marginTop().isAuto())
+                    if(childStyle->margin(TopEdge).isAuto())
                         ++autoMarginCount;
-                    if(childStyle->marginBottom().isAuto()) {
+                    if(childStyle->margin(BottomEdge).isAuto()) {
                         ++autoMarginCount;
                     }
                 }
@@ -610,16 +610,16 @@ void FlexBox::layout(FragmentBuilder* fragmentainer)
             if(autoMarginCount > 0) {
                 auto childStyle = child->style();
                 if(isHorizontalFlow()) {
-                    if(childStyle->margin(Edge::Left).isAuto())
-                        child->setMarginLeft(autoMarginOffset);
-                    if(childStyle->marginRight().isAuto()) {
-                        child->setMarginRight(autoMarginOffset);
+                    if(childStyle->margin(LeftEdge).isAuto())
+                        child->setMargin(LeftEdge, autoMarginOffset);
+                    if(childStyle->margin(RightEdge).isAuto()) {
+                        child->setMargin(RightEdge, autoMarginOffset);
                     }
                 } else {
-                    if(childStyle->marginTop().isAuto())
-                        child->setMarginTop(autoMarginOffset);
-                    if(childStyle->marginBottom().isAuto()) {
-                        child->setMarginBottom(autoMarginOffset);
+                    if(childStyle->margin(TopEdge).isAuto())
+                        child->setMargin(TopEdge, autoMarginOffset);
+                    if(childStyle->margin(BottomEdge).isAuto()) {
+                        child->setMargin(BottomEdge, autoMarginOffset);
                     }
                 }
             }
@@ -775,8 +775,8 @@ void FlexBox::layout(FragmentBuilder* fragmentainer)
             auto child = item.box();
             auto childStyle = child->style();
             if(isHorizontalFlow()) {
-                auto marginTopLength = childStyle->marginTop();
-                auto marginBottomLength = childStyle->marginBottom();
+                auto marginTopLength = childStyle->margin(TopEdge);
+                auto marginBottomLength = childStyle->margin(BottomEdge);
                 if(marginTopLength.isAuto() || marginBottomLength.isAuto()) {
                     float autoMarginOffset = 0;
                     auto availableSpace = line.crossSize() - item.marginBoxCrossSize();
@@ -787,9 +787,9 @@ void FlexBox::layout(FragmentBuilder* fragmentainer)
                     }
 
                     if(marginTopLength.isAuto())
-                        child->setMarginTop(autoMarginOffset);
+                        child->setMargin(TopEdge, autoMarginOffset);
                     if(marginBottomLength.isAuto()) {
-                        child->setMarginBottom(autoMarginOffset);
+                        child->setMargin(BottomEdge, autoMarginOffset);
                     }
 
                     if(marginTopLength.isAuto())
@@ -797,8 +797,8 @@ void FlexBox::layout(FragmentBuilder* fragmentainer)
                     continue;
                 }
             } else {
-                auto marginLeftLength = childStyle->margin(Edge::Left);
-                auto marginRightLength = childStyle->marginRight();
+                auto marginLeftLength = childStyle->margin(LeftEdge);
+                auto marginRightLength = childStyle->margin(RightEdge);
                 if(marginLeftLength.isAuto() || marginRightLength.isAuto()) {
                     float autoMarginOffset = 0;
                     auto availableSpace = line.crossSize() - item.marginBoxCrossSize();
@@ -809,9 +809,9 @@ void FlexBox::layout(FragmentBuilder* fragmentainer)
                     }
 
                     if(marginLeftLength.isAuto())
-                        child->setMarginLeft(autoMarginOffset);
+                        child->setMargin(LeftEdge, autoMarginOffset);
                     if(marginRightLength.isAuto()) {
-                        child->setMarginRight(autoMarginOffset);
+                        child->setMargin(RightEdge, autoMarginOffset);
                     }
 
                     auto marginStartLength = style()->isLeftToRightDirection() ? marginLeftLength : marginRightLength;

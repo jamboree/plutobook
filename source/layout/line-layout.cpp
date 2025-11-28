@@ -586,7 +586,7 @@ LineBreaker::~LineBreaker()
 {
     if(m_hasUnpositionedFloats)
         m_block->positionNewFloats(m_fragmentainer);
-    m_block->setHeight(m_block->height() + m_block->borderAndPaddingBottom());
+    m_block->setHeight(m_block->height() + m_block->borderAndPadding(BottomEdge));
 }
 
 const LineInfo& LineBreaker::nextLine()
@@ -855,9 +855,9 @@ void LineBreaker::handleInlineStart(const LineItem& item)
     box.updatePaddingWidths(m_block);
 
     auto& run = addItemRun(item);
-    run.width += box.marginLeft();
-    run.width += box.paddingLeft();
-    run.width += box.borderLeft();
+    run.width += box.margin(LeftEdge);
+    run.width += box.padding(LeftEdge);
+    run.width += box.border(LeftEdge);
     if(run.width && m_line.isEmptyLine()) {
         m_line.setIsEmptyLine(false);
     }
@@ -884,9 +884,9 @@ void LineBreaker::handleInlineEnd(const LineItem& item)
 {
     const auto& box = to<InlineBox>(*item.box());
     auto& run = addItemRun(item);
-    run.width += box.marginRight();
-    run.width += box.paddingRight();
-    run.width += box.borderRight();
+    run.width += box.margin(RightEdge);
+    run.width += box.padding(RightEdge);
+    run.width += box.border(RightEdge);
     if(run.width && m_line.isEmptyLine()) {
         m_line.setIsEmptyLine(false);
     }
@@ -943,7 +943,7 @@ void LineBreaker::handleFloating(const LineItem& item)
     box->updatePaddingWidths(m_block);
     box->updateVerticalMargins(m_block);
 
-    auto estimatedTop = floatTop + box->marginTop();
+    auto estimatedTop = floatTop + box->margin(TopEdge);
     if(m_fragmentainer)
         m_fragmentainer->enterFragment(estimatedTop);
     box->layout(m_fragmentainer);
@@ -1551,12 +1551,12 @@ void LineLayout::computeIntrinsicWidths(float& minWidth, float& maxWidth) const
             if(item.type() == LineItem::Type::InlineStart) {
                 child.updateHorizontalMargins(nullptr);
                 child.updateHorizontalPaddings(nullptr);
-                inlineMinWidth += child.marginLeft() + child.paddingLeft() + child.borderLeft();
-                inlineMaxWidth += child.marginLeft() + child.paddingLeft() + child.borderLeft();
+                inlineMinWidth += child.margin(LeftEdge) + child.padding(LeftEdge) + child.border(LeftEdge);
+                inlineMaxWidth += child.margin(LeftEdge) + child.padding(LeftEdge) + child.border(LeftEdge);
                 currentStyle = child.style();
             } else {
-                inlineMinWidth += child.marginRight() + child.paddingRight() + child.borderRight();
-                inlineMaxWidth += child.marginRight() + child.paddingRight() + child.borderRight();
+                inlineMinWidth += child.margin(RightEdge) + child.padding(RightEdge) + child.border(RightEdge);
+                inlineMaxWidth += child.margin(RightEdge) + child.padding(RightEdge) + child.border(RightEdge);
                 currentStyle = child.parentBox()->style();
             }
         } else if(item.type() == LineItem::Type::Floating || item.type() == LineItem::Type::Replaced) {
@@ -1633,7 +1633,7 @@ void LineLayout::layout(FragmentBuilder* fragmentainer)
             }
         }
 
-        m_block->setHeight(m_block->height() + m_block->borderAndPaddingBottom());
+        m_block->setHeight(m_block->height() + m_block->borderAndPadding(BottomEdge));
         return;
     }
 

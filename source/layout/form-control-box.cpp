@@ -131,7 +131,7 @@ void SelectBox::paintContents(const PaintInfo& info, const Point& offset, PaintP
 void SelectBox::layout(FragmentBuilder* fragmentainer)
 {
     updateWidth();
-    setHeight(borderAndPaddingTop());
+    setHeight(borderAndPadding(TopEdge));
     for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {
         if(child->isPositioned()) {
             auto childLayer = child->layer();
@@ -144,7 +144,7 @@ void SelectBox::layout(FragmentBuilder* fragmentainer)
         child->updatePaddingWidths(this);
         child->updateVerticalMargins(this);
 
-        auto optionTop = height() + child->marginTop();
+        auto optionTop = height() + child->margin(TopEdge);
         if(fragmentainer)
             fragmentainer->enterFragment(optionTop);
         child->setY(optionTop);
@@ -156,10 +156,10 @@ void SelectBox::layout(FragmentBuilder* fragmentainer)
         child->setX(borderStart() + paddingStart() + child->marginStart(style()->direction()));
         if(style()->isRightToLeftDirection())
             child->setX(width() - child->x() - child->width());
-        setHeight(child->y() + child->height() + child->marginBottom());
+        setHeight(child->y() + child->height() + child->margin(BottomEdge));
     }
 
-    setHeight(height() + borderAndPaddingBottom());
+    setHeight(height() + borderAndPadding(BottomEdge));
     updateHeight();
     layoutPositionedBoxes();
     updateOverflowRect();

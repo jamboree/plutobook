@@ -527,7 +527,7 @@ void MultiColumnFlowBox::layoutContents(FragmentBuilder* fragmentainer)
 
     auto changed = layoutColumns(false);
     while(changed) {
-        setHeight(borderAndPaddingTop());
+        setHeight(borderAndPadding(TopEdge));
         changed = layoutColumns(true);
     }
 }

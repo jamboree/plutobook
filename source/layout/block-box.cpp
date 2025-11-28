@@ -69,7 +69,7 @@ std::optional<float> BlockBox::availableHeight() const
         return std::nullopt;
     if(isAnonymous())
         return containingBlockHeightForContent();
-    if(isPositioned() && style()->height().isAuto() && !(style()->inset(Edge::Top).isAuto() || style()->inset(Edge::Bottom).isAuto())) {
+    if(isPositioned() && style()->height().isAuto() && !(style()->inset(TopEdge).isAuto() || style()->inset(BottomEdge).isAuto())) {
         float y = 0;
         float height = borderAndPaddingHeight();
         float marginTop = 0;
@@ -126,8 +126,8 @@ float BlockBox::computeWidthUsing(const Length& widthLength, const BlockBox* con
         return computeIntrinsicWidthUsing(widthLength, containerWidth);
     if(!widthLength.isAuto())
         return adjustBorderBoxWidth(widthLength.calc(containerWidth));
-    auto marginLeft = style()->margin(Edge::Left).calcMin(containerWidth);
-    auto marginRight = style()->marginRight().calcMin(containerWidth);
+    auto marginLeft = style()->margin(LeftEdge).calcMin(containerWidth);
+    auto marginRight = style()->margin(RightEdge).calcMin(containerWidth);
     auto width = containerWidth - marginLeft - marginRight;
     if(auto block = to<BlockFlowBox>(container); block && block->containsFloats() && shrinkToAvoidFloats())
         width = std::min(width, shrinkWidthToAvoidFloats(marginLeft, marginRight, block));
@@ -261,7 +261,7 @@ void BlockBox::computePositionedWidthUsing(const Length& widthLength, const BoxM
         }
     }
 
-    x = leftLengthValue + marginLeft + container->borderLeft();
+    x = leftLengthValue + marginLeft + container->border(LeftEdge);
 }
 
 void BlockBox::computePositionedWidth(float& x, float& width, float& marginLeft, float& marginRight) const
@@ -270,11 +270,11 @@ void BlockBox::computePositionedWidth(float& x, float& width, float& marginLeft,
     auto containerWidth = containingBlockWidthForPositioned(container);
     auto containerDirection = container->style()->direction();
 
-    auto marginLeftLength = style()->margin(Edge::Left);
-    auto marginRightLength = style()->marginRight();
+    auto marginLeftLength = style()->margin(LeftEdge);
+    auto marginRightLength = style()->margin(RightEdge);
 
-    auto leftLength = style()->inset(Edge::Left);
-    auto rightLength = style()->inset(Edge::Right);
+    auto leftLength = style()->inset(LeftEdge);
+    auto rightLength = style()->inset(RightEdge);
     computeHorizontalStaticDistance(leftLength, rightLength, container, containerWidth);
 
     auto widthLength = style()->width();
@@ -374,7 +374,7 @@ void BlockBox::computePositionedHeightUsing(const Length& heightLength, const Bo
         }
     }
 
-    y = topLengthValue + marginTop + container->borderTop();
+    y = topLengthValue + marginTop + container->border(TopEdge);
 }
 
 void BlockBox::computePositionedHeight(float& y, float& height, float& marginTop, float& marginBottom) const
@@ -383,11 +383,11 @@ void BlockBox::computePositionedHeight(float& y, float& height, float& marginTop
     auto containerHeight = containingBlockHeightForPositioned(container);
     auto contentHeight = height - borderAndPaddingHeight();
 
-    auto marginTopLength = style()->marginTop();
-    auto marginBottomLength = style()->marginBottom();
+    auto marginTopLength = style()->margin(TopEdge);
+    auto marginBottomLength = style()->margin(BottomEdge);
 
-    auto topLength = style()->inset(Edge::Top);
-    auto bottomLength = style()->inset(Edge::Bottom);
+    auto topLength = style()->inset(TopEdge);
+    auto bottomLength = style()->inset(BottomEdge);
     computeVerticalStaticDistance(topLength, bottomLength, container);
 
     auto heightLength = style()->height();
@@ -606,7 +606,7 @@ void BlockFlowBox::updateOverflowRect()
         for(const auto& item : *m_floatingBoxes) {
             auto child = item.box();
             if(!item.isIntruding()) {
-                addOverflowRect(child, item.x() + child->marginLeft(), item.y() + child->marginTop());
+                addOverflowRect(child, item.x() + child->margin(LeftEdge), item.y() + child->margin(TopEdge));
             }
         }
     }
@@ -656,8 +656,8 @@ void BlockFlowBox::computeIntrinsicWidths(float& minWidth, float& maxWidth) cons
         auto childMinWidth = child->minPreferredWidth();
         auto childMaxWidth = child->maxPreferredWidth();
 
-        auto marginLeft = child->marginLeft();
-        auto marginRight = child->marginRight();
+        auto marginLeft = child->margin(LeftEdge);
+        auto marginRight = child->margin(RightEdge);
 
         auto marginWidth = marginLeft + marginRight;
         auto width = childMinWidth + marginWidth;
@@ -787,9 +787,9 @@ void BlockFlowBox::addIntrudingFloats(BlockFlowBox* prevBlock, float offsetX, fl
         return;
     for(const auto& item : *prevBlock->floatingBoxes()) {
         if(item.bottom() > offsetY && !containsFloat(item.box())) {
-            auto leftOffset = offsetX + marginLeft();
+            auto leftOffset = offsetX + margin(LeftEdge);
             if(prevBlock != parentBox())
-                leftOffset -= prevBlock->marginLeft();
+                leftOffset -= prevBlock->margin(LeftEdge);
             FloatingBox floatingBox(item.box());
             floatingBox.setX(item.x() - leftOffset);
             floatingBox.setY(item.y() - offsetY);
@@ -859,15 +859,15 @@ void BlockFlowBox::positionFloatingBox(FloatingBox& floatingBox, FragmentBuilder
     if(fragmentainer) {
         floatTop = fragmentainer->applyFragmentBreakInside(child, floatTop);
         if(!isNearlyEqual(top, floatTop)) {
-            auto newTop = floatTop + child->marginTop();
+            auto newTop = floatTop + child->margin(TopEdge);
             fragmentainer->enterFragment(newTop);
             child->layout(fragmentainer);
             fragmentainer->leaveFragment(newTop);
         }
     }
 
-    child->setX(floatLeft + child->marginLeft());
-    child->setY(floatTop + child->marginTop());
+    child->setX(floatLeft + child->margin(LeftEdge));
+    child->setY(floatTop + child->margin(TopEdge));
 
     floatingBox.setX(floatLeft);
     floatingBox.setY(floatTop);
@@ -897,7 +897,7 @@ void BlockFlowBox::positionNewFloats(FragmentBuilder* fragmentainer)
         child->updatePaddingWidths(this);
         child->updateVerticalMargins(this);
 
-        auto estimatedTop = floatTop + child->marginTop();
+        auto estimatedTop = floatTop + child->margin(TopEdge);
         if(fragmentainer)
             fragmentainer->enterFragment(estimatedTop);
         child->layout(fragmentainer);
@@ -1262,10 +1262,10 @@ void BlockFlowBox::updateMaxMargins()
         return;
     }
 
-    m_maxPositiveMarginTop = std::max(0.f, marginTop());
-    m_maxNegativeMarginTop = std::max(0.f, -marginTop());
-    m_maxPositiveMarginBottom = std::max(0.f, marginBottom());
-    m_maxNegativeMarginBottom = std::max(0.f, -marginBottom());
+    m_maxPositiveMarginTop = std::max(0.f, margin(TopEdge));
+    m_maxNegativeMarginTop = std::max(0.f, -margin(TopEdge));
+    m_maxPositiveMarginBottom = std::max(0.f, margin(BottomEdge));
+    m_maxNegativeMarginBottom = std::max(0.f, -margin(BottomEdge));
 }
 
 bool BlockFlowBox::isSelfCollapsingBlock() const
@@ -1323,8 +1323,8 @@ float BlockFlowBox::getClearDelta(BoxFrame* child, float y) const
             auto childX = child->x();
             auto childY = child->y();
             auto childWidth = child->width();
-            auto childMarginLeft = child->marginLeft();
-            auto childMarginRight = child->marginRight();
+            auto childMarginLeft = child->margin(LeftEdge);
+            auto childMarginRight = child->margin(RightEdge);
 
             child->setY(top);
             child->computeWidth(childX, childWidth, childMarginLeft, childMarginRight);
@@ -1340,8 +1340,8 @@ float BlockFlowBox::getClearDelta(BoxFrame* child, float y) const
 
 void BlockFlowBox::estimateMarginTop(BoxFrame* child, float& positiveMarginTop, float& negativeMarginTop) const
 {
-    positiveMarginTop = std::max(positiveMarginTop, child->marginTop());
-    negativeMarginTop = std::max(negativeMarginTop, -child->marginTop());
+    positiveMarginTop = std::max(positiveMarginTop, child->margin(TopEdge));
+    negativeMarginTop = std::max(negativeMarginTop, -child->margin(TopEdge));
 
     auto childBlock = to<BlockFlowBox>(child);
     if(childBlock == nullptr || childBlock->isChildrenInline()) {
@@ -1350,7 +1350,7 @@ void BlockFlowBox::estimateMarginTop(BoxFrame* child, float& positiveMarginTop, 
 
     childBlock->updateVerticalPaddings(this);
 
-    MarginInfo childMarginInfo(childBlock, childBlock->borderAndPaddingTop(), childBlock->borderAndPaddingBottom());
+    MarginInfo childMarginInfo(childBlock, childBlock->borderAndPadding(TopEdge), childBlock->borderAndPadding(BottomEdge));
     if(!childMarginInfo.canCollapseMarginTopWithChildren()) {
         return;
     }
@@ -1427,24 +1427,24 @@ float BlockFlowBox::determineVerticalPosition(BoxFrame* child, FragmentBuilder* 
 void BlockFlowBox::determineHorizontalPosition(BoxFrame* child) const
 {
     if(style()->isLeftToRightDirection()) {
-        auto offsetX = borderLeft() + paddingLeft() + child->marginLeft();
+        auto offsetX = border(LeftEdge) + padding(LeftEdge) + child->margin(LeftEdge);
         if(containsFloats() && child->avoidsFloats()) {
             auto startOffset = startOffsetForLine(child->y());
-            if(child->style()->margin(Edge::Left).isAuto())
-                offsetX = std::max(offsetX, startOffset + child->marginLeft());
-            else if(startOffset > borderAndPaddingLeft()) {
+            if(child->style()->margin(LeftEdge).isAuto())
+                offsetX = std::max(offsetX, startOffset + child->margin(LeftEdge));
+            else if(startOffset > borderAndPadding(LeftEdge)) {
                 offsetX = std::max(offsetX, startOffset);
             }
         }
 
         child->setX(offsetX);
     } else {
-        auto offsetX = borderRight() + paddingRight() + child->marginRight();
+        auto offsetX = border(RightEdge) + padding(RightEdge) + child->margin(RightEdge);
         if(containsFloats() && child->avoidsFloats()) {
             auto startOffset = startOffsetForLine(child->y());
-            if(child->style()->marginRight().isAuto())
-                offsetX = std::max(offsetX, startOffset + child->marginRight());
-            else if(startOffset > borderAndPaddingRight()) {
+            if(child->style()->margin(RightEdge).isAuto())
+                offsetX = std::max(offsetX, startOffset + child->margin(RightEdge));
+            else if(startOffset > borderAndPadding(RightEdge)) {
                 offsetX = std::max(offsetX, startOffset);
             }
         }
@@ -1528,8 +1528,8 @@ void BlockFlowBox::layoutBlockChild(BoxFrame* child, FragmentBuilder* fragmentai
 
 void BlockFlowBox::layoutBlockChildren(FragmentBuilder* fragmentainer)
 {
-    auto top = borderTop() + paddingTop();
-    auto bottom = borderBottom() + paddingBottom();
+    auto top = border(TopEdge) + padding(TopEdge);
+    auto bottom = border(BottomEdge) + padding(BottomEdge);
 
     MarginInfo marginInfo(this, top, bottom);
     for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {
@@ -1578,13 +1578,13 @@ void BlockFlowBox::layout(FragmentBuilder* fragmentainer)
     updateMaxMargins();
     collectIntrudingFloats();
 
-    setHeight(borderAndPaddingTop());
+    setHeight(borderAndPadding(TopEdge));
     layoutContents(fragmentainer);
 
-    if(avoidsFloats() && floatBottom() > (height() - borderAndPaddingBottom()))
-        setHeight(floatBottom() + borderAndPaddingBottom());
+    if(avoidsFloats() && floatBottom() > (height() - borderAndPadding(BottomEdge)))
+        setHeight(floatBottom() + borderAndPadding(BottomEdge));
     if(auto verticalShift = computeVerticalAlignShift()) {
-        setHeight(verticalShift + borderAndPaddingTop());
+        setHeight(verticalShift + borderAndPadding(TopEdge));
         layoutContents(fragmentainer);
     }
 
@@ -1626,8 +1626,8 @@ void BlockFlowBox::paintFloats(const PaintInfo& info, const Point& offset)
         auto child = item.box();
         if(!item.isIntruding() && !child->hasLayer()) {
             Point adjustedOffset = {
-                offset.x + item.x() - child->x() + child->marginLeft(),
-                offset.y + item.y() - child->y() + child->marginTop()
+                offset.x + item.x() - child->x() + child->margin(LeftEdge),
+                offset.y + item.y() - child->y() + child->margin(TopEdge)
             };
 
             child->paint(info, adjustedOffset, PaintPhase::Decorations);

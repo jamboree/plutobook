@@ -612,15 +612,15 @@ void BoxModel::paintBackgroundStyle(const PaintInfo& info, const Rect& borderRec
     auto clipRect = style()->getBorderRoundedRect(borderRect, includeLeftEdge, includeRightEdge);
     auto backgroundClip = backgroundStyle->backgroundClip();
     if(backgroundClip == BackgroundBox::PaddingBox || backgroundClip == BackgroundBox::ContentBox) {
-        auto topWidth = borderTop();
-        auto rightWidth = borderRight();
-        auto bottomWidth = borderBottom();
-        auto leftWidth = borderLeft();
+        auto topWidth = border(TopEdge);
+        auto rightWidth = border(RightEdge);
+        auto bottomWidth = border(BottomEdge);
+        auto leftWidth = border(LeftEdge);
         if(backgroundClip == BackgroundBox::ContentBox) {
-            topWidth += paddingTop();
-            rightWidth += paddingRight();
-            bottomWidth += paddingBottom();
-            leftWidth += paddingLeft();
+            topWidth += padding(TopEdge);
+            rightWidth += padding(RightEdge);
+            bottomWidth += padding(BottomEdge);
+            leftWidth += padding(LeftEdge);
         }
 
         if(!includeLeftEdge)
@@ -644,15 +644,15 @@ void BoxModel::paintBackgroundStyle(const PaintInfo& info, const Rect& borderRec
         Rect positioningArea(0, 0, borderRect.w, borderRect.h);
         auto backgroundOrigin = backgroundStyle->backgroundOrigin();
         if(backgroundOrigin == BackgroundBox::PaddingBox || backgroundOrigin == BackgroundBox::ContentBox) {
-            auto topWidth = borderTop();
-            auto rightWidth = borderRight();
-            auto bottomWidth = borderBottom();
-            auto leftWidth = borderLeft();
+            auto topWidth = border(TopEdge);
+            auto rightWidth = border(RightEdge);
+            auto bottomWidth = border(BottomEdge);
+            auto leftWidth = border(LeftEdge);
             if(backgroundOrigin == BackgroundBox::ContentBox) {
-                topWidth += paddingTop();
-                rightWidth += paddingRight();
-                bottomWidth += paddingBottom();
-                leftWidth += paddingLeft();
+                topWidth += padding(TopEdge);
+                rightWidth += padding(RightEdge);
+                bottomWidth += padding(BottomEdge);
+                leftWidth += padding(LeftEdge);
             }
 
             positioningArea.shrink(topWidth, rightWidth, bottomWidth, leftWidth);
@@ -774,8 +774,8 @@ float BoxModel::relativePositionOffsetX() const
 {
     auto container = containingBlock();
 
-    auto leftLength = style()->inset(Edge::Left);
-    auto rightLength = style()->inset(Edge::Right);
+    auto leftLength = style()->inset(LeftEdge);
+    auto rightLength = style()->inset(RightEdge);
 
     auto availableWidth = containingBlockWidthForContent(container);
     if(!leftLength.isAuto()) {
@@ -793,8 +793,8 @@ float BoxModel::relativePositionOffsetY() const
 {
     auto container = containingBlock();
 
-    auto topLength = style()->inset(Edge::Top);
-    auto bottomLength = style()->inset(Edge::Bottom);
+    auto topLength = style()->inset(TopEdge);
+    auto bottomLength = style()->inset(BottomEdge);
 
     auto availableHeight = containingBlockHeightForContent(container);
     if(!topLength.isAuto() && (availableHeight || !topLength.isPercent()))
@@ -845,15 +845,15 @@ std::optional<float> BoxModel::containingBlockHeightForContent(const BlockBox* c
 void BoxModel::updateVerticalMargins(const BlockBox* container)
 {
     auto containerWidth = containingBlockWidthForContent(container);
-    m_marginTop = style()->marginTop().calcMin(containerWidth);
-    m_marginBottom = style()->marginBottom().calcMin(containerWidth);
+    m_margin[TopEdge] = style()->margin(TopEdge).calcMin(containerWidth);
+    m_margin[BottomEdge] = style()->margin(BottomEdge).calcMin(containerWidth);
 }
 
 void BoxModel::updateHorizontalMargins(const BlockBox* container)
 {
     auto containerWidth = containingBlockWidthForContent(container);
-    m_marginLeft = style()->margin(Edge::Left).calcMin(containerWidth);
-    m_marginRight = style()->marginRight().calcMin(containerWidth);
+    m_margin[LeftEdge] = style()->margin(LeftEdge).calcMin(containerWidth);
+    m_margin[RightEdge] = style()->margin(RightEdge).calcMin(containerWidth);
 }
 
 void BoxModel::updateMarginWidths(const BlockBox* container)
@@ -865,15 +865,15 @@ void BoxModel::updateMarginWidths(const BlockBox* container)
 void BoxModel::updateVerticalPaddings(const BlockBox* container)
 {
     auto containerWidth = containingBlockWidthForContent(container);
-    m_paddingTop = style()->paddingTop().calcMin(containerWidth);
-    m_paddingBottom = style()->paddingBottom().calcMin(containerWidth);
+    m_padding[TopEdge] = style()->padding(TopEdge).calcMin(containerWidth);
+    m_padding[BottomEdge] = style()->padding(BottomEdge).calcMin(containerWidth);
 }
 
 void BoxModel::updateHorizontalPaddings(const BlockBox* container)
 {
     auto containerWidth = containingBlockWidthForContent(container);
-    m_paddingLeft = style()->paddingLeft().calcMin(containerWidth);
-    m_paddingRight = style()->paddingRight().calcMin(containerWidth);
+    m_padding[LeftEdge] = style()->padding(LeftEdge).calcMin(containerWidth);
+    m_padding[RightEdge] = style()->padding(RightEdge).calcMin(containerWidth);
 }
 
 void BoxModel::updatePaddingWidths(const BlockBox* container)
@@ -890,16 +890,16 @@ void BoxModel::computeBorderWidths(float& borderTop, float& borderBottom, float&
         return 0.f;
     };
 
-    borderTop = calc(style()->borderTopStyle(), style()->borderTopWidth());
-    borderBottom = calc(style()->borderBottomStyle(), style()->borderBottomWidth());
-    borderLeft = calc(style()->borderLeftStyle(), style()->borderLeftWidth());
-    borderRight = calc(style()->borderRightStyle(), style()->borderRightWidth());
+    borderTop = calc(style()->borderStyle(TopEdge), style()->borderWidth(TopEdge));
+    borderBottom = calc(style()->borderStyle(BottomEdge), style()->borderWidth(BottomEdge));
+    borderLeft = calc(style()->borderStyle(LeftEdge), style()->borderWidth(LeftEdge));
+    borderRight = calc(style()->borderStyle(RightEdge), style()->borderWidth(RightEdge));
 }
 
 float BoxModel::border(Edge edge) const
 {
     if(m_border[std::to_underlying(edge)] < 0)
-        computeBorderWidths(m_border[0], m_border[2], m_border[3], m_border[1]);
+        computeBorderWidths(m_border[TopEdge], m_border[BottomEdge], m_border[LeftEdge], m_border[RightEdge]);
     return m_border[std::to_underlying(edge)];
 }
 
@@ -1005,7 +1005,7 @@ void BoxFrame::computeHorizontalStaticDistance(Length& leftLength, Length& right
         return;
     auto parent = parentBox();
     if(parent->style()->direction() == Direction::Ltr) {
-        auto staticPosition = layer()->staticLeft() - container->borderLeft();
+        auto staticPosition = layer()->staticLeft() - container->border(LeftEdge);
         for(; parent && parent != container; parent = parent->containingBox()) {
             if(auto box = to<BoxFrame>(parent)) {
                 staticPosition += box->x();
@@ -1017,7 +1017,7 @@ void BoxFrame::computeHorizontalStaticDistance(Length& leftLength, Length& right
 
         leftLength = Length(Length::Type::Fixed, staticPosition);
     } else {
-        auto staticPosition = layer()->staticLeft() + containerWidth + container->borderRight();
+        auto staticPosition = layer()->staticLeft() + containerWidth + container->border(RightEdge);
         while(parent && !parent->isBoxFrame())
             parent = parent->parentBox();
         if(auto box = to<BoxFrame>(parent))
@@ -1039,7 +1039,7 @@ void BoxFrame::computeVerticalStaticDistance(Length& topLength, Length& bottomLe
 {
     if(!topLength.isAuto() || !bottomLength.isAuto())
         return;
-    auto staticTop = layer()->staticTop() - container->borderTop();
+    auto staticTop = layer()->staticTop() - container->border(TopEdge);
     for(auto parent = parentBox(); parent && parent != container; parent = parent->containingBox()) {
         if(auto box = to<BoxFrame>(parent)) {
             staticTop += box->y();
@@ -1056,8 +1056,8 @@ void BoxFrame::computeHorizontalMargins(float& marginLeft, float& marginRight, f
 {
     if(isFlexItem() || isTableCellBox())
         return;
-    auto marginLeftLength = style()->margin(Edge::Left);
-    auto marginRightLength = style()->marginRight();
+    auto marginLeftLength = style()->margin(LeftEdge);
+    auto marginRightLength = style()->margin(RightEdge);
     if(isInline() || isFloating()) {
         marginLeft = marginLeftLength.calcMin(containerWidth);
         marginRight = marginRightLength.calcMin(containerWidth);
@@ -1096,8 +1096,8 @@ void BoxFrame::computeVerticalMargins(float& marginTop, float& marginBottom) con
     if(isFlexItem() || isTableCellBox())
         return;
     auto containerWidth = containingBlockWidthForContent();
-    marginTop = style()->marginTop().calcMin(containerWidth);
-    marginBottom = style()->marginBottom().calcMin(containerWidth);
+    marginTop = style()->margin(TopEdge).calcMin(containerWidth);
+    marginBottom = style()->margin(BottomEdge).calcMin(containerWidth);
 }
 
 float BoxFrame::computeIntrinsicWidthUsing(const Length& widthLength, float containerWidth) const
@@ -1109,8 +1109,8 @@ float BoxFrame::computeIntrinsicWidthUsing(const Length& widthLength, float cont
     }
 
     assert(widthLength.isFitContent());
-    auto marginLeft = style()->margin(Edge::Left).calcMin(containerWidth);
-    auto marginRight = style()->marginRight().calcMin(containerWidth);
+    auto marginLeft = style()->margin(LeftEdge).calcMin(containerWidth);
+    auto marginRight = style()->margin(RightEdge).calcMin(containerWidth);
     auto width = containerWidth - marginLeft - marginRight;
     return std::max(minPreferredWidth(), std::min(width, maxPreferredWidth()));
 }
@@ -1127,22 +1127,22 @@ void BoxFrame::computeHeight(float& y, float& height, float& marginTop, float& m
 
 void BoxFrame::updateWidth()
 {
-    computeWidth(m_x, m_width, m_marginLeft, m_marginRight);
+    computeWidth(m_x, m_width, m_margin[LeftEdge], m_margin[RightEdge]);
 }
 
 void BoxFrame::updateHeight()
 {
-    computeHeight(m_y, m_height, m_marginTop, m_marginBottom);
+    computeHeight(m_y, m_height, m_margin[TopEdge], m_margin[BottomEdge]);
 }
 
 float BoxFrame::maxMarginTop(bool positive) const
 {
-    return positive ? std::max(0.f, m_marginTop) : -std::min(0.f, m_marginTop);
+    return positive ? std::max(0.f, m_margin[TopEdge]) : -std::min(0.f, m_margin[TopEdge]);
 }
 
 float BoxFrame::maxMarginBottom(bool positive) const
 {
-    return positive ? std::max(0.f, m_marginBottom) : -std::min(0.f, m_marginBottom);
+    return positive ? std::max(0.f, m_margin[BottomEdge]) : -std::min(0.f, m_margin[BottomEdge]);
 }
 
 float BoxFrame::collapsedMarginTop() const

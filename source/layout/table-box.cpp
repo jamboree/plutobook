@@ -129,14 +129,14 @@ void TableBox::computeBorderWidths(float& borderTop, float& borderBottom, float&
     if(auto section = topSection()) {
         auto row = section->firstRow();
         for(const auto& [col, cell] : row->cells()) {
-            borderTop = std::max(borderTop, cell->borderTop());
+            borderTop = std::max(borderTop, cell->border(TopEdge));
         }
     }
 
     if(auto section = bottomSection()) {
         auto row = section->lastRow();
         for(const auto& [col, cell] : row->cells()) {
-            borderBottom = std::max(borderBottom, cell->borderBottom());
+            borderBottom = std::max(borderBottom, cell->border(BottomEdge));
         }
     }
 
@@ -151,9 +151,9 @@ void TableBox::computeBorderWidths(float& borderTop, float& borderBottom, float&
     for(auto section : m_sections) {
         for(auto row : section->rows()) {
             if(auto cell = row->cellAt(startColumnIndex))
-                borderLeft = std::max(borderLeft, cell->borderLeft());
+                borderLeft = std::max(borderLeft, cell->border(LeftEdge));
             if(auto cell = row->cellAt(endColumnIndex)) {
-                borderRight = std::max(borderRight, cell->borderRight());
+                borderRight = std::max(borderRight, cell->border(RightEdge));
             }
         }
     }
@@ -282,19 +282,19 @@ void TableBox::layoutCaption(TableCaptionBox* caption, FragmentBuilder* fragment
     caption->updatePaddingWidths(this);
     caption->updateVerticalMargins(this);
 
-    auto captionTop = height() + caption->marginTop();
+    auto captionTop = height() + caption->margin(TopEdge);
     if(fragmentainer) {
         fragmentainer->enterFragment(captionTop);
     }
 
     caption->setY(captionTop);
     caption->layout(fragmentainer);
-    caption->setX(caption->marginLeft());
+    caption->setX(caption->margin(LeftEdge));
     if(fragmentainer) {
         fragmentainer->leaveFragment(captionTop);
     }
 
-    setHeight(captionTop + caption->height() + caption->marginBottom());
+    setHeight(captionTop + caption->height() + caption->margin(BottomEdge));
 }
 
 void TableBox::layout(FragmentBuilder* fragmentainer)
@@ -315,7 +315,7 @@ void TableBox::layout(FragmentBuilder* fragmentainer)
         tableHeight = std::max(tableHeight, overrideHeight() - borderAndPaddingHeight() - height());
     }
 
-    setHeight(height() + borderAndPaddingTop());
+    setHeight(height() + borderAndPadding(TopEdge));
     if(m_columns.empty()) {
         setHeight(tableHeight + height());
     } else {
@@ -352,7 +352,7 @@ void TableBox::layout(FragmentBuilder* fragmentainer)
             }
 
             section->setY(sectionTop);
-            section->setX(borderAndPaddingLeft());
+            section->setX(borderAndPadding(LeftEdge));
             section->layoutRows(fragmentainer);
             if(fragmentainer) {
                 fragmentainer->leaveFragment(sectionTop);
@@ -364,7 +364,7 @@ void TableBox::layout(FragmentBuilder* fragmentainer)
         setHeight(sectionTop);
     }
 
-    setHeight(height() + borderAndPaddingBottom());
+    setHeight(height() + borderAndPadding(BottomEdge));
     for(auto caption : m_captions) {
         if(caption->captionSide() == CaptionSide::Bottom) {
             layoutCaption(caption, fragmentainer);
@@ -1014,7 +1014,7 @@ std::optional<float> TableSectionBox::firstLineBaseline() const
     for(const auto& [col, cell] : firstRowBox->cells()) {
         auto cellBox = cell.box();
         if(!cell.inColOrRowSpan() && cellBox->contentBoxHeight()) {
-            auto candidate = firstRowBox->y() + cellBox->borderAndPaddingTop() + cellBox->contentBoxHeight();
+            auto candidate = firstRowBox->y() + cellBox->borderAndPadding(TopEdge) + cellBox->contentBoxHeight();
             baseline = std::max(candidate, baseline.value_or(candidate));
         }
     }
@@ -1033,7 +1033,7 @@ std::optional<float> TableSectionBox::lastLineBaseline() const
     for(const auto& [col, cell] : lastRowBox->cells()) {
         auto cellBox = cell.box();
         if(!cell.inColOrRowSpan() && cellBox->contentBoxHeight()) {
-            auto candidate = lastRowBox->y() + cellBox->borderAndPaddingTop() + cellBox->contentBoxHeight();
+            auto candidate = lastRowBox->y() + cellBox->borderAndPadding(TopEdge) + cellBox->contentBoxHeight();
             baseline = std::max(candidate, baseline.value_or(candidate));
         }
     }
@@ -1416,22 +1416,22 @@ TableCollapsedBorderEdge TableCollapsedBorderEdges::chooseEdge(const TableCollap
 
 TableCollapsedBorderEdge TableCollapsedBorderEdges::getTopEdge(TableCollapsedBorderSource source, const BoxStyle* style)
 {
-    return TableCollapsedBorderEdge(source, style->borderTopStyle(), style->borderTopWidth(), style->borderTopColor());
+    return TableCollapsedBorderEdge(source, style->borderStyle(TopEdge), style->borderWidth(TopEdge), style->borderColor(TopEdge));
 }
 
 TableCollapsedBorderEdge TableCollapsedBorderEdges::getBottomEdge(TableCollapsedBorderSource source, const BoxStyle* style)
 {
-    return TableCollapsedBorderEdge(source, style->borderBottomStyle(), style->borderBottomWidth(), style->borderBottomColor());
+    return TableCollapsedBorderEdge(source, style->borderStyle(BottomEdge), style->borderWidth(BottomEdge), style->borderColor(BottomEdge));
 }
 
 TableCollapsedBorderEdge TableCollapsedBorderEdges::getLeftEdge(TableCollapsedBorderSource source, const BoxStyle* style)
 {
-    return TableCollapsedBorderEdge(source, style->borderLeftStyle(), style->borderLeftWidth(), style->borderLeftColor());
+    return TableCollapsedBorderEdge(source, style->borderStyle(LeftEdge), style->borderWidth(LeftEdge), style->borderColor(LeftEdge));
 }
 
 TableCollapsedBorderEdge TableCollapsedBorderEdges::getRightEdge(TableCollapsedBorderSource source, const BoxStyle* style)
 {
-    return TableCollapsedBorderEdge(source, style->borderRightStyle(), style->borderRightWidth(), style->borderRightColor());
+    return TableCollapsedBorderEdge(source, style->borderStyle(RightEdge), style->borderWidth(RightEdge), style->borderColor(RightEdge));
 }
 
 TableCollapsedBorderEdge TableCollapsedBorderEdges::calcTopEdge(const TableCellBox* cellBox)
@@ -1690,7 +1690,7 @@ float TableCellBox::cellBaselinePosition() const
 {
     if(auto baseline = firstLineBaseline())
         return baseline.value();
-    return paddingTop() + borderTop() + contentBoxHeight();
+    return padding(TopEdge) + border(TopEdge) + contentBoxHeight();
 }
 
 float TableCellBox::computeVerticalAlignShift() const

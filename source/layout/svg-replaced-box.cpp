@@ -91,10 +91,10 @@ void SvgRootBox::computeIntrinsicRatioInformation(float& intrinsicWidth, float& 
 void SvgRootBox::paintReplaced(const PaintInfo& info, const Point& offset)
 {
     const RectOutsets outsets = {
-        borderTop() + paddingTop(),
-        borderRight() + paddingRight(),
-        borderBottom() + paddingBottom(),
-        borderLeft() + paddingLeft()
+        border(TopEdge) + padding(TopEdge),
+        border(RightEdge) + padding(RightEdge),
+        border(BottomEdge) + padding(BottomEdge),
+        border(LeftEdge) + padding(LeftEdge)
     };
 
     Rect borderRect(offset, size());

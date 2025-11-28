@@ -191,13 +191,13 @@ const FontVariationList& BoxStyle::fontVariationSettings() const
     return m_font->variationSettings();
 }
 
-inline CssPropertyID edgeProperty(CssPropertyID id, Edge edge) {
-    return CssPropertyID(std::to_underlying(id) + std::to_underlying(edge));
+inline CssPropertyID offsetProperty(CssPropertyID id, uint8_t offset) {
+    return CssPropertyID(std::to_underlying(id) + offset);
 }
 
 Length BoxStyle::inset(Edge edge) const
 {
-    auto value = get(edgeProperty(CssPropertyID::Top, edge));
+    auto value = get(offsetProperty(CssPropertyID::Top, edge));
     if (value == nullptr)
         return Length::Auto;
     return convertLengthOrPercentOrAuto(*value);
@@ -253,159 +253,39 @@ Length BoxStyle::maxHeight() const
 
 Length BoxStyle::margin(Edge edge) const
 {
-    auto value = get(edgeProperty(CssPropertyID::MarginTop, edge));
+    auto value = get(offsetProperty(CssPropertyID::MarginTop, edge));
     if (value == nullptr)
         return Length::ZeroFixed;
     return convertLengthOrPercentOrAuto(*value);
 }
 
-Length BoxStyle::marginRight() const
+Length BoxStyle::padding(Edge edge) const
 {
-    auto value = get(CssPropertyID::MarginRight);
-    if(value == nullptr)
-        return Length::ZeroFixed;
-    return convertLengthOrPercentOrAuto(*value);
-}
-
-Length BoxStyle::marginTop() const
-{
-    auto value = get(CssPropertyID::MarginTop);
-    if(value == nullptr)
-        return Length::ZeroFixed;
-    return convertLengthOrPercentOrAuto(*value);
-}
-
-Length BoxStyle::marginBottom() const
-{
-    auto value = get(CssPropertyID::MarginBottom);
-    if(value == nullptr)
-        return Length::ZeroFixed;
-    return convertLengthOrPercentOrAuto(*value);
-}
-
-Length BoxStyle::paddingLeft() const
-{
-    auto value = get(CssPropertyID::PaddingLeft);
+    auto value = get(offsetProperty(CssPropertyID::PaddingTop, edge));
     if(value == nullptr)
         return Length::ZeroFixed;
     return convertLengthOrPercent(*value);
 }
 
-Length BoxStyle::paddingRight() const
+LineStyle BoxStyle::borderStyle(Edge edge) const
 {
-    auto value = get(CssPropertyID::PaddingRight);
-    if(value == nullptr)
-        return Length::ZeroFixed;
-    return convertLengthOrPercent(*value);
-}
-
-Length BoxStyle::paddingTop() const
-{
-    auto value = get(CssPropertyID::PaddingTop);
-    if(value == nullptr)
-        return Length::ZeroFixed;
-    return convertLengthOrPercent(*value);
-}
-
-Length BoxStyle::paddingBottom() const
-{
-    auto value = get(CssPropertyID::PaddingBottom);
-    if(value == nullptr)
-        return Length::ZeroFixed;
-    return convertLengthOrPercent(*value);
-}
-
-LineStyle BoxStyle::borderLeftStyle() const
-{
-    auto value = get(CssPropertyID::BorderLeftStyle);
+    auto value = get(offsetProperty(CssPropertyID::BorderTopStyle, edge));
     if(value == nullptr)
         return LineStyle::None;
     return convertLineStyle(*value);
 }
 
-LineStyle BoxStyle::borderRightStyle() const
+Color BoxStyle::borderColor(Edge edge) const
 {
-    auto value = get(CssPropertyID::BorderRightStyle);
-    if(value == nullptr)
-        return LineStyle::None;
-    return convertLineStyle(*value);
-}
-
-LineStyle BoxStyle::borderTopStyle() const
-{
-    auto value = get(CssPropertyID::BorderTopStyle);
-    if(value == nullptr)
-        return LineStyle::None;
-    return convertLineStyle(*value);
-}
-
-LineStyle BoxStyle::borderBottomStyle() const
-{
-    auto value = get(CssPropertyID::BorderBottomStyle);
-    if(value == nullptr)
-        return LineStyle::None;
-    return convertLineStyle(*value);
-}
-
-Color BoxStyle::borderLeftColor() const
-{
-    auto value = get(CssPropertyID::BorderLeftColor);
+    auto value = get(offsetProperty(CssPropertyID::BorderTopColor, edge));
     if(value == nullptr)
         return m_color;
     return convertColor(*value);
 }
 
-Color BoxStyle::borderRightColor() const
+float BoxStyle::borderWidth(Edge edge) const
 {
-    auto value = get(CssPropertyID::BorderRightColor);
-    if(value == nullptr)
-        return m_color;
-    return convertColor(*value);
-}
-
-Color BoxStyle::borderTopColor() const
-{
-    auto value = get(CssPropertyID::BorderTopColor);
-    if(value == nullptr)
-        return m_color;
-    return convertColor(*value);
-}
-
-Color BoxStyle::borderBottomColor() const
-{
-    auto value = get(CssPropertyID::BorderBottomColor);
-    if(value == nullptr)
-        return m_color;
-    return convertColor(*value);
-}
-
-float BoxStyle::borderLeftWidth() const
-{
-    auto value = get(CssPropertyID::BorderLeftWidth);
-    if(value == nullptr)
-        return 3.0;
-    return convertLineWidth(*value);
-}
-
-float BoxStyle::borderRightWidth() const
-{
-    auto value = get(CssPropertyID::BorderRightWidth);
-    if(value == nullptr)
-        return 3.0;
-    return convertLineWidth(*value);
-}
-
-float BoxStyle::borderTopWidth() const
-{
-    auto value = get(CssPropertyID::BorderTopWidth);
-    if(value == nullptr)
-        return 3.0;
-    return convertLineWidth(*value);
-}
-
-float BoxStyle::borderBottomWidth() const
-{
-    auto value = get(CssPropertyID::BorderBottomWidth);
+    auto value = get(offsetProperty(CssPropertyID::BorderTopWidth, edge));
     if(value == nullptr)
         return 3.0;
     return convertLineWidth(*value);
@@ -413,44 +293,20 @@ float BoxStyle::borderBottomWidth() const
 
 void BoxStyle::getBorderEdgeInfo(BorderEdge edges[], bool includeLeftEdge, bool includeRightEdge) const
 {
-    edges[BoxSideTop] = BorderEdge(borderTopWidth(), borderTopColor(), borderTopStyle());
+    edges[BoxSideTop] = BorderEdge(borderWidth(TopEdge), borderColor(TopEdge), borderStyle(TopEdge));
     if(includeRightEdge) {
-        edges[BoxSideRight] = BorderEdge(borderRightWidth(), borderRightColor(), borderRightStyle());
+        edges[BoxSideRight] = BorderEdge(borderWidth(RightEdge), borderColor(RightEdge), borderStyle(RightEdge));
     }
 
-    edges[BoxSideBottom] = BorderEdge(borderBottomWidth(), borderBottomColor(), borderBottomStyle());
+    edges[BoxSideBottom] = BorderEdge(borderWidth(BottomEdge), borderColor(BottomEdge), borderStyle(BottomEdge));
     if(includeLeftEdge) {
-        edges[BoxSideLeft] = BorderEdge(borderLeftWidth(), borderLeftColor(), borderLeftStyle());
+        edges[BoxSideLeft] = BorderEdge(borderWidth(LeftEdge), borderColor(LeftEdge), borderStyle(LeftEdge));
     }
 }
 
-LengthSize BoxStyle::borderTopLeftRadius() const
+LengthSize BoxStyle::borderRadius(Corner corner) const
 {
-    auto value = get(CssPropertyID::BorderTopLeftRadius);
-    if(value == nullptr)
-        return LengthSize(Length::ZeroFixed);
-    return convertBorderRadius(*value);
-}
-
-LengthSize BoxStyle::borderTopRightRadius() const
-{
-    auto value = get(CssPropertyID::BorderTopRightRadius);
-    if(value == nullptr)
-        return LengthSize(Length::ZeroFixed);
-    return convertBorderRadius(*value);
-}
-
-LengthSize BoxStyle::borderBottomLeftRadius() const
-{
-    auto value = get(CssPropertyID::BorderBottomLeftRadius);
-    if(value == nullptr)
-        return LengthSize(Length::ZeroFixed);
-    return convertBorderRadius(*value);
-}
-
-LengthSize BoxStyle::borderBottomRightRadius() const
-{
-    auto value = get(CssPropertyID::BorderBottomRightRadius);
+    auto value = get(offsetProperty(CssPropertyID::BorderTopLeftRadius, corner));
     if(value == nullptr)
         return LengthSize(Length::ZeroFixed);
     return convertBorderRadius(*value);
@@ -464,13 +320,13 @@ RoundedRect BoxStyle::getBorderRoundedRect(const Rect& borderRect, bool includeL
 
     RectRadii borderRadii;
     if(includeLeftEdge) {
-        borderRadii.tl = calc(borderTopLeftRadius());
-        borderRadii.bl = calc(borderBottomLeftRadius());
+        borderRadii.tl = calc(borderRadius(TopLeftCorner));
+        borderRadii.bl = calc(borderRadius(BottomLeftCorner));
     }
 
     if(includeRightEdge) {
-        borderRadii.tr = calc(borderTopRightRadius());
-        borderRadii.br = calc(borderBottomRightRadius());
+        borderRadii.tr = calc(borderRadius(TopRightCorner));
+        borderRadii.br = calc(borderRadius(BottomRightCorner));
     }
 
     borderRadii.constrain(borderRect.w, borderRect.h);

@@ -80,9 +80,9 @@ Point InlineBox::relativePositionedInlineOffset(const BoxModel* child) const
     const auto* childStyle = child->style();
 
     Point offset;
-    if(!childStyle->inset(Edge::Left).isAuto() || !childStyle->inset(Edge::Right).isAuto())
+    if(!childStyle->inset(LeftEdge).isAuto() || !childStyle->inset(RightEdge).isAuto())
         offset.x = firstLine->x();
-    if(!childStyle->inset(Edge::Top).isAuto() || !childStyle->inset(Edge::Bottom).isAuto()) {
+    if(!childStyle->inset(TopEdge).isAuto() || !childStyle->inset(BottomEdge).isAuto()) {
         offset.y = firstLine->y();
     }
 
@@ -98,8 +98,8 @@ float InlineBox::innerPaddingBoxWidth() const
     const auto& firstLine = m_lines.front();
     const auto& lastLine = m_lines.back();
     if(style()->isLeftToRightDirection())
-        return lastLine->right() - firstLine->x() - borderLeft() - borderRight();
-    return firstLine->right() - lastLine->x() - borderLeft() - borderRight();
+        return lastLine->right() - firstLine->x() - borderWidth();
+    return firstLine->right() - lastLine->x() - borderWidth();
 }
 
 float InlineBox::innerPaddingBoxHeight() const
@@ -110,7 +110,7 @@ float InlineBox::innerPaddingBoxHeight() const
 
     const auto& firstLine = m_lines.front();
     const auto& lastLine = m_lines.back();
-    return lastLine->bottom() - firstLine->y() - borderTop() - borderBottom();
+    return lastLine->bottom() - firstLine->y() - borderHeight();
 }
 
 void InlineBox::addChild(Box* newChild)

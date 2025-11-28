@@ -11,9 +11,14 @@
 #include <boost/unordered/unordered_flat_map.hpp>
 
 namespace plutobook {
-    enum class Corner : uint8_t { TopLeft, TopRight, BottomRight, BottomLeft };
+    enum Corner : uint8_t {
+        TopLeftCorner,
+        TopRightCorner,
+        BottomRightCorner,
+        BottomLeftCorner
+    };
 
-    enum class Edge : uint8_t { Top, Right, Bottom, Left };
+    enum Edge : uint8_t { TopEdge, RightEdge, BottomEdge, LeftEdge };
 
     enum class Display : uint8_t {
         None,
@@ -609,42 +614,19 @@ namespace plutobook {
         Length maxHeight() const;
 
         Length margin(Edge edge) const;
-        Length marginRight() const;
-        Length marginTop() const;
-        Length marginBottom() const;
 
         Length padding(Edge edge) const;
-        Length paddingLeft() const;
-        Length paddingRight() const;
-        Length paddingTop() const;
-        Length paddingBottom() const;
 
         LineStyle borderStyle(Edge edge) const;
-        LineStyle borderLeftStyle() const;
-        LineStyle borderRightStyle() const;
-        LineStyle borderTopStyle() const;
-        LineStyle borderBottomStyle() const;
 
         Color borderColor(Edge edge) const;
-        Color borderLeftColor() const;
-        Color borderRightColor() const;
-        Color borderTopColor() const;
-        Color borderBottomColor() const;
 
         float borderWidth(Edge edge) const;
-        float borderLeftWidth() const;
-        float borderRightWidth() const;
-        float borderTopWidth() const;
-        float borderBottomWidth() const;
 
         void getBorderEdgeInfo(BorderEdge edges[], bool includeLeftEdge,
                                bool includeRightEdge) const;
 
         LengthSize borderRadius(Corner corner) const;
-        LengthSize borderTopLeftRadius() const;
-        LengthSize borderTopRightRadius() const;
-        LengthSize borderBottomLeftRadius() const;
-        LengthSize borderBottomRightRadius() const;
 
         RoundedRect getBorderRoundedRect(const Rect& borderRect,
                                          bool includeLeftEdge,

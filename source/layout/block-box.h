@@ -25,7 +25,7 @@ namespace plutobook {
         void layoutPositionedBoxes();
 
         float leftOffsetForContent() const {
-            return borderLeft() + paddingLeft();
+            return border(LeftEdge) + padding(LeftEdge);
         }
         float rightOffsetForContent() const {
             return leftOffsetForContent() + contentBoxWidth();

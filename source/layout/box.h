@@ -339,13 +339,13 @@ namespace plutobook {
         }
 
         float marginWidth() const {
-            return margin(Edge::Left) + margin(Edge::Right);
+            return margin(LeftEdge) + margin(RightEdge);
         }
         float marginHeight() const {
-            return margin(Edge::Top) + margin(Edge::Bottom);
+            return margin(TopEdge) + margin(BottomEdge);
         }
 
-        void setMargin(float value, Edge edge) {
+        void setMargin(Edge edge, float value) {
             m_margin[std::to_underlying(edge)] = value;
         }
 
@@ -358,13 +358,13 @@ namespace plutobook {
         }
 
         float paddingWidth() const {
-            return padding(Edge::Left) + padding(Edge::Right);
+            return padding(LeftEdge) + padding(RightEdge);
         }
         float paddingHeight() const {
-            return padding(Edge::Top) + padding(Edge::Bottom);
+            return padding(TopEdge) + padding(BottomEdge);
         }
 
-        void setPadding(float value, Edge edge) {
+        void setPadding(Edge edge, float value) {
             m_padding[std::to_underlying(edge)] = value;
         }
 
@@ -379,10 +379,10 @@ namespace plutobook {
         float border(Edge edge) const;
 
         float borderWidth() const {
-            return border(Edge::Left) + border(Edge::Right);
+            return border(LeftEdge) + border(RightEdge);
         }
         float borderHeight() const {
-            return border(Edge::Top) + border(Edge::Bottom);
+            return border(TopEdge) + border(BottomEdge);
         }
 
         float borderAndPadding(Edge edge) const {
@@ -397,30 +397,30 @@ namespace plutobook {
         }
 
         float marginStart(Direction direction) const {
-            return direction == Direction::Ltr ? margin(Edge::Left)
-                                               : margin(Edge::Right);
+            return direction == Direction::Ltr ? margin(LeftEdge)
+                                               : margin(RightEdge);
         }
         float marginEnd(Direction direction) const {
-            return direction == Direction::Ltr ? margin(Edge::Right)
-                                               : margin(Edge::Left);
+            return direction == Direction::Ltr ? margin(RightEdge)
+                                               : margin(LeftEdge);
         }
 
         float borderStart(Direction direction) const {
-            return direction == Direction::Ltr ? border(Edge::Left)
-                                               : border(Edge::Right);
+            return direction == Direction::Ltr ? border(LeftEdge)
+                                               : border(RightEdge);
         }
         float borderEnd(Direction direction) const {
-            return direction == Direction::Ltr ? border(Edge::Right)
-                                               : border(Edge::Left);
+            return direction == Direction::Ltr ? border(RightEdge)
+                                               : border(LeftEdge);
         }
 
         float paddingStart(Direction direction) const {
-            return direction == Direction::Ltr ? padding(Edge::Left)
-                                               : padding(Edge::Right);
+            return direction == Direction::Ltr ? padding(LeftEdge)
+                                               : padding(RightEdge);
         }
         float paddingEnd(Direction direction) const {
-            return direction == Direction::Ltr ? padding(Edge::Right)
-                                               : padding(Edge::Left);
+            return direction == Direction::Ltr ? padding(RightEdge)
+                                               : padding(LeftEdge);
         }
 
         float marginStart() const { return marginStart(style()->direction()); }
@@ -532,16 +532,16 @@ namespace plutobook {
             return Rect(0, 0, borderBoxWidth(), borderBoxHeight());
         }
         Rect paddingBoxRect() const {
-            return Rect(border(Edge::Left), border(Edge::Top),
+            return Rect(border(LeftEdge), border(TopEdge),
                         paddingBoxWidth(), paddingBoxHeight());
         }
         Rect contentBoxRect() const {
-            return Rect(border(Edge::Left) + padding(Edge::Left),
-                        border(Edge::Top) + padding(Edge::Top),
+            return Rect(border(LeftEdge) + padding(LeftEdge),
+                        border(TopEdge) + padding(TopEdge),
                         contentBoxWidth(), contentBoxHeight());
         }
         Rect marginBoxRect() const {
-            return Rect(-margin(Edge::Left), -margin(Edge::Right),
+            return Rect(-margin(LeftEdge), -margin(RightEdge),
                         marginBoxWidth(), marginBoxHeight());
         }
 
