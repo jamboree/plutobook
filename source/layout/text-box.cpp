@@ -20,7 +20,7 @@ TextBox::~TextBox() = default;
 LineBreakBox::LineBreakBox(Node* node, const RefPtr<BoxStyle>& style)
     : TextBox(classKind, node, style)
 {
-    setText(newLineGlo);
+    setText(GlobalString(newLineGlo));
 }
 
 WordBreakBox::WordBreakBox(Node* node, const RefPtr<BoxStyle>& style)

@@ -4,7 +4,7 @@
 
 namespace plutobook {
     enum class GlobalStringId : unsigned {
-        emptyGlo = 0,
+        _emptyGlo = 0,
 #define GLOBAL_STRING(id, str) id,
 #include "global-string.inc"
         frameTag = frameGlo,
@@ -55,15 +55,7 @@ namespace plutobook {
         return GlobalString({data, length});
     }
 
-    constexpr GlobalString emptyGlo(GlobalStringId::emptyGlo);
-#define GLOBAL_STRING(id, str) constexpr GlobalString id(GlobalStringId::id);
-#include "global-string.inc"
-    constexpr GlobalString frameTag(GlobalStringId::frameTag);
-    constexpr GlobalString frameAttr(GlobalStringId::frameAttr);
-    constexpr GlobalString spanTag(GlobalStringId::spanTag);
-    constexpr GlobalString spanAttr(GlobalStringId::spanAttr);
-    constexpr GlobalString styleTag(GlobalStringId::styleTag);
-    constexpr GlobalString styleAttr(GlobalStringId::styleAttr);
-    constexpr GlobalString textTag(GlobalStringId::textTag);
-    constexpr GlobalString textAttr(GlobalStringId::textAttr);
+    using enum GlobalStringId;
+
+    constexpr GlobalString emptyGlo(GlobalStringId::_emptyGlo);
 } // namespace plutobook

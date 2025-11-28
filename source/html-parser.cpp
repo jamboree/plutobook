@@ -6,7 +6,6 @@ namespace plutobook {
 
 inline bool isNumberedHeaderTag(GlobalString tagName)
 {
-    using enum GlobalStringId;
     switch (tagName.asId()) {
     case h1Tag:
     case h2Tag:
@@ -22,7 +21,6 @@ inline bool isNumberedHeaderTag(GlobalString tagName)
 
 inline bool isImpliedEndTag(GlobalString tagName)
 {
-    using enum GlobalStringId;
     switch (tagName.asId()) {
     case ddTag:
     case dtTag:
@@ -40,7 +38,6 @@ inline bool isImpliedEndTag(GlobalString tagName)
 
 inline bool isFosterRedirectingTag(GlobalString tagName)
 {
-    using enum GlobalStringId;
     switch (tagName.asId()) {
     case tableTag:
     case tbodyTag:
@@ -59,7 +56,6 @@ inline bool isNumberedHeaderElement(const Element* element)
 
 inline bool isSvgTag(GlobalString tagName)
 {
-    using enum GlobalStringId;
     switch (tagName.asId()) {
     case foreignObjectTag:
     case descTag:
@@ -72,7 +68,6 @@ inline bool isSvgTag(GlobalString tagName)
 
 inline bool isMathmlTag(GlobalString tagName)
 {
-    using enum GlobalStringId;
     switch (tagName.asId()) {
     case miTag:
     case moTag:
@@ -96,7 +91,6 @@ inline bool isSpecialElement(const Element* element)
         return isMathmlTag(tagName) || tagName == annotation_xmlTag;
     }
 
-    using enum GlobalStringId;
     switch (tagName.asId()) {
     case addressTag:
     case appletTag:
@@ -216,7 +210,6 @@ inline bool isScopeMarker(const Element* element)
         return isMathmlTag(tagName) || tagName == annotation_xmlTag;
     }
 
-    using enum GlobalStringId;
     switch (tagName.asId()) {
     case captionTag:
     case marqueeTag:
@@ -246,7 +239,6 @@ inline bool isTableScopeMarker(const Element* element)
 
 inline bool isTableBodyScopeMarker(const Element* element)
 {
-    using enum GlobalStringId;
     switch (element->tagName().asId()) {
     case tbodyTag:
     case tfootTag:

@@ -313,10 +313,7 @@ bool CssVariableData::resolveVar(CssTokenStream input, const BoxStyle* style, Cs
         return resolve(input, style, tokens, references);
     }
 
-    if(references.contains(data))
-        return false;
-    references.insert(data);
-    return data->resolve(style, tokens, references);
+    return references.insert(data).second && data->resolve(style, tokens, references);
 }
 
 RefPtr<CssCustomPropertyValue> CssCustomPropertyValue::create(GlobalString name, RefPtr<CssVariableData> value)
