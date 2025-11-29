@@ -3,17 +3,17 @@
 
 #include "line-layout.h"
 
-#include <optional>
+#include "optional.h"
 #include <boost/unordered/unordered_flat_map.hpp>
 
 namespace plutobook {
 
 struct SvgCharacterPosition {
-    std::optional<float> x;
-    std::optional<float> y;
-    std::optional<float> dx;
-    std::optional<float> dy;
-    std::optional<float> rotate;
+    Optional<float> x;
+    Optional<float> y;
+    Optional<float> dx;
+    Optional<float> dy;
+    Optional<float> rotate;
 };
 
 using SvgCharacterPositions = boost::unordered_flat_map<uint32_t, SvgCharacterPosition>;

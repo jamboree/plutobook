@@ -37,9 +37,9 @@ namespace plutobook {
                                  float& borderLeft,
                                  float& borderRight) const final;
 
-        std::optional<float> firstLineBaseline() const final;
-        std::optional<float> lastLineBaseline() const final;
-        std::optional<float> inlineBlockBaseline() const final;
+        Optional<float> firstLineBaseline() const final;
+        Optional<float> lastLineBaseline() const final;
+        Optional<float> inlineBlockBaseline() const final;
 
         TableColumnList& columns() { return m_columns; }
         const TableColumnList& columns() const { return m_columns; }
@@ -158,8 +158,8 @@ namespace plutobook {
 
         void addChild(Box* newChild) final;
 
-        std::optional<float> firstLineBaseline() const final;
-        std::optional<float> lastLineBaseline() const final;
+        Optional<float> firstLineBaseline() const final;
+        Optional<float> lastLineBaseline() const final;
 
         const TableRowBoxList& rows() const { return m_rows; }
         TableRowBoxList& rows() { return m_rows; }

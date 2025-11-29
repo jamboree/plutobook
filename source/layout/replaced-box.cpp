@@ -219,7 +219,7 @@ void ReplacedBox::computePositionedReplacedHeight(float& y, float& height, float
     y = topLengthValue + marginTop + container->border(TopEdge);
 }
 
-std::optional<float> ReplacedBox::computeReplacedWidthUsing(const Length& widthLength) const
+Optional<float> ReplacedBox::computeReplacedWidthUsing(const Length& widthLength) const
 {
     if(widthLength.isFixed())
         return adjustContentBoxWidth(widthLength.value());
@@ -237,7 +237,7 @@ std::optional<float> ReplacedBox::computeReplacedWidthUsing(const Length& widthL
     return std::nullopt;
 }
 
-std::optional<float> ReplacedBox::computeReplacedHeightUsing(const Length& heightLength) const
+Optional<float> ReplacedBox::computeReplacedHeightUsing(const Length& heightLength) const
 {
     if(heightLength.isFixed())
         return adjustContentBoxHeight(heightLength.value());

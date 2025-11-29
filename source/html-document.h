@@ -2,7 +2,7 @@
 
 #include "document.h"
 
-#include <optional>
+#include "optional.h"
 
 namespace plutobook {
     class HtmlDocument;
@@ -19,15 +19,12 @@ namespace plutobook {
         void buildElementBox(Counters& counters, Box* box);
         void buildBox(Counters& counters, Box* parent) override;
 
-        void collectAttributeStyle(std::string& output,
-                                   GlobalString name,
+        void collectAttributeStyle(std::string& output, GlobalString name,
                                    const HeapString& value) const override;
 
     protected:
-        template<typename T = int>
-        std::optional<T> parseIntegerAttribute(GlobalString name) const;
-        std::optional<unsigned>
-        parseNonNegativeIntegerAttribute(GlobalString name) const;
+        template<typename T>
+        Optional<T> parseIntegerAttribute(GlobalString name) const;
     };
 
     extern template bool is<HtmlElement>(const Node& value);
@@ -36,8 +33,7 @@ namespace plutobook {
     public:
         HtmlBodyElement(Document* document);
 
-        void collectAttributeStyle(std::string& output,
-                                   GlobalString name,
+        void collectAttributeStyle(std::string& output, GlobalString name,
                                    const HeapString& value) const final;
     };
 
@@ -45,8 +41,7 @@ namespace plutobook {
     public:
         HtmlFontElement(Document* document);
 
-        void collectAttributeStyle(std::string& output,
-                                   GlobalString name,
+        void collectAttributeStyle(std::string& output, GlobalString name,
                                    const HeapString& value) const final;
     };
 
@@ -56,8 +51,7 @@ namespace plutobook {
     public:
         HtmlImageElement(Document* document);
 
-        void collectAttributeStyle(std::string& output,
-                                   GlobalString name,
+        void collectAttributeStyle(std::string& output, GlobalString name,
                                    const HeapString& value) const final;
         const HeapString& altText() const;
         RefPtr<Image> srcImage() const;
@@ -69,8 +63,7 @@ namespace plutobook {
     public:
         HtmlHrElement(Document* document);
 
-        void collectAttributeStyle(std::string& output,
-                                   GlobalString name,
+        void collectAttributeStyle(std::string& output, GlobalString name,
                                    const HeapString& value) const final;
     };
 
@@ -92,10 +85,9 @@ namespace plutobook {
     public:
         HtmlLiElement(Document* document);
 
-        std::optional<int> value() const;
+        Optional<int> value() const;
 
-        void collectAttributeStyle(std::string& output,
-                                   GlobalString name,
+        void collectAttributeStyle(std::string& output, GlobalString name,
                                    const HeapString& value) const final;
     };
 
@@ -105,8 +97,7 @@ namespace plutobook {
 
         int start() const;
 
-        void collectAttributeStyle(std::string& output,
-                                   GlobalString name,
+        void collectAttributeStyle(std::string& output, GlobalString name,
                                    const HeapString& value) const final;
     };
 
@@ -114,16 +105,14 @@ namespace plutobook {
     public:
         HtmlTableElement(Document* document);
 
-        void parseAttribute(GlobalString name,
-                            const HeapString& value) final;
+        void parseAttribute(GlobalString name, const HeapString& value) final;
 
         void collectAdditionalCellAttributeStyle(std::string& output) const;
         void collectAdditionalRowGroupAttributeStyle(std::string& output) const;
         void collectAdditionalColGroupAttributeStyle(std::string& output) const;
         void collectAdditionalAttributeStyle(std::string& output) const final;
 
-        void collectAttributeStyle(std::string& output,
-                                   GlobalString name,
+        void collectAttributeStyle(std::string& output, GlobalString name,
                                    const HeapString& value) const final;
 
     private:
@@ -158,15 +147,13 @@ namespace plutobook {
 
         HtmlTableElement* findParentTable() const;
 
-        void collectAttributeStyle(std::string& output,
-                                   GlobalString name,
+        void collectAttributeStyle(std::string& output, GlobalString name,
                                    const HeapString& value) const override;
     };
 
     class HtmlTableSectionElement final : public HtmlTablePartElement {
     public:
-        HtmlTableSectionElement(Document* document,
-                                GlobalString tagName);
+        HtmlTableSectionElement(Document* document, GlobalString tagName);
 
         void collectAdditionalAttributeStyle(std::string& output) const final;
     };

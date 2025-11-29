@@ -35,8 +35,8 @@ namespace plutobook {
         void setFlexBaseSize(float value) { m_flexBaseSize = value; }
         void setTargetMainSize(float value) { m_targetMainSize = value; }
 
-        std::optional<float> computeWidthUsing(const Length& widthLength) const;
-        std::optional<float>
+        Optional<float> computeWidthUsing(const Length& widthLength) const;
+        Optional<float>
         computeHeightUsing(const Length& heightLength) const;
 
         float constrainWidth(float width) const;
@@ -96,9 +96,9 @@ namespace plutobook {
         void computeIntrinsicWidths(float& minWidth,
                                     float& maxWidth) const final;
 
-        std::optional<float> firstLineBaseline() const final;
-        std::optional<float> lastLineBaseline() const final;
-        std::optional<float> inlineBlockBaseline() const final;
+        Optional<float> firstLineBaseline() const final;
+        Optional<float> lastLineBaseline() const final;
+        Optional<float> inlineBlockBaseline() const final;
 
         float computeMainContentSize(float hypotheticalMainSize) const;
         float availableCrossSize() const;

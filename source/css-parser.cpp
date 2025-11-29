@@ -75,7 +75,7 @@ static bool identMatches(const char* name, int length, const std::string_view& i
 }
 
 template<typename T, unsigned int N>
-static std::optional<T> matchIdent(const IdentTable<T, N>& table, const std::string_view& ident)
+static Optional<T> matchIdent(const IdentTable<T, N>& table, const std::string_view& ident)
 {
     const auto it = table.find(ident);
     if (it != table.end())
@@ -132,7 +132,7 @@ bool CssParser::consumeMediaFeature(CssTokenStream& input, CssMediaFeatureList& 
     if(block->type() != CssToken::Type::Ident)
         return false;
     auto id = matchIdent(table, block->data());
-    if(id == std::nullopt)
+    if(!id.has_value())
         return false;
     block.consumeIncludingWhitespace();
     if(block->type() == CssToken::Type::Colon) {
@@ -433,7 +433,7 @@ RefPtr<CssPageMarginRule> CssParser::consumePageMarginRule(CssTokenStream& input
     });
 
     auto marginType = matchIdent(table, name);
-    if(marginType == std::nullopt)
+    if(!marginType.has_value())
         return nullptr;
     CssPropertyList properties;
     consumeDeclaractionList(block, properties, CssRuleType::PageMargin);
@@ -513,7 +513,7 @@ bool CssParser::consumePageSelector(CssTokenStream& input, CssPageSelector& sele
         auto name = input->data();
         input.consumeIncludingWhitespace();
         auto matchType = matchIdent(table, name);
-        if(matchType == std::nullopt)
+        if(!matchType.has_value())
             return false;
         selector.emplace_front(matchType.value());
     }
@@ -731,7 +731,7 @@ bool CssParser::consumePseudoSelector(CssTokenStream& input, CssCompoundSelector
         });
 
         auto matchType = matchIdent(table, name);
-        if(matchType == std::nullopt)
+        if(!matchType.has_value())
             return false;
         selector.emplace_front(matchType.value());
         return true;
@@ -771,7 +771,7 @@ bool CssParser::consumePseudoSelector(CssTokenStream& input, CssCompoundSelector
         });
 
         auto matchType = matchIdent(table, name);
-        if(matchType == std::nullopt)
+        if(!matchType.has_value())
             return false;
         selector.emplace_front(matchType.value());
         return true;
@@ -794,7 +794,7 @@ bool CssParser::consumePseudoSelector(CssTokenStream& input, CssCompoundSelector
         });
 
         auto matchType = matchIdent(table, name);
-        if(matchType == std::nullopt)
+        if(!matchType.has_value())
             return false;
         switch(matchType.value()) {
         case CssSimpleSelector::MatchType::PseudoClassIs:
@@ -2018,7 +2018,7 @@ RefPtr<CssValue> CssParser::consumeNumberOrPercentOrAuto(CssTokenStream& input, 
     return consumeNumberOrPercent(input, negative);
 }
 
-static std::optional<CssLengthUnits> matchUnitType(std::string_view name)
+static Optional<CssLengthUnits> matchUnitType(std::string_view name)
 {
     static constexpr auto table = makeIdentTable<CssLengthUnits>({
         {"px", CssLengthUnits::Pixels},
@@ -2075,7 +2075,7 @@ static bool consumeCalcBlock(CssTokenStream& input, CssTokenList& stack, CssCalc
             block.consumeIncludingWhitespace();
         } else if(token.type() == CssToken::Type::Dimension) {
             auto unitType = matchUnitType(token.data());
-            if(unitType == std::nullopt)
+            if(!unitType.has_value())
                 return false;
             values.emplace_back(token.number(), unitType.value());
             block.consumeIncludingWhitespace();
@@ -2202,7 +2202,7 @@ RefPtr<CssValue> CssParser::consumeLength(CssTokenStream& input, bool negative, 
     }
 
     auto unitType = matchUnitType(input->data());
-    if(unitType == std::nullopt)
+    if(!unitType.has_value())
         return nullptr;
     input.consumeIncludingWhitespace();
     return CssLengthValue::create(value, unitType.value());
@@ -2448,7 +2448,7 @@ RefPtr<CssValue> CssParser::consumeColor(CssTokenStream& input)
         }
 
         auto color = Color::named(name);
-        if(color == std::nullopt)
+        if(!color.has_value())
             return nullptr;
         input.consumeIncludingWhitespace();
         return CssColorValue::create(color.value());
@@ -2562,7 +2562,7 @@ static bool consumeAngleComponent(CssTokenStream& input, float& component)
         });
 
         auto unitType = matchIdent(table, input->data());
-        if(unitType == std::nullopt)
+        if(!unitType.has_value())
             return false;
         switch(unitType.value()) {
         case CssAngleValue::Unit::Degrees:
@@ -3585,7 +3585,7 @@ RefPtr<CssValue> CssParser::consumeAngle(CssTokenStream& input)
     });
 
     auto unitType = matchIdent(table, input->data());
-    if(unitType == std::nullopt)
+    if(!unitType.has_value())
         return nullptr;
     auto value = input->number();
     input.consumeIncludingWhitespace();
@@ -3611,7 +3611,7 @@ RefPtr<CssValue> CssParser::consumeTransformValue(CssTokenStream& input)
     });
 
     auto id = matchIdent(table, input->data());
-    if(id == std::nullopt)
+    if(!id.has_value())
         return nullptr;
     CssValueList values;
     auto block = input.consumeBlock();

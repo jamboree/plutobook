@@ -51,7 +51,7 @@ Color Color::darken() const
     return Color(red, green, blue, alpha());
 }
 
-std::optional<Color> Color::named(const std::string_view& name)
+Optional<Color> Color::named(const std::string_view& name)
 {
     static const struct {
         std::string_view name;

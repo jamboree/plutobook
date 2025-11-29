@@ -47,7 +47,7 @@ namespace plutobook {
         }
 
         float availableWidth() const { return contentBoxWidth(); }
-        std::optional<float> availableHeight() const;
+        Optional<float> availableHeight() const;
 
         bool shrinkToAvoidFloats() const;
         float shrinkWidthToAvoidFloats(float marginLeft, float marginRight,
@@ -56,8 +56,7 @@ namespace plutobook {
         float computeWidthUsing(const Length& widthLength,
                                 const BlockBox* container,
                                 float containerWidth) const;
-        std::optional<float>
-        computeHeightUsing(const Length& heightLength) const;
+        Optional<float> computeHeightUsing(const Length& heightLength) const;
 
         float constrainWidth(float width, const BlockBox* container,
                              float containerWidth) const;
@@ -90,9 +89,9 @@ namespace plutobook {
         void computeHeight(float& y, float& height, float& marginTop,
                            float& marginBottom) const override;
 
-        std::optional<float> firstLineBaseline() const override;
-        std::optional<float> lastLineBaseline() const override;
-        std::optional<float> inlineBlockBaseline() const override;
+        Optional<float> firstLineBaseline() const override;
+        Optional<float> lastLineBaseline() const override;
+        Optional<float> inlineBlockBaseline() const override;
 
         virtual void paintContents(const PaintInfo& info, const Point& offset,
                                    PaintPhase phase);
@@ -177,9 +176,9 @@ namespace plutobook {
         }
         MultiColumnFlowBox* columnFlowBox() const { return m_columnFlowBox; }
 
-        std::optional<float> firstLineBaseline() const override;
-        std::optional<float> lastLineBaseline() const override;
-        std::optional<float> inlineBlockBaseline() const override;
+        Optional<float> firstLineBaseline() const override;
+        Optional<float> lastLineBaseline() const override;
+        Optional<float> inlineBlockBaseline() const override;
 
         void collectIntrudingFloats();
         void collectOverhangingFloats();

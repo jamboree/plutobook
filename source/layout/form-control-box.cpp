@@ -15,7 +15,7 @@ HtmlElement* TextInputBox::element() const
     return static_cast<HtmlElement*>(node());
 }
 
-std::optional<float> TextInputBox::inlineBlockBaseline() const
+Optional<float> TextInputBox::inlineBlockBaseline() const
 {
     if(m_rows == 1)
         return firstLineBaseline();
@@ -44,7 +44,7 @@ HtmlSelectElement* SelectBox::element() const
     return static_cast<HtmlSelectElement*>(node());
 }
 
-std::optional<float> SelectBox::inlineBlockBaseline() const
+Optional<float> SelectBox::inlineBlockBaseline() const
 {
     if(m_size == 1)
         return firstLineBaseline();

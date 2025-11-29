@@ -66,12 +66,16 @@ template<class Fn>
 void CssPropertyMap::foreach(Fn fn) const {
     auto p = m_values.data();
     unsigned offset = 0;
-    for (const auto bits : m_bitset) {
-        auto rest = bits;
-        for (unsigned idx = 0; rest; rest = bits >> ++idx, ++p) {
-            idx += std::countr_zero(rest);
-            const auto id = CssPropertyID(offset + idx);
-            fn(CssPropertyID(offset + idx), *p);
+    for (auto bits : m_bitset) {
+        if (bits) {
+            auto rest = bits;
+            bits >>= 1;
+            unsigned idx = 0;
+            do {
+                idx += std::countr_zero(rest);
+                fn(CssPropertyID(offset + idx), *p++);
+                rest = bits >> idx++; // Note: can only shift up to 31 bits.
+            } while (rest);
         }
         offset += 32u;
     }
@@ -773,7 +777,7 @@ Overflow BoxStyle::overflow() const
     return Overflow::Visible;
 }
 
-std::optional<int> BoxStyle::zIndex() const
+Optional<int> BoxStyle::zIndex() const
 {
     auto value = get(CssPropertyID::ZIndex);
     if(value == nullptr)
@@ -1021,7 +1025,7 @@ ColumnFill BoxStyle::columnFill() const
     return ColumnFill::Balance;
 }
 
-std::optional<float> BoxStyle::rowGap() const
+Optional<float> BoxStyle::rowGap() const
 {
     auto value = get(CssPropertyID::RowGap);
     if(value == nullptr)
@@ -1029,7 +1033,7 @@ std::optional<float> BoxStyle::rowGap() const
     return convertLengthOrNormal(*value);
 }
 
-std::optional<float> BoxStyle::columnGap() const
+Optional<float> BoxStyle::columnGap() const
 {
     auto value = get(CssPropertyID::ColumnGap);
     if(value == nullptr)
@@ -1037,7 +1041,7 @@ std::optional<float> BoxStyle::columnGap() const
     return convertLengthOrNormal(*value);
 }
 
-std::optional<float> BoxStyle::columnWidth() const
+Optional<float> BoxStyle::columnWidth() const
 {
     auto value = get(CssPropertyID::ColumnWidth);
     if(value == nullptr)
@@ -1045,7 +1049,7 @@ std::optional<float> BoxStyle::columnWidth() const
     return convertLengthOrAuto(*value);
 }
 
-std::optional<int> BoxStyle::columnCount() const
+Optional<int> BoxStyle::columnCount() const
 {
     auto value = get(CssPropertyID::ColumnCount);
     if(value == nullptr)
@@ -1053,7 +1057,7 @@ std::optional<int> BoxStyle::columnCount() const
     return convertIntegerOrAuto(*value);
 }
 
-std::optional<float> BoxStyle::pageScale() const
+Optional<float> BoxStyle::pageScale() const
 {
     auto value = get(CssPropertyID::PageScale);
     if(value == nullptr || value->id() == CssValueID::Auto)
@@ -2245,7 +2249,7 @@ float BoxStyle::convertLengthOrPercent(float maximum, const CssValue& value) con
     return convertLengthValue(value);
 }
 
-std::optional<float> BoxStyle::convertLengthOrAuto(const CssValue& value) const
+Optional<float> BoxStyle::convertLengthOrAuto(const CssValue& value) const
 {
     if(is<CssIdentValue>(value)) {
         const auto& ident = to<CssIdentValue>(value);
@@ -2256,7 +2260,7 @@ std::optional<float> BoxStyle::convertLengthOrAuto(const CssValue& value) const
     return convertLengthValue(value);
 }
 
-std::optional<float> BoxStyle::convertLengthOrNormal(const CssValue& value) const
+Optional<float> BoxStyle::convertLengthOrNormal(const CssValue& value) const
 {
     if(is<CssIdentValue>(value)) {
         const auto& ident = to<CssIdentValue>(value);
@@ -3022,7 +3026,7 @@ int BoxStyle::convertInteger(const CssValue& value)
     return to<CssIntegerValue>(value).value();
 }
 
-std::optional<int> BoxStyle::convertIntegerOrAuto(const CssValue& value)
+Optional<int> BoxStyle::convertIntegerOrAuto(const CssValue& value)
 {
     if(is<CssIdentValue>(value)) {
         const auto& ident = to<CssIdentValue>(value);

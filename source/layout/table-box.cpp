@@ -159,7 +159,7 @@ void TableBox::computeBorderWidths(float& borderTop, float& borderBottom, float&
     }
 }
 
-std::optional<float> TableBox::firstLineBaseline() const
+Optional<float> TableBox::firstLineBaseline() const
 {
     if(auto section = topSection()) {
         if(auto baseline = section->firstLineBaseline()) {
@@ -170,7 +170,7 @@ std::optional<float> TableBox::firstLineBaseline() const
     return std::nullopt;
 }
 
-std::optional<float> TableBox::lastLineBaseline() const
+Optional<float> TableBox::lastLineBaseline() const
 {
     if(auto section = bottomSection()) {
         if(auto baseline = section->lastLineBaseline()) {
@@ -181,7 +181,7 @@ std::optional<float> TableBox::lastLineBaseline() const
     return std::nullopt;
 }
 
-std::optional<float> TableBox::inlineBlockBaseline() const
+Optional<float> TableBox::inlineBlockBaseline() const
 {
     return firstLineBaseline();
 }
@@ -1003,14 +1003,14 @@ void TableSectionBox::addChild(Box* newChild)
     newRow->addChild(newChild);
 }
 
-std::optional<float> TableSectionBox::firstLineBaseline() const
+Optional<float> TableSectionBox::firstLineBaseline() const
 {
     if(m_rows.empty())
         return std::nullopt;
     auto firstRowBox = m_rows.front();
     if(auto baseline = firstRowBox->maxBaseline())
         return baseline + firstRowBox->y();
-    std::optional<float> baseline;
+    Optional<float> baseline;
     for(const auto& [col, cell] : firstRowBox->cells()) {
         auto cellBox = cell.box();
         if(!cell.inColOrRowSpan() && cellBox->contentBoxHeight()) {
@@ -1022,14 +1022,14 @@ std::optional<float> TableSectionBox::firstLineBaseline() const
     return baseline;
 }
 
-std::optional<float> TableSectionBox::lastLineBaseline() const
+Optional<float> TableSectionBox::lastLineBaseline() const
 {
     if(m_rows.empty())
         return std::nullopt;
     auto lastRowBox = m_rows.back();
     if(auto baseline = lastRowBox->maxBaseline())
         return baseline + lastRowBox->y();
-    std::optional<float> baseline;
+    Optional<float> baseline;
     for(const auto& [col, cell] : lastRowBox->cells()) {
         auto cellBox = cell.box();
         if(!cell.inColOrRowSpan() && cellBox->contentBoxHeight()) {

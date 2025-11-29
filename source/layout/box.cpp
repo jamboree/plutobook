@@ -837,7 +837,7 @@ float BoxModel::containingBlockWidthForContent(const BlockBox* container) const
     return 0.f;
 }
 
-std::optional<float> BoxModel::containingBlockHeightForContent(const BlockBox* container) const
+Optional<float> BoxModel::containingBlockHeightForContent(const BlockBox* container) const
 {
     return container->availableHeight();
 }
@@ -884,12 +884,10 @@ void BoxModel::updatePaddingWidths(const BlockBox* container)
 
 void BoxModel::computeBorderWidths(float& borderTop, float& borderBottom, float& borderLeft, float& borderRight) const
 {
-    auto calc = [](LineStyle style, float width) {
-        if(style > LineStyle::Hidden)
-            return width;
-        return 0.f;
+    constexpr auto calc = [](LineStyle style, float width) {
+        return style > LineStyle::Hidden ? width : 0.f;
     };
-
+    
     borderTop = calc(style()->borderStyle(TopEdge), style()->borderWidth(TopEdge));
     borderBottom = calc(style()->borderStyle(BottomEdge), style()->borderWidth(BottomEdge));
     borderLeft = calc(style()->borderStyle(LeftEdge), style()->borderWidth(LeftEdge));
@@ -898,9 +896,9 @@ void BoxModel::computeBorderWidths(float& borderTop, float& borderBottom, float&
 
 float BoxModel::border(Edge edge) const
 {
-    if(m_border[std::to_underlying(edge)] < 0)
+    if(m_border[edge] < 0)
         computeBorderWidths(m_border[TopEdge], m_border[BottomEdge], m_border[LeftEdge], m_border[RightEdge]);
-    return m_border[std::to_underlying(edge)];
+    return m_border[edge];
 }
 
 void BoxModel::build()

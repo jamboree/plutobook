@@ -1,6 +1,7 @@
 #pragma once
 
 #include "box-style.h"
+#include "optional.h"
 #include "geometry.h"
 
 #include <memory>
@@ -328,15 +329,13 @@ namespace plutobook {
             return containingBlockWidthForContent(containingBlock());
         }
 
-        std::optional<float>
+        Optional<float>
         containingBlockHeightForContent(const BlockBox* container) const;
-        std::optional<float> containingBlockHeightForContent() const {
+        Optional<float> containingBlockHeightForContent() const {
             return containingBlockHeightForContent(containingBlock());
         }
 
-        float margin(Edge edge) const {
-            return m_margin[std::to_underlying(edge)];
-        }
+        float margin(Edge edge) const { return m_margin[edge]; }
 
         float marginWidth() const {
             return margin(LeftEdge) + margin(RightEdge);
@@ -345,17 +344,13 @@ namespace plutobook {
             return margin(TopEdge) + margin(BottomEdge);
         }
 
-        void setMargin(Edge edge, float value) {
-            m_margin[std::to_underlying(edge)] = value;
-        }
+        void setMargin(Edge edge, float value) { m_margin[edge] = value; }
 
         void updateVerticalMargins(const BlockBox* container);
         void updateHorizontalMargins(const BlockBox* container);
         void updateMarginWidths(const BlockBox* container);
 
-        float padding(Edge edge) const {
-            return m_padding[std::to_underlying(edge)];
-        }
+        float padding(Edge edge) const { return m_padding[edge]; }
 
         float paddingWidth() const {
             return padding(LeftEdge) + padding(RightEdge);
@@ -364,9 +359,7 @@ namespace plutobook {
             return padding(TopEdge) + padding(BottomEdge);
         }
 
-        void setPadding(Edge edge, float value) {
-            m_padding[std::to_underlying(edge)] = value;
-        }
+        void setPadding(Edge edge, float value) { m_padding[edge] = value; }
 
         void updateVerticalPaddings(const BlockBox* container);
         void updateHorizontalPaddings(const BlockBox* container);
@@ -609,13 +602,13 @@ namespace plutobook {
         float collapsedMarginTop() const;
         float collapsedMarginBottom() const;
 
-        virtual std::optional<float> firstLineBaseline() const {
+        virtual Optional<float> firstLineBaseline() const {
             return std::nullopt;
         }
-        virtual std::optional<float> lastLineBaseline() const {
+        virtual Optional<float> lastLineBaseline() const {
             return std::nullopt;
         }
-        virtual std::optional<float> inlineBlockBaseline() const {
+        virtual Optional<float> inlineBlockBaseline() const {
             return std::nullopt;
         }
 

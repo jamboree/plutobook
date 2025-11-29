@@ -13,6 +13,7 @@
 
 #include "plutobook.hpp"
 
+#include <charconv>
 #include <unicode/uchar.h>
 #include <unicode/uiter.h>
 
@@ -186,50 +187,33 @@ void HtmlElement::collectAttributeStyle(std::string& output, GlobalString name, 
     }
 }
 
-template<typename T = int>
-static std::optional<T> parseHtmlInteger(std::string_view input)
+template<typename T>
+static Optional<T> parseHtmlInteger(std::string_view input)
 {
-    constexpr auto isSigned = std::numeric_limits<T>::is_signed;
     stripLeadingAndTrailingSpaces(input);
-    bool isNegative = false;
-    if(!input.empty() && input.front() == '+')
-        input.remove_prefix(1);
-    else if(!input.empty() && isSigned && input.front() == '-') {
-        input.remove_prefix(1);
-        isNegative = true;
+    if (!input.empty()) {
+        if (input.front() == '+') {
+            input.remove_prefix(1);
+            if (input.empty() || !isDigit(input.front()))
+                return std::nullopt;
+        }
+        T output;
+        const auto end = input.data() + input.size();
+        const auto [p, ec] = std::from_chars(input.data(), end, output);
+        if (ec == std::errc() && p == end) {
+            return output;
+        }
     }
-
-    if(input.empty() || !isDigit(input.front()))
-        return std::nullopt;
-    T output = 0;
-    do {
-        output = output * 10 + input.front() - '0';
-        input.remove_prefix(1);
-    } while(!input.empty() && isDigit(input.front()));
-
-    using SignedType = typename std::make_signed<T>::type;
-    if(isNegative)
-        output = -static_cast<SignedType>(output);
-    return output;
-}
-
-static std::optional<unsigned> parseHtmlNonNegativeInteger(std::string_view input)
-{
-    return parseHtmlInteger<unsigned>(input);
+    return std::nullopt;
 }
 
 template<typename T>
-std::optional<T> HtmlElement::parseIntegerAttribute(GlobalString name) const
+Optional<T> HtmlElement::parseIntegerAttribute(GlobalString name) const
 {
     const auto& value = getAttribute(name);
     if(!value.empty())
         return parseHtmlInteger<T>(value);
     return std::nullopt;
-}
-
-std::optional<unsigned> HtmlElement::parseNonNegativeIntegerAttribute(GlobalString name) const
-{
-    return parseIntegerAttribute<unsigned>(name);
 }
 
 static void addHtmlLengthAttributeStyle(std::string& output, const std::string_view& name, const std::string_view& value)
@@ -452,7 +436,7 @@ void HtmlHrElement::collectAttributeStyle(std::string& output, GlobalString name
     if(name == widthAttr) {
         addHtmlLengthAttributeStyle(output, "width", value);
     } else if(name == sizeAttr) {
-        auto size = parseHtmlInteger(value);
+        auto size = parseHtmlInteger<int>(value);
         if(size && size.value() > 1) {
             addHtmlLengthAttributeStyle(output, "height", size.value() - 2);
         } else {
@@ -507,9 +491,9 @@ HtmlLiElement::HtmlLiElement(Document* document)
 {
 }
 
-std::optional<int> HtmlLiElement::value() const
+Optional<int> HtmlLiElement::value() const
 {
-    return parseIntegerAttribute(valueAttr);
+    return parseIntegerAttribute<int>(valueAttr);
 }
 
 std::string_view listTypeAttributeToStyleName(const std::string_view& value)
@@ -545,7 +529,7 @@ HtmlOlElement::HtmlOlElement(Document* document)
 
 int HtmlOlElement::start() const
 {
-    return parseIntegerAttribute(startAttr).value_or(1);
+    return parseIntegerAttribute<int>(startAttr).value_or(1);
 }
 
 void HtmlOlElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
@@ -565,9 +549,9 @@ HtmlTableElement::HtmlTableElement(Document* document)
 void HtmlTableElement::parseAttribute(GlobalString name, const HeapString& value)
 {
     if(name == cellpaddingAttr) {
-        m_padding = parseHtmlNonNegativeInteger(value).value_or(0);
+        m_padding = parseHtmlInteger<unsigned>(value).value_or(0);
     } else if(name == borderAttr) {
-        m_border = parseHtmlNonNegativeInteger(value).value_or(1);
+        m_border = parseHtmlInteger<unsigned>(value).value_or(1);
     } else if(name == rulesAttr) {
         m_rules = parseRulesAttribute(value);
     } else if(name == frameAttr) {
@@ -800,7 +784,7 @@ HtmlTableColElement::HtmlTableColElement(Document* document, GlobalString tagNam
 
 unsigned HtmlTableColElement::span() const
 {
-    return parseNonNegativeIntegerAttribute(spanAttr).value_or(1);
+    return parseIntegerAttribute<unsigned>(spanAttr).value_or(1);
 }
 
 void HtmlTableColElement::collectAdditionalAttributeStyle(std::string& output) const
@@ -828,12 +812,12 @@ HtmlTableCellElement::HtmlTableCellElement(Document* document, GlobalString tagN
 
 unsigned HtmlTableCellElement::colSpan() const
 {
-    return std::max(1u, parseNonNegativeIntegerAttribute(colspanAttr).value_or(1));
+    return std::max(1u, parseIntegerAttribute<unsigned>(colspanAttr).value_or(1));
 }
 
 unsigned HtmlTableCellElement::rowSpan() const
 {
-    return parseNonNegativeIntegerAttribute(rowspanAttr).value_or(1);
+    return parseIntegerAttribute<unsigned>(rowspanAttr).value_or(1);
 }
 
 void HtmlTableCellElement::collectAdditionalAttributeStyle(std::string& output) const
@@ -862,7 +846,7 @@ HtmlInputElement::HtmlInputElement(Document* document)
 
 unsigned HtmlInputElement::size() const
 {
-    return std::max(1u, parseNonNegativeIntegerAttribute(sizeAttr).value_or(20));
+    return std::max(1u, parseIntegerAttribute<unsigned>(sizeAttr).value_or(20));
 }
 
 Box* HtmlInputElement::createBox(const RefPtr<BoxStyle>& style)
@@ -889,12 +873,12 @@ HtmlTextAreaElement::HtmlTextAreaElement(Document* document)
 
 unsigned HtmlTextAreaElement::rows() const
 {
-    return std::max(1u, parseNonNegativeIntegerAttribute(rowsAttr).value_or(2));
+    return std::max(1u, parseIntegerAttribute<unsigned>(rowsAttr).value_or(2));
 }
 
 unsigned HtmlTextAreaElement::cols() const
 {
-    return std::max(1u, parseNonNegativeIntegerAttribute(colsAttr).value_or(20));
+    return std::max(1u, parseIntegerAttribute<unsigned>(colsAttr).value_or(20));
 }
 
 Box* HtmlTextAreaElement::createBox(const RefPtr<BoxStyle>& style)
@@ -912,7 +896,7 @@ HtmlSelectElement::HtmlSelectElement(Document* document)
 
 unsigned HtmlSelectElement::size() const
 {
-    if(auto size = parseNonNegativeIntegerAttribute(sizeAttr))
+    if(auto size = parseIntegerAttribute<unsigned>(sizeAttr))
         return std::max(1u, size.value());
     return hasAttribute(multipleAttr) ? 4 : 1;
 }

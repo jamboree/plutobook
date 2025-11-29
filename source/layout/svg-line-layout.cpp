@@ -483,7 +483,7 @@ static void fillCharacterPositions(const SvgTextPosition& position, SvgCharacter
     }
 
     SvgLengthContext lengthContext(position.element);
-    std::optional<float> lastRotation;
+    Optional<float> lastRotation;
     for(auto offset = position.startOffset; offset < position.endOffset; ++offset) {
         auto index = offset - position.startOffset;
         if(index >= xListSize && index >= yListSize && index >= dxListSize && index >= dyListSize && index >= rotateListSize)
@@ -503,7 +503,7 @@ static void fillCharacterPositions(const SvgTextPosition& position, SvgCharacter
         }
     }
 
-    if(lastRotation == std::nullopt)
+    if(!lastRotation.has_value())
         return;
     auto offset = position.startOffset + rotateList.size();
     while(offset < position.endOffset) {

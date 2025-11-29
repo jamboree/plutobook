@@ -12,7 +12,7 @@ namespace plutobook {
         TextInputBox(HtmlElement* element, const RefPtr<BoxStyle>& style);
 
         HtmlElement* element() const;
-        std::optional<float> inlineBlockBaseline() const final;
+        Optional<float> inlineBlockBaseline() const final;
         uint32_t rows() const { return m_rows; }
         uint32_t cols() const { return m_cols; }
 
@@ -40,7 +40,7 @@ namespace plutobook {
         SelectBox(HtmlSelectElement* element, const RefPtr<BoxStyle>& style);
 
         HtmlSelectElement* element() const;
-        std::optional<float> inlineBlockBaseline() const final;
+        Optional<float> inlineBlockBaseline() const final;
         uint32_t size() const { return m_size; }
 
         void addChild(Box* newChild) final;

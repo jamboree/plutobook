@@ -16,7 +16,7 @@ FlexItem::FlexItem(BoxFrame* box, int order, float flexGrow, float flexShrink, A
 {
 }
 
-std::optional<float> FlexItem::computeWidthUsing(const Length& widthLength) const
+Optional<float> FlexItem::computeWidthUsing(const Length& widthLength) const
 {
     if(widthLength.isFixed())
         return m_box->adjustContentBoxWidth(widthLength.value());
@@ -30,7 +30,7 @@ std::optional<float> FlexItem::computeWidthUsing(const Length& widthLength) cons
     return std::nullopt;
 }
 
-std::optional<float> FlexItem::computeHeightUsing(const Length& heightLength) const
+Optional<float> FlexItem::computeHeightUsing(const Length& heightLength) const
 {
     if(heightLength.isFixed())
         return m_box->adjustContentBoxHeight(heightLength.value());
@@ -91,7 +91,7 @@ float FlexItem::computeFlexBaseSize() const
     if(flexBasis.isAuto())
         flexBasis = m_box->style()->height();
     auto height = computeHeightUsing(flexBasis);
-    if(height == std::nullopt)
+    if(!height.has_value())
         m_box->layout(nullptr);
     return height.value_or(m_box->height() - m_box->borderAndPaddingHeight());
 }
@@ -285,7 +285,7 @@ void FlexBox::computeIntrinsicWidths(float& minWidth, float& maxWidth) const
     maxWidth = std::max(minWidth, maxWidth);
 }
 
-std::optional<float> FlexBox::firstLineBaseline() const
+Optional<float> FlexBox::firstLineBaseline() const
 {
     const BoxFrame* baselineChild = nullptr;
     for(const auto& item : m_items) {
@@ -305,7 +305,7 @@ std::optional<float> FlexBox::firstLineBaseline() const
     return height() + baselineChild->y();
 }
 
-std::optional<float> FlexBox::lastLineBaseline() const
+Optional<float> FlexBox::lastLineBaseline() const
 {
     const BoxFrame* baselineChild = nullptr;
     for(const auto& item : m_items | std::views::reverse) {
@@ -325,7 +325,7 @@ std::optional<float> FlexBox::lastLineBaseline() const
     return height() + baselineChild->y();
 }
 
-std::optional<float> FlexBox::inlineBlockBaseline() const
+Optional<float> FlexBox::inlineBlockBaseline() const
 {
     return firstLineBaseline();
 }

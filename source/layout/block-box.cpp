@@ -59,7 +59,7 @@ void BlockBox::layoutPositionedBoxes()
     }
 }
 
-std::optional<float> BlockBox::availableHeight() const
+Optional<float> BlockBox::availableHeight() const
 {
     if(isBoxView())
         return document()->containerHeight();
@@ -139,7 +139,7 @@ float BlockBox::computeWidthUsing(const Length& widthLength, const BlockBox* con
     return width;
 }
 
-std::optional<float> BlockBox::computeHeightUsing(const Length& heightLength) const
+Optional<float> BlockBox::computeHeightUsing(const Length& heightLength) const
 {
     if(heightLength.isFixed())
         return heightLength.value();
@@ -480,7 +480,7 @@ void BlockBox::computeHeight(float& y, float& height, float& marginTop, float& m
     height = constrainBorderBoxHeight(height);
 }
 
-std::optional<float> BlockBox::firstLineBaseline() const
+Optional<float> BlockBox::firstLineBaseline() const
 {
     for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {
         if(child->isFloatingOrPositioned())
@@ -493,7 +493,7 @@ std::optional<float> BlockBox::firstLineBaseline() const
     return std::nullopt;
 }
 
-std::optional<float> BlockBox::lastLineBaseline() const
+Optional<float> BlockBox::lastLineBaseline() const
 {
     for(auto child = lastBoxFrame(); child; child = child->prevBoxFrame()) {
         if(child->isFloatingOrPositioned())
@@ -506,7 +506,7 @@ std::optional<float> BlockBox::lastLineBaseline() const
     return std::nullopt;
 }
 
-std::optional<float> BlockBox::inlineBlockBaseline() const
+Optional<float> BlockBox::inlineBlockBaseline() const
 {
     for(auto child = lastBoxFrame(); child; child = child->prevBoxFrame()) {
         if(child->isFloatingOrPositioned() || child->isTableBox())
@@ -702,7 +702,7 @@ void BlockFlowBox::computeIntrinsicWidths(float& minWidth, float& maxWidth) cons
     maxWidth = std::max(maxWidth, minWidth);
 }
 
-std::optional<float> BlockFlowBox::firstLineBaseline() const
+Optional<float> BlockFlowBox::firstLineBaseline() const
 {
     if(!isChildrenInline())
         return BlockBox::firstLineBaseline();
@@ -713,7 +713,7 @@ std::optional<float> BlockFlowBox::firstLineBaseline() const
     return firstLine->y() + style()->fontAscent();
 }
 
-std::optional<float> BlockFlowBox::lastLineBaseline() const
+Optional<float> BlockFlowBox::lastLineBaseline() const
 {
     if(!isChildrenInline())
         return BlockBox::lastLineBaseline();
@@ -724,7 +724,7 @@ std::optional<float> BlockFlowBox::lastLineBaseline() const
     return lastLine->y() + style()->fontAscent();
 }
 
-std::optional<float> BlockFlowBox::inlineBlockBaseline() const
+Optional<float> BlockFlowBox::inlineBlockBaseline() const
 {
     if(!isChildrenInline())
         return BlockBox::inlineBlockBaseline();
@@ -984,7 +984,7 @@ float BlockFlowBox::nextFloatBottom(float y) const
 {
     if(m_floatingBoxes == nullptr)
         return 0;
-    std::optional<float> bottom;
+    Optional<float> bottom;
     for(const auto& floatingBox : *m_floatingBoxes) {
         assert(floatingBox.isPlaced());
         auto floatBottom = floatingBox.bottom();

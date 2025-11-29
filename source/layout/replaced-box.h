@@ -26,9 +26,9 @@ namespace plutobook {
                                              float& marginTop,
                                              float& marginBottom) const;
 
-        std::optional<float>
+        Optional<float>
         computeReplacedWidthUsing(const Length& widthLength) const;
-        std::optional<float>
+        Optional<float>
         computeReplacedHeightUsing(const Length& heightLength) const;
 
         float constrainReplacedWidth(float width) const;

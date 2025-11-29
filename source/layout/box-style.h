@@ -5,7 +5,7 @@
 #include "color.h"
 #include "css-property-id.h"
 
-#include <optional>
+#include "optional.h"
 #include <forward_list>
 #include <vector>
 #include <boost/unordered/unordered_flat_map.hpp>
@@ -663,7 +663,7 @@ namespace plutobook {
         BlendMode blendMode() const { return m_blendMode; }
         MaskType maskType() const { return m_maskType; }
         Overflow overflow() const;
-        std::optional<int> zIndex() const;
+        Optional<int> zIndex() const;
         VerticalAlign verticalAlign() const;
         LengthBox clip() const;
 
@@ -695,16 +695,16 @@ namespace plutobook {
         ColumnSpan columnSpan() const;
         ColumnFill columnFill() const;
 
-        std::optional<float> rowGap() const;
-        std::optional<float> columnGap() const;
-        std::optional<float> columnWidth() const;
-        std::optional<int> columnCount() const;
+        Optional<float> rowGap() const;
+        Optional<float> columnGap() const;
+        Optional<float> columnWidth() const;
+        Optional<int> columnCount() const;
 
         BreakBetween breakAfter() const { return m_breakAfter; }
         BreakBetween breakBefore() const { return m_breakBefore; }
         BreakInside breakInside() const { return m_breakInside; }
 
-        std::optional<float> pageScale() const;
+        Optional<float> pageScale() const;
         GlobalString page() const;
 
         PageSize getPageSize(const PageSize& deviceSize) const;
@@ -857,8 +857,8 @@ namespace plutobook {
         float convertSpacing(const CssValue& value) const;
         float convertLengthOrPercent(float maximum,
                                      const CssValue& value) const;
-        std::optional<float> convertLengthOrAuto(const CssValue& value) const;
-        std::optional<float> convertLengthOrNormal(const CssValue& value) const;
+        Optional<float> convertLengthOrAuto(const CssValue& value) const;
+        Optional<float> convertLengthOrNormal(const CssValue& value) const;
         Length convertLength(const CssValue& value) const;
         Length convertLengthOrPercent(const CssValue& value) const;
         Length convertLengthOrPercentOrAuto(const CssValue& value) const;
@@ -903,7 +903,7 @@ namespace plutobook {
         static BreakInside convertBreakInside(const CssValue& value);
         static PageSize convertPageSize(const CssValue& value);
         static int convertInteger(const CssValue& value);
-        static std::optional<int> convertIntegerOrAuto(const CssValue& value);
+        static Optional<int> convertIntegerOrAuto(const CssValue& value);
         static float convertNumber(const CssValue& value);
         static float convertNumberOrPercent(const CssValue& value);
         static float convertAngle(const CssValue& value);
