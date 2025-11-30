@@ -1741,22 +1741,22 @@ void BoxStyle::reset(CssPropertyID id)
 
 void BoxStyle::inheritFrom(const BoxStyle* parentStyle)
 {
-    m_font = parentStyle->font();
-    m_direction = parentStyle->direction();
-    m_visibility = parentStyle->visibility();
-    m_writingMode = parentStyle->writingMode();
-    m_textOrientation = parentStyle->textOrientation();
-    m_textAlign = parentStyle->textAlign();
-    m_whiteSpace = parentStyle->whiteSpace();
-    m_wordBreak = parentStyle->wordBreak();
-    m_overflowWrap = parentStyle->overflowWrap();
-    m_fillRule = parentStyle->fillRule();
-    m_clipRule = parentStyle->clipRule();
-    m_captionSide = parentStyle->captionSide();
-    m_emptyCells = parentStyle->emptyCells();
-    m_borderCollapse = parentStyle->borderCollapse();
-    m_color = parentStyle->color();
-    m_customProperties = parentStyle->customProperties();
+    m_font = parentStyle->m_font;
+    m_direction = parentStyle->m_direction;
+    m_visibility = parentStyle->m_visibility;
+    m_writingMode = parentStyle->m_writingMode;
+    m_textOrientation = parentStyle->m_textOrientation;
+    m_textAlign = parentStyle->m_textAlign;
+    m_whiteSpace = parentStyle->m_whiteSpace;
+    m_wordBreak = parentStyle->m_wordBreak;
+    m_overflowWrap = parentStyle->m_overflowWrap;
+    m_fillRule = parentStyle->m_fillRule;
+    m_clipRule = parentStyle->m_clipRule;
+    m_captionSide = parentStyle->m_captionSide;
+    m_emptyCells = parentStyle->m_emptyCells;
+    m_borderCollapse = parentStyle->m_borderCollapse;
+    m_color = parentStyle->m_color;
+    m_customProperties = parentStyle->m_customProperties;
     parentStyle->properties().foreach([this](CssPropertyID id, const RefPtr<CssValue>& value) {
         switch (id) {
         case CssPropertyID::BorderCollapse:

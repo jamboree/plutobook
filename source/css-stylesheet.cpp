@@ -361,7 +361,10 @@ protected:
         return {m_allProperties.data() + m_propertyCount, m_allProperties.size() - m_propertyCount};
     }
 
-    FontDescription fontDescription() const;
+    FontDescription fontDescription() const {
+        return FontDescriptionBuilder(m_parentStyle, properties()).build();
+    }
+
     void merge(uint32_t specificity, uint32_t position, const CssPropertyList& properties);
     void buildStyle(BoxStyle* newStyle);
 
@@ -370,11 +373,6 @@ protected:
     unsigned m_propertyCount = 0;
     PseudoType m_pseudoType;
 };
-
-FontDescription StyleBuilder::fontDescription() const
-{
-    return FontDescriptionBuilder(m_parentStyle, properties()).build();
-}
 
 void StyleBuilder::merge(uint32_t specificity, uint32_t position, const CssPropertyList& properties)
 {
@@ -466,29 +464,24 @@ void StyleBuilder::buildStyle(BoxStyle* newStyle)
 
 class ElementStyleBuilder final : public StyleBuilder {
 public:
-    ElementStyleBuilder(Element* element, PseudoType pseudoType, const BoxStyle* parentStyle);
+    ElementStyleBuilder(Element* element, PseudoType pseudoType, const BoxStyle* parentStyle)
+        : StyleBuilder(parentStyle, pseudoType)
+        , m_element(element)
+    {}
 
-    void add(const CssRuleDataList& rules);
+    void add(const CssRuleDataList& rules) {
+        for (const auto& rule : rules) {
+            if (rule.match(m_element, m_pseudoType)) {
+                merge(rule.specificity(), rule.position(), rule.properties());
+            }
+        }
+    }
+
     RefPtr<BoxStyle> build();
 
 private:
     Element* m_element;
 };
-
-ElementStyleBuilder::ElementStyleBuilder(Element* element, PseudoType pseudoType, const BoxStyle* parentStyle)
-    : StyleBuilder(parentStyle, pseudoType)
-    , m_element(element)
-{
-}
-
-void ElementStyleBuilder::add(const CssRuleDataList& rules)
-{
-    for(const auto& rule : rules) {
-        if(rule.match(m_element, m_pseudoType)) {
-            merge(rule.specificity(), rule.position(), rule.properties());
-        }
-    }
-}
 
 RefPtr<BoxStyle> ElementStyleBuilder::build()
 {
