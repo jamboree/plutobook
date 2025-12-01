@@ -176,7 +176,7 @@ namespace plutobook {
         HeapString m_value;
     };
 
-    using AttributeList = std::forward_list<Attribute>;
+    using AttributeList = std::vector<Attribute>;
     using ClassNameList = std::forward_list<HeapString>;
     using CssPropertyList = std::vector<CssProperty>;
 
@@ -221,8 +221,8 @@ namespace plutobook {
         virtual void
         collectAdditionalAttributeStyle(std::string& output) const {}
 
-        CssPropertyList inlineStyle();
-        CssPropertyList presentationAttributeStyle();
+        CssPropertyList inlineStyle() const;
+        CssPropertyList presentationAttributeStyle() const;
 
         Element* parentElement() const;
         Element* firstChildElement() const;

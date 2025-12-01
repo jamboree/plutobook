@@ -326,15 +326,17 @@ const HeapString& Element::lang() const
     return getAttribute(langAttr);
 }
 
+static inline auto getAttributeLowerBound(const AttributeList& list, GlobalString name)
+{
+    return std::ranges::lower_bound(list, name, std::ranges::less{}, [](const Attribute& attr) {
+        return attr.name();
+    });
+}
+
 const Attribute* Element::findAttribute(GlobalString name) const
 {
-    for(const auto& attribute : m_attributes) {
-        if(name == attribute.name()) {
-            return &attribute;
-        }
-    }
-
-    return nullptr;
+    const auto it = getAttributeLowerBound(m_attributes, name);
+    return it == m_attributes.end() || it->name() != name ? nullptr : &*it;
 }
 
 const Attribute* Element::findAttributePossiblyIgnoringCase(GlobalString name) const
@@ -352,24 +354,14 @@ const Attribute* Element::findAttributePossiblyIgnoringCase(GlobalString name) c
 
 bool Element::hasAttribute(GlobalString name) const
 {
-    for(const auto& attribute : m_attributes) {
-        if(name == attribute.name()) {
-            return true;
-        }
-    }
-
-    return false;
+    const auto it = getAttributeLowerBound(m_attributes, name);
+    return it != m_attributes.end() && it->name() == name;
 }
 
 const HeapString& Element::getAttribute(GlobalString name) const
 {
-    for(const auto& attribute : m_attributes) {
-        if(name == attribute.name()) {
-            return attribute.value();
-        }
-    }
-
-    return emptyGlo;
+    const auto it = getAttributeLowerBound(m_attributes, name);
+    return it == m_attributes.end() || it->name() != name ? emptyGlo : it->value();
 }
 
 Url Element::getUrlAttribute(GlobalString name) const
@@ -396,22 +388,21 @@ void Element::setAttribute(const Attribute& attribute)
 void Element::setAttribute(GlobalString name, const HeapString& value)
 {
     parseAttribute(name, value);
-    for(auto& attribute : m_attributes) {
-        if(name == attribute.name()) {
-            attribute.setValue(value);
-            return;
-        }
+    const auto it = getAttributeLowerBound(m_attributes, name);
+    if (it == m_attributes.end() || it->name() != name) {
+        m_attributes.insert(it, Attribute(name, value));
+    } else {
+        m_attributes[it - m_attributes.begin()].setValue(value);
     }
-
-    m_attributes.emplace_front(name, value);
 }
 
 void Element::removeAttribute(GlobalString name)
 {
     parseAttribute(name, emptyGlo);
-    m_attributes.remove_if([&name](const auto& attribute) {
-        return name == attribute.name();
-    });
+    const auto it = getAttributeLowerBound(m_attributes, name);
+    if (it != m_attributes.end() && it->name() == name) {
+        m_attributes.erase(it);
+    }
 }
 
 void Element::parseAttribute(GlobalString name, const HeapString& value)
@@ -443,7 +434,7 @@ void Element::parseAttribute(GlobalString name, const HeapString& value)
     }
 }
 
-CssPropertyList Element::inlineStyle()
+CssPropertyList Element::inlineStyle() const
 {
     const auto& value = getAttribute(styleAttr);
     if(value.empty())
@@ -453,7 +444,7 @@ CssPropertyList Element::inlineStyle()
     return parser.parseStyle(value);
 }
 
-CssPropertyList Element::presentationAttributeStyle()
+CssPropertyList Element::presentationAttributeStyle() const
 {
     std::string output;
     for(const auto& attribute : attributes())
