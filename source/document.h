@@ -15,6 +15,7 @@ namespace plutobook {
     class Counters;
     class ContainerNode;
     class Box;
+    class AttributeStyle;
 
     enum class NodeType {
         Text,
@@ -40,8 +41,7 @@ namespace plutobook {
 
         bool isRootNode() const;
         bool isSvgRootNode() const;
-        bool isOfType(GlobalString namespaceURI,
-                      GlobalString tagName) const;
+        bool isOfType(GlobalString namespaceURI, GlobalString tagName) const;
 
         bool inHtmlDocument() const;
         bool inSvgDocument() const;
@@ -177,16 +177,15 @@ namespace plutobook {
     };
 
     using AttributeList = std::vector<Attribute>;
-    using ClassNameList = std::forward_list<HeapString>;
+    using ClassNameList = std::vector<HeapString>;
     using CssPropertyList = std::vector<CssProperty>;
 
     class Element : public ContainerNode {
     public:
-        Element(ClassKind type, Document* document,
-                GlobalString namespaceURI, GlobalString tagName);
+        Element(ClassKind type, Document* document, GlobalString namespaceURI,
+                GlobalString tagName);
 
-        bool isOfType(GlobalString namespaceURI,
-                      GlobalString tagName) const {
+        bool isOfType(GlobalString namespaceURI, GlobalString tagName) const {
             return m_namespaceURI == namespaceURI && m_tagName == tagName;
         }
 
@@ -199,7 +198,9 @@ namespace plutobook {
 
         const HeapString& lang() const;
         const HeapString& id() const { return m_id; }
+
         const ClassNameList& classNames() const { return m_classNames; }
+        bool hasClass(const HeapString& name) const;
 
         const Attribute* findAttribute(GlobalString name) const;
         const Attribute*
@@ -301,7 +302,8 @@ namespace plutobook {
     using CounterMap =
         boost::unordered_flat_map<GlobalString, std::vector<int>>;
 
-    using DocumentElementMap = boost::unordered_multimap<HeapString, Element*, StrHash, StrEqual>;
+    using DocumentElementMap =
+        boost::unordered_multimap<HeapString, Element*, StrHash, StrEqual>;
     using DocumentResourceMap =
         boost::unordered_flat_map<Url, RefPtr<Resource>>;
     using DocumentFontMap =
@@ -355,8 +357,7 @@ namespace plutobook {
         bool setContainerSize(float containerWidth, float containerHeight);
 
         TextNode* createTextNode(const std::string_view& value);
-        Element* createElement(GlobalString namespaceURI,
-                               GlobalString tagName);
+        Element* createElement(GlobalString namespaceURI, GlobalString tagName);
 
         Element* rootElement() const { return m_rootElement; }
         Element* bodyElement() const;
@@ -379,8 +380,7 @@ namespace plutobook {
                                         GlobalString listStyle,
                                         const HeapString& separator);
         HeapString getCountersText(const CounterMap& counters,
-                                   GlobalString name,
-                                   GlobalString listStyle,
+                                   GlobalString name, GlobalString listStyle,
                                    const HeapString& separator);
 
         void runJavaScript(const std::string_view& script);
@@ -401,8 +401,7 @@ namespace plutobook {
         pseudoStyleForElement(Element* element, PseudoType pseudoType,
                               const BoxStyle* parentStyle) const;
 
-        RefPtr<BoxStyle> styleForPage(GlobalString pageName,
-                                      uint32_t pageIndex,
+        RefPtr<BoxStyle> styleForPage(GlobalString pageName, uint32_t pageIndex,
                                       PseudoType pseudoType) const;
         RefPtr<BoxStyle> styleForPageMargin(GlobalString pageName,
                                             uint32_t pageIndex,

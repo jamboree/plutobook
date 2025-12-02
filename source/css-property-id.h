@@ -226,4 +226,6 @@ namespace plutobook {
         ZIndex,
         Custom
     };
+
+    CssPropertyID csspropertyid(const std::string_view& name);
 } // namespace plutobook

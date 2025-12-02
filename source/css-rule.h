@@ -1730,4 +1730,27 @@ namespace plutobook {
     };
 
     const CssCounterStyleMap* userAgentCounterStyleMap();
+
+    class AttributeStyle {
+        CssParserContext m_context;
+        CssPropertyList m_properties;
+        CssTokenizer m_tokenizer;
+
+    public:
+        explicit AttributeStyle(const Node* node);
+
+        void addProperty(CssPropertyID id, CssValueID value) {
+            m_properties.emplace_back(id, m_context.origin(), false,
+                                      CssIdentValue::create(value));
+        }
+
+        void addProperty(CssPropertyID id, RefPtr<CssValue> value) {
+            m_properties.emplace_back(id, m_context.origin(), false,
+                                      std::move(value));
+        }
+
+        bool addProperty(CssPropertyID id, std::string_view value);
+
+        const CssPropertyList& properties() const { return m_properties; }
+    };
 } // namespace plutobook

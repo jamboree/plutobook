@@ -180,6 +180,8 @@ namespace plutobook {
 
     class CssTokenizerInputStream {
     public:
+        CssTokenizerInputStream() = default;
+
         explicit CssTokenizerInputStream(const std::string_view& input)
             : m_data(input.data()), m_length(input.length()) {}
 
@@ -221,16 +223,24 @@ namespace plutobook {
         bool empty() const { return m_offset == m_length; }
 
     private:
-        const char* m_data;
-        size_t m_length;
-        size_t m_offset{0};
+        const char* m_data = nullptr;
+        size_t m_length = 0;
+        size_t m_offset = 0;
     };
 
     class CssTokenizer {
     public:
+        CssTokenizer() = default;
+
         explicit CssTokenizer(const std::string_view& input) : m_input(input) {}
 
         CssTokenStream tokenize();
+
+        void reset(const std::string_view& input) {
+            m_input = CssTokenizerInputStream(m_input);
+            m_tokenList.clear();
+            m_stringList.clear();
+        }
 
     private:
         static bool isEscapeSequence(char first, char second);

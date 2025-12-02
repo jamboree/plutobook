@@ -52,21 +52,15 @@ CssMediaQueryList CssParser::parseMediaQueries(const std::string_view& content)
     return queries;
 }
 
-CssPropertyList CssParser::parsePropertyValue(CssTokenStream input, CssPropertyID id, bool important)
-{
-    CssPropertyList properties;
-    consumeDescriptor(input, properties, id, important);
-    return properties;
-}
-
 static bool identMatches(const char* name, int length, const std::string_view& ident)
 {
     if(length != ident.length())
         return false;
-    for(int i = 0; i < length; ++i) {
-        auto cc = name[i];
-        assert(!isUpper(cc));
-        if(cc != toLower(ident[i])) {
+    const auto it = std::mismatch(name, name + length, ident.begin(), ident.end()).first;
+    for (int i = int(it - name); i != length; ++i) {
+        const auto c = name[i];
+        assert(!isUpper(c));
+        if(c != toLower(ident[i])) {
             return false;
         }
     }
@@ -1158,7 +1152,7 @@ constexpr bool isCustomPropertyName(std::string_view name)
     return name.length() > 2 && name.starts_with("--");
 }
 
-static CssPropertyID csspropertyid(const std::string_view& name)
+CssPropertyID csspropertyid(const std::string_view& name)
 {
     if(isCustomPropertyName(name))
         return CssPropertyID::Custom;
@@ -1379,15 +1373,19 @@ static CssPropertyID csspropertyid(const std::string_view& name)
     char buffer[32];
     if(name.length() > sizeof(buffer))
         return CssPropertyID::Unknown;
-    for(size_t i = 0; i < name.length(); ++i) {
-        buffer[i] = toLower(name[i]);
+    auto lowerName = name;
+    const auto up = std::ranges::find_if(name, [](char c) { return isUpper(c); });
+    if (up != name.end()) {
+        size_t i = up - name.begin();
+        std::memcpy(buffer, name.data(), i);
+        for (; i != name.length(); ++i) {
+            buffer[i] = toLower(name[i]);
+        }
+        lowerName = std::string_view(buffer, name.length());
     }
 
-    std::string_view lowerName(buffer, name.length());
     const auto it = table.find(lowerName);
-    if(it != table.end())
-        return it->second;
-    return CssPropertyID::Unknown;
+    return it == table.end() ? CssPropertyID::Unknown : it->second;
 }
 
 bool CssParser::consumeDeclaraction(CssTokenStream& input, CssPropertyList& properties, CssRuleType ruleType)

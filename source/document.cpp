@@ -326,17 +326,24 @@ const HeapString& Element::lang() const
     return getAttribute(langAttr);
 }
 
-static inline auto getAttributeLowerBound(const AttributeList& list, GlobalString name)
+static inline auto locateAttribute(const AttributeList& list, GlobalString name)
 {
-    return std::ranges::lower_bound(list, name, std::ranges::less{}, [](const Attribute& attr) {
+    const auto it = std::ranges::lower_bound(list, name, std::ranges::less{}, [](const Attribute& attr) {
         return attr.name();
     });
+    return std::pair(it, it != list.end() && it->name() == name);
+}
+
+bool Element::hasClass(const HeapString& name) const
+{
+    const auto it = std::ranges::lower_bound(m_classNames, name);
+    return it != m_classNames.end() && *it == name;
 }
 
 const Attribute* Element::findAttribute(GlobalString name) const
 {
-    const auto it = getAttributeLowerBound(m_attributes, name);
-    return it == m_attributes.end() || it->name() != name ? nullptr : &*it;
+    const auto [it, found] = locateAttribute(m_attributes, name);
+    return found ? &*it : nullptr;
 }
 
 const Attribute* Element::findAttributePossiblyIgnoringCase(GlobalString name) const
@@ -354,14 +361,13 @@ const Attribute* Element::findAttributePossiblyIgnoringCase(GlobalString name) c
 
 bool Element::hasAttribute(GlobalString name) const
 {
-    const auto it = getAttributeLowerBound(m_attributes, name);
-    return it != m_attributes.end() && it->name() == name;
+    return locateAttribute(m_attributes, name).second;
 }
 
 const HeapString& Element::getAttribute(GlobalString name) const
 {
-    const auto it = getAttributeLowerBound(m_attributes, name);
-    return it == m_attributes.end() || it->name() != name ? emptyGlo : it->value();
+    const auto [it, found] = locateAttribute(m_attributes, name);
+    return found ? it->value() : emptyGlo;
 }
 
 Url Element::getUrlAttribute(GlobalString name) const
@@ -388,19 +394,20 @@ void Element::setAttribute(const Attribute& attribute)
 void Element::setAttribute(GlobalString name, const HeapString& value)
 {
     parseAttribute(name, value);
-    const auto it = getAttributeLowerBound(m_attributes, name);
-    if (it == m_attributes.end() || it->name() != name) {
-        m_attributes.insert(it, Attribute(name, value));
+    const auto [it, found] = locateAttribute(m_attributes, name);
+    if (found) {
+        const auto p = m_attributes.begin();
+        p[it - p].setValue(value);
     } else {
-        m_attributes[it - m_attributes.begin()].setValue(value);
+        m_attributes.insert(it, Attribute(name, value));
     }
 }
 
 void Element::removeAttribute(GlobalString name)
 {
     parseAttribute(name, emptyGlo);
-    const auto it = getAttributeLowerBound(m_attributes, name);
-    if (it != m_attributes.end() && it->name() == name) {
+    const auto [it, found] = locateAttribute(m_attributes, name);
+    if (found) {
         m_attributes.erase(it);
     }
 }
@@ -428,7 +435,11 @@ void Element::parseAttribute(GlobalString name, const HeapString& value)
             size_t end = begin + 1;
             while(end < value.size() && !isSpace(value[end]))
                 ++end;
-            m_classNames.push_front(value.substring(begin, end - begin));
+            const auto it = std::ranges::lower_bound(m_classNames, name);
+            auto substr = value.substring(begin, end - begin);
+            if (it == m_classNames.end() || *it != substr) {
+                m_classNames.insert(it, std::move(substr));
+            }
             begin = end + 1;
         }
     }

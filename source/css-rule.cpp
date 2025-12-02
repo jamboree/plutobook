@@ -347,7 +347,9 @@ CssPropertyList CssVariableReferenceValue::resolve(const BoxStyle* style) const
         return CssPropertyList();
     CssTokenStream input(tokens.data(), tokens.size());
     CssParser parser(m_context);
-    return parser.parsePropertyValue(input, m_id, m_important);
+    CssPropertyList properties;
+    parser.parsePropertyValue(input, properties, m_id, m_important);
+    return properties;
 }
 
 CssVariableReferenceValue::CssVariableReferenceValue(const CssParserContext& context, CssPropertyID id, bool important, RefPtr<CssVariableData> value)
@@ -645,13 +647,7 @@ bool CssRuleData::matchIdSelector(const Element* element, const CssSimpleSelecto
 
 bool CssRuleData::matchClassSelector(const Element* element, const CssSimpleSelector& selector)
 {
-    for(const auto& name : element->classNames()) {
-        if(name == selector.value()) {
-            return true;
-        }
-    }
-
-    return false;
+    return element->hasClass(selector.value());
 }
 
 bool CssRuleData::matchAttributeHasSelector(const Element* element, const CssSimpleSelector& selector)
@@ -1419,6 +1415,21 @@ const CssCounterStyleMap* userAgentCounterStyleMap()
     }();
 
     return counterStyleMap.get();
+}
+
+AttributeStyle::AttributeStyle(const Node* node)
+    : m_context(node, CssStyleOrigin::PresentationAttribute,
+        node->document()->baseUrl()) {
+}
+
+bool AttributeStyle::addProperty(CssPropertyID id, std::string_view value)
+{
+    if (value.empty())
+        return false;
+    CssParser parser(m_context);
+    m_tokenizer.reset(value);
+    return parser.parsePropertyValue(m_tokenizer.tokenize(),
+        m_properties, id, false);
 }
 
 } // namespace plutobook

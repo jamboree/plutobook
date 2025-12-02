@@ -11,8 +11,11 @@ namespace plutobook {
         CssPropertyList parseStyle(const std::string_view& content);
         CssMediaQueryList parseMediaQueries(const std::string_view& content);
 
-        CssPropertyList parsePropertyValue(CssTokenStream input,
-                                           CssPropertyID id, bool important);
+        bool parsePropertyValue(CssTokenStream input,
+                                CssPropertyList& properties, CssPropertyID id,
+                                bool important) {
+            return consumeDescriptor(input, properties, id, important);
+        }
 
     private:
         bool consumeMediaFeature(CssTokenStream& input,
@@ -261,11 +264,8 @@ namespace plutobook {
         RefPtr<CssValue>
         consumeCounterStyleAdditiveSymbols(CssTokenStream& input);
 
-        GlobalString defaultNamespace() const {
-            return m_defaultNamespace;
-        }
-        GlobalString
-        determineNamespace(GlobalString prefix) const;
+        GlobalString defaultNamespace() const { return m_defaultNamespace; }
+        GlobalString determineNamespace(GlobalString prefix) const;
 
         const CssParserContext& m_context;
         boost::unordered_flat_map<GlobalString, GlobalString> m_namespaces;
