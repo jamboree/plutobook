@@ -83,19 +83,6 @@ void SvgElement::collectAttributeStyle(AttributeStyle& style) const
     }
 }
 
-void SvgElement::addProperty(GlobalString name, SvgProperty& value)
-{
-    m_properties.emplace(name, &value);
-}
-
-SvgProperty* SvgElement::getProperty(GlobalString name) const
-{
-    auto it = m_properties.find(name);
-    if(it == m_properties.end())
-        return nullptr;
-    return it->second;
-}
-
 Size SvgElement::currentViewportSize() const
 {
     auto parent = to<SvgElement>(parentNode());
@@ -144,8 +131,13 @@ SvgResourceMaskerBox* SvgElement::getMasker(const std::string_view& id) const
 
 SvgGraphicsElement::SvgGraphicsElement(Document* document, GlobalString tagName)
     : SvgElement(document, tagName)
+{}
+
+SvgProperty* SvgGraphicsElement::getProperty(GlobalString name)
 {
-    addProperty(transformAttr, m_transform);
+    if(name == transformAttr)
+        return &m_transform;
+    return SvgElement::getProperty(name);
 }
 
 SvgResourcePaintServerBox* SvgGraphicsElement::getPainter(const std::string_view& id) const
@@ -174,12 +166,6 @@ StrokeData SvgGraphicsElement::getStrokeData(const BoxStyle* style) const
     return strokeData;
 }
 
-SvgFitToViewBox::SvgFitToViewBox(SvgElement* element)
-{
-    element->addProperty(viewBoxAttr, m_viewBox);
-    element->addProperty(preserveAspectRatioAttr, m_preserveAspectRatio);
-}
-
 Transform SvgFitToViewBox::viewBoxToViewTransform(const Size& viewportSize) const
 {
     const auto& viewBoxRect = m_viewBox.value();
@@ -196,11 +182,6 @@ Rect SvgFitToViewBox::getClipRect(const Size& viewportSize) const
     return m_preserveAspectRatio.getClipRect(viewBoxRect, viewportSize);
 }
 
-SvgURIReference::SvgURIReference(SvgElement* element)
-{
-    element->addProperty(hrefAttr, m_href);
-}
-
 SvgElement* SvgURIReference::getTargetElement(const Document* document) const
 {
     std::string_view value(m_href.value());
@@ -211,16 +192,24 @@ SvgElement* SvgURIReference::getTargetElement(const Document* document) const
 
 SvgSvgElement::SvgSvgElement(Document* document)
     : SvgGraphicsElement(document, svgTag)
-    , SvgFitToViewBox(this)
     , m_x(0.f, SvgLengthType::Number, SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Allow)
     , m_y(0.f, SvgLengthType::Number, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
     , m_width(100.f, SvgLengthType::Percentage, SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Forbid)
     , m_height(100.f, SvgLengthType::Percentage, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
+{}
+
+SvgProperty* SvgSvgElement::getProperty(GlobalString name)
 {
-    addProperty(xAttr, m_x);
-    addProperty(yAttr, m_y);
-    addProperty(widthAttr, m_width);
-    addProperty(heightAttr, m_height);
+    switch (name.asId()) {
+    case xAttr: return &m_x;
+    case yAttr: return &m_y;
+    case widthAttr: return &m_width;
+    case heightAttr: return &m_height;
+        // SvgFitToViewBox
+    case viewBoxAttr: return &m_viewBox;
+    case preserveAspectRatioAttr: return &m_preserveAspectRatio;
+    default: return SvgGraphicsElement::getProperty(name);
+    }
 }
 
 void SvgSvgElement::computeIntrinsicDimensions(float& intrinsicWidth, float& intrinsicHeight, double& intrinsicRatio)
@@ -282,16 +271,23 @@ Box* SvgSvgElement::createBox(const RefPtr<BoxStyle>& style)
 
 SvgUseElement::SvgUseElement(Document* document)
     : SvgGraphicsElement(document, useTag)
-    , SvgURIReference(this)
     , m_x(0.f, SvgLengthType::Number, SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Allow)
     , m_y(0.f, SvgLengthType::Number, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
     , m_width(100.f, SvgLengthType::Percentage, SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Forbid)
     , m_height(100.f, SvgLengthType::Percentage, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
+{}
+
+SvgProperty* SvgUseElement::getProperty(GlobalString name)
 {
-    addProperty(xAttr, m_x);
-    addProperty(yAttr, m_y);
-    addProperty(widthAttr, m_width);
-    addProperty(heightAttr, m_height);
+    switch (name.asId()) {
+    case xAttr: return &m_x;
+    case yAttr: return &m_y;
+    case widthAttr: return &m_width;
+    case heightAttr: return &m_height;
+        // SvgURIReference
+    case hrefAttr: return &m_href;
+    default: return SvgGraphicsElement::getProperty(name);
+    }
 }
 
 Box* SvgUseElement::createBox(const RefPtr<BoxStyle>& style)
@@ -373,17 +369,24 @@ Element* SvgUseElement::cloneTargetElement(SvgElement* targetElement)
 
 SvgImageElement::SvgImageElement(Document* document)
     : SvgGraphicsElement(document, imageTag)
-    , SvgURIReference(this)
     , m_x(0.f, SvgLengthType::Number, SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Allow)
     , m_y(0.f, SvgLengthType::Number, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
     , m_width(100.f, SvgLengthType::Percentage, SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Forbid)
     , m_height(100.f, SvgLengthType::Percentage, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
+{}
+
+SvgProperty* SvgImageElement::getProperty(GlobalString name)
 {
-    addProperty(xAttr, m_x);
-    addProperty(yAttr, m_y);
-    addProperty(widthAttr, m_width);
-    addProperty(heightAttr, m_height);
-    addProperty(preserveAspectRatioAttr, m_preserveAspectRatio);
+    switch (name.asId()) {
+    case xAttr: return &m_x;
+    case yAttr: return &m_y;
+    case widthAttr: return &m_width;
+    case heightAttr: return &m_height;
+    case preserveAspectRatioAttr: return &m_preserveAspectRatio;
+        // SvgURIReference
+    case hrefAttr: return &m_href;
+    default: return SvgGraphicsElement::getProperty(name);
+    }
 }
 
 Box* SvgImageElement::createBox(const RefPtr<BoxStyle>& style)
@@ -401,8 +404,17 @@ RefPtr<Image> SvgImageElement::image() const
 
 SvgSymbolElement::SvgSymbolElement(Document* document)
     : SvgGraphicsElement(document, symbolTag)
-    , SvgFitToViewBox(this)
 {
+}
+
+SvgProperty* SvgSymbolElement::getProperty(GlobalString name)
+{
+    switch (name.asId()) {
+        // SvgFitToViewBox
+    case viewBoxAttr: return &m_viewBox;
+    case preserveAspectRatioAttr: return &m_preserveAspectRatio;
+    default: return SvgElement::getProperty(name);
+    }
 }
 
 Box* SvgSymbolElement::createBox(const RefPtr<BoxStyle>& style)
@@ -412,8 +424,16 @@ Box* SvgSymbolElement::createBox(const RefPtr<BoxStyle>& style)
 
 SvgAElement::SvgAElement(Document* document)
     : SvgGraphicsElement(document, aTag)
-    , SvgURIReference(this)
 {
+}
+
+SvgProperty* SvgAElement::getProperty(GlobalString name)
+{
+    switch (name.asId()) {
+        // SvgURIReference
+    case hrefAttr: return &m_href;
+    default: return SvgElement::getProperty(name);
+    }
 }
 
 Box* SvgAElement::createBox(const RefPtr<BoxStyle>& style)
@@ -453,8 +473,13 @@ SvgResourceMarkerBox* SvgGeometryElement::getMarker(const std::string_view& id) 
 
 SvgPathElement::SvgPathElement(Document* document)
     : SvgGeometryElement(document, pathTag)
+{}
+
+SvgProperty* SvgPathElement::getProperty(GlobalString name)
 {
-    addProperty(dAttr, m_d);
+    if(name == dAttr)
+        return &m_d;
+    return SvgGeometryElement::getProperty(name);
 }
 
 Box* SvgPathElement::createBox(const RefPtr<BoxStyle>& style)
@@ -478,11 +503,17 @@ SvgLineElement::SvgLineElement(Document* document)
     , m_y1(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
     , m_x2(SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Allow)
     , m_y2(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
+{}
+
+SvgProperty* SvgLineElement::getProperty(GlobalString name)
 {
-    addProperty(x1Attr, m_x1);
-    addProperty(y1Attr, m_y1);
-    addProperty(x2Attr, m_x2);
-    addProperty(y2Attr, m_y2);
+    switch (name.asId()) {
+    case x1Attr: return &m_x1;
+    case y1Attr: return &m_y1;
+    case x2Attr: return &m_x2;
+    case y2Attr: return &m_y2;
+    default: return SvgShapeElement::getProperty(name);
+    }
 }
 
 Rect SvgLineElement::getPath(Path& path) const
@@ -506,13 +537,19 @@ SvgRectElement::SvgRectElement(Document* document)
     , m_height(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
     , m_rx(SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Forbid)
     , m_ry(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
+{}
+
+SvgProperty* SvgRectElement::getProperty(GlobalString name)
 {
-    addProperty(xAttr, m_x);
-    addProperty(yAttr, m_y);
-    addProperty(widthAttr, m_width);
-    addProperty(heightAttr, m_height);
-    addProperty(rxAttr, m_rx);
-    addProperty(ryAttr, m_ry);
+    switch (name.asId()) {
+    case xAttr: return &m_x;
+    case yAttr: return &m_y;
+    case widthAttr: return &m_width;
+    case heightAttr: return &m_height;
+    case rxAttr: return &m_rx;
+    case ryAttr: return &m_ry;
+    default: return SvgShapeElement::getProperty(name);
+    }
 }
 
 Rect SvgRectElement::getPath(Path& path) const
@@ -545,10 +582,16 @@ SvgCircleElement::SvgCircleElement(Document* document)
     , m_cx(SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Allow)
     , m_cy(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
     , m_r(SvgLengthDirection::Diagonal, SvgLengthNegativeValuesMode::Forbid)
+{}
+
+SvgProperty* SvgCircleElement::getProperty(GlobalString name)
 {
-    addProperty(cxAttr, m_cx);
-    addProperty(cyAttr, m_cy);
-    addProperty(rAttr, m_r);
+    switch (name.asId()) {
+    case cxAttr: return &m_cx;
+    case cyAttr: return &m_cy;
+    case rAttr: return &m_r;
+    default: return SvgShapeElement::getProperty(name);
+    }
 }
 
 Rect SvgCircleElement::getPath(Path& path) const
@@ -571,11 +614,17 @@ SvgEllipseElement::SvgEllipseElement(Document* document)
     , m_cy(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
     , m_rx(SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Forbid)
     , m_ry(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
+{}
+
+SvgProperty* SvgEllipseElement::getProperty(GlobalString name)
 {
-    addProperty(cxAttr, m_cx);
-    addProperty(cyAttr, m_cy);
-    addProperty(rxAttr, m_rx);
-    addProperty(ryAttr, m_ry);
+    switch (name.asId()) {
+    case cxAttr: return &m_cx;
+    case cyAttr: return &m_cy;
+    case rxAttr: return &m_rx;
+    case ryAttr: return &m_ry;
+    default: return SvgShapeElement::getProperty(name);
+    }
 }
 
 Rect SvgEllipseElement::getPath(Path& path) const
@@ -595,8 +644,13 @@ Rect SvgEllipseElement::getPath(Path& path) const
 
 SvgPolyElement::SvgPolyElement(Document* document, GlobalString tagName)
     : SvgShapeElement(document, tagName)
+{}
+
+SvgProperty* SvgPolyElement::getProperty(GlobalString name)
 {
-    addProperty(pointsAttr, m_points);
+    if (name == pointsAttr)
+        return &m_points;
+    return SvgShapeElement::getProperty(name);
 }
 
 Rect SvgPolyElement::getPath(Path& path) const
@@ -622,12 +676,18 @@ SvgTextPositioningElement::SvgTextPositioningElement(Document* document, GlobalS
     , m_y(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
     , m_dx(SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Allow)
     , m_dy(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
+{}
+
+SvgProperty* SvgTextPositioningElement::getProperty(GlobalString name)
 {
-    addProperty(xAttr, m_x);
-    addProperty(yAttr, m_y);
-    addProperty(dxAttr, m_dx);
-    addProperty(dyAttr, m_dy);
-    addProperty(rotateAttr, m_rotate);
+    switch (name.asId()) {
+    case xAttr: return &m_x;
+    case yAttr: return &m_y;
+    case dxAttr: return &m_dx;
+    case dyAttr: return &m_dy;
+    case rotateAttr: return &m_rotate;
+    default: return SvgGraphicsElement::getProperty(name);
+    }
 }
 
 SvgTSpanElement::SvgTSpanElement(Document* document)
@@ -652,19 +712,27 @@ Box* SvgTextElement::createBox(const RefPtr<BoxStyle>& style)
 
 SvgMarkerElement::SvgMarkerElement(Document* document)
     : SvgElement(document, markerTag)
-    , SvgFitToViewBox(this)
     , m_refX(0.f, SvgLengthType::Number, SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Allow)
     , m_refY(0.f, SvgLengthType::Number, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
     , m_markerWidth(3.f, SvgLengthType::Number, SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Forbid)
     , m_markerHeight(3.f, SvgLengthType::Number, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
     , m_markerUnits(SvgMarkerUnitsTypeStrokeWidth)
+{}
+
+SvgProperty* SvgMarkerElement::getProperty(GlobalString name)
 {
-    addProperty(refXAttr, m_refX);
-    addProperty(refYAttr, m_refY);
-    addProperty(markerWidthAttr, m_markerWidth);
-    addProperty(markerHeightAttr, m_markerHeight);
-    addProperty(markerUnitsAttr, m_markerUnits);
-    addProperty(orientAttr, m_orient);
+    switch (name.asId()) {
+    case refXAttr: return &m_refX;
+    case refYAttr: return &m_refY;
+    case markerWidthAttr: return &m_markerWidth;
+    case markerHeightAttr: return &m_markerHeight;
+    case markerUnitsAttr: return &m_markerUnits;
+    case orientAttr: return &m_orient;
+        // SvgFitToViewBox
+    case viewBoxAttr: return &m_viewBox;
+    case preserveAspectRatioAttr: return &m_preserveAspectRatio;
+    default: return SvgElement::getProperty(name);
+    }
 }
 
 Box* SvgMarkerElement::createBox(const RefPtr<BoxStyle>& style)
@@ -675,8 +743,13 @@ Box* SvgMarkerElement::createBox(const RefPtr<BoxStyle>& style)
 SvgClipPathElement::SvgClipPathElement(Document* document)
     : SvgGraphicsElement(document, clipPathTag)
     , m_clipPathUnits(SvgUnitsTypeUserSpaceOnUse)
+{}
+
+SvgProperty* SvgClipPathElement::getProperty(GlobalString name)
 {
-    addProperty(clipPathUnitsAttr, m_clipPathUnits);
+    if(name == clipPathUnitsAttr)
+        return &m_clipPathUnits;
+    return SvgGraphicsElement::getProperty(name);
 }
 
 Box* SvgClipPathElement::createBox(const RefPtr<BoxStyle>& style)
@@ -692,13 +765,19 @@ SvgMaskElement::SvgMaskElement(Document* document)
     , m_height(120.f, SvgLengthType::Percentage, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
     , m_maskUnits(SvgUnitsTypeObjectBoundingBox)
     , m_maskContentUnits(SvgUnitsTypeUserSpaceOnUse)
+{}
+
+SvgProperty* SvgMaskElement::getProperty(GlobalString name)
 {
-    addProperty(xAttr, m_x);
-    addProperty(yAttr, m_y);
-    addProperty(widthAttr, m_width);
-    addProperty(heightAttr, m_height);
-    addProperty(maskUnitsAttr, m_maskUnits);
-    addProperty(maskContentUnitsAttr, m_maskContentUnits);
+    switch (name.asId()) {
+    case xAttr: return &m_x;
+    case yAttr: return &m_y;
+    case widthAttr: return &m_width;
+    case heightAttr: return &m_height;
+    case maskUnitsAttr: return &m_maskUnits;
+    case maskContentUnitsAttr: return &m_maskContentUnits;
+    default: return SvgElement::getProperty(name);
+    }
 }
 
 Box* SvgMaskElement::createBox(const RefPtr<BoxStyle>& style)
@@ -708,22 +787,31 @@ Box* SvgMaskElement::createBox(const RefPtr<BoxStyle>& style)
 
 SvgPatternElement::SvgPatternElement(Document* document)
     : SvgElement(document, patternTag)
-    , SvgURIReference(this)
-    , SvgFitToViewBox(this)
     , m_x(SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Allow)
     , m_y(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
     , m_width(SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Forbid)
     , m_height(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
     , m_patternUnits(SvgUnitsTypeObjectBoundingBox)
     , m_patternContentUnits(SvgUnitsTypeUserSpaceOnUse)
+{}
+
+SvgProperty* SvgPatternElement::getProperty(GlobalString name)
 {
-    addProperty(xAttr, m_x);
-    addProperty(yAttr, m_y);
-    addProperty(widthAttr, m_width);
-    addProperty(heightAttr, m_height);
-    addProperty(patternTransformAttr, m_patternTransform);
-    addProperty(patternUnitsAttr, m_patternUnits);
-    addProperty(patternContentUnitsAttr, m_patternContentUnits);
+    switch (name.asId()) {
+    case xAttr: return &m_x;
+    case yAttr: return &m_y;
+    case widthAttr: return &m_width;
+    case heightAttr: return &m_height;
+    case patternTransformAttr: return &m_patternTransform;
+    case patternUnitsAttr: return &m_patternUnits;
+    case patternContentUnitsAttr: return &m_patternContentUnits;
+        // SvgURIReference
+    case hrefAttr: return &m_href;
+        // SvgFitToViewBox
+    case viewBoxAttr: return &m_viewBox;
+    case preserveAspectRatioAttr: return &m_preserveAspectRatio;
+    default: return SvgElement::getProperty(name);
+    }
 }
 
 SvgPatternAttributes SvgPatternElement::collectPatternAttributes() const
@@ -780,8 +868,13 @@ Box* SvgPatternElement::createBox(const RefPtr<BoxStyle>& style)
 
 SvgStopElement::SvgStopElement(Document* document)
     : SvgElement(document, stopTag)
+{}
+
+SvgProperty* SvgStopElement::getProperty(GlobalString name)
 {
-    addProperty(offsetAttr, m_offset);
+    if(name == offsetAttr)
+        return &m_offset;
+    return SvgElement::getProperty(name);
 }
 
 Color SvgStopElement::stopColorIncludingOpacity() const
@@ -798,13 +891,20 @@ Box* SvgStopElement::createBox(const RefPtr<BoxStyle>& style)
 
 SvgGradientElement::SvgGradientElement(Document* document, GlobalString tagName)
     : SvgElement(document, tagName)
-    , SvgURIReference(this)
     , m_gradientUnits(SvgUnitsTypeObjectBoundingBox)
     , m_spreadMethod(SvgSpreadMethodTypePad)
+{}
+
+SvgProperty* SvgGradientElement::getProperty(GlobalString name)
 {
-    addProperty(gradientTransformAttr, m_gradientTransform);
-    addProperty(gradientUnitsAttr, m_gradientUnits);
-    addProperty(spreadMethodAttr, m_spreadMethod);
+    switch (name.asId()) {
+    case gradientTransformAttr: return &m_gradientTransform;
+    case gradientUnitsAttr: return &m_gradientUnits;
+    case spreadMethodAttr: return &m_spreadMethod;
+        // SvgURIReference
+    case hrefAttr: return &m_href;
+    default: return SvgElement::getProperty(name);
+    }
 }
 
 void SvgGradientElement::collectGradientAttributes(SvgGradientAttributes& attributes) const
@@ -831,11 +931,17 @@ SvgLinearGradientElement::SvgLinearGradientElement(Document* document)
     , m_y1(0.f, SvgLengthType::Percentage, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
     , m_x2(100.f, SvgLengthType::Percentage, SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Allow)
     , m_y2(0.f, SvgLengthType::Percentage, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
+{}
+
+SvgProperty* SvgLinearGradientElement::getProperty(GlobalString name)
 {
-    addProperty(x1Attr, m_x1);
-    addProperty(y1Attr, m_y1);
-    addProperty(x2Attr, m_x2);
-    addProperty(y2Attr, m_y2);
+    switch (name.asId()) {
+    case x1Attr: return &m_x1;
+    case y1Attr: return &m_y1;
+    case x2Attr: return &m_x2;
+    case y2Attr: return &m_y2;
+    default: return SvgGradientElement::getProperty(name);
+    }
 }
 
 SvgLinearGradientAttributes SvgLinearGradientElement::collectGradientAttributes() const
@@ -884,12 +990,18 @@ SvgRadialGradientElement::SvgRadialGradientElement(Document* document)
     , m_r(50.f, SvgLengthType::Percentage, SvgLengthDirection::Diagonal, SvgLengthNegativeValuesMode::Forbid)
     , m_fx(0.f, SvgLengthType::Number, SvgLengthDirection::Horizontal, SvgLengthNegativeValuesMode::Allow)
     , m_fy(0.f, SvgLengthType::Number, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
+{}
+
+SvgProperty* SvgRadialGradientElement::getProperty(GlobalString name)
 {
-    addProperty(cxAttr, m_cx);
-    addProperty(cyAttr, m_cy);
-    addProperty(rAttr, m_r);
-    addProperty(fxAttr, m_fx);
-    addProperty(fyAttr, m_fy);
+    switch (name.asId()) {
+    case cxAttr: return &m_cx;
+    case cyAttr: return &m_cy;
+    case rAttr: return &m_r;
+    case fxAttr: return &m_fx;
+    case fyAttr: return &m_fy;
+    default: return SvgGradientElement::getProperty(name);
+    }
 }
 
 SvgRadialGradientAttributes SvgRadialGradientElement::collectGradientAttributes() const

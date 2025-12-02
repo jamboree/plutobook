@@ -514,16 +514,22 @@ HtmlTableElement::HtmlTableElement(Document* document)
 
 void HtmlTableElement::parseAttribute(GlobalString name, const HeapString& value)
 {
-    if(name == cellpaddingAttr) {
+    switch (name.asId()) {
+    case cellpaddingAttr:
         m_padding = parseHtmlInteger<unsigned>(value).value_or(0);
-    } else if(name == borderAttr) {
+        break;
+    case borderAttr:
         m_border = parseHtmlInteger<unsigned>(value).value_or(1);
-    } else if(name == rulesAttr) {
+        break;
+    case rulesAttr:
         m_rules = parseRulesAttribute(value);
-    } else if(name == frameAttr) {
+        break;
+    case frameAttr:
         m_frame = parseFrameAttribute(value);
-    } else {
+        break;
+    default:
         HtmlElement::parseAttribute(name, value);
+        break;
     }
 }
 
