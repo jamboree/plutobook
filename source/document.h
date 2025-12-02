@@ -214,16 +214,10 @@ namespace plutobook {
         void setAttribute(GlobalString name, const HeapString& value);
         void removeAttribute(GlobalString name);
 
-        virtual void parseAttribute(GlobalString name,
-                                    const HeapString& value);
-        virtual void collectAttributeStyle(std::string& output,
-                                           GlobalString name,
-                                           const HeapString& value) const {}
-        virtual void
-        collectAdditionalAttributeStyle(std::string& output) const {}
+        virtual void parseAttribute(GlobalString name, const HeapString& value);
+        virtual void collectAttributeStyle(AttributeStyle& style) const {}
 
         CssPropertyList inlineStyle() const;
-        CssPropertyList presentationAttributeStyle() const;
 
         Element* parentElement() const;
         Element* firstChildElement() const;

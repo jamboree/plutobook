@@ -455,20 +455,6 @@ CssPropertyList Element::inlineStyle() const
     return parser.parseStyle(value);
 }
 
-CssPropertyList Element::presentationAttributeStyle() const
-{
-    std::string output;
-    for(const auto& attribute : attributes())
-        collectAttributeStyle(output, attribute.name(), attribute.value());
-    collectAdditionalAttributeStyle(output);
-
-    if(output.empty())
-        return CssPropertyList();
-    CssParserContext context(this, CssStyleOrigin::PresentationAttribute, document()->baseUrl());
-    CssParser parser(context);
-    return parser.parseStyle(output);
-}
-
 Element* Element::parentElement() const
 {
     return to<Element>(parentNode());

@@ -182,7 +182,7 @@ namespace plutobook {
     public:
         CssTokenizerInputStream() = default;
 
-        explicit CssTokenizerInputStream(const std::string_view& input)
+        explicit CssTokenizerInputStream(const std::string_view& input) noexcept
             : m_data(input.data()), m_length(input.length()) {}
 
         char peek(size_t count = 0) const {
@@ -236,8 +236,8 @@ namespace plutobook {
 
         CssTokenStream tokenize();
 
-        void reset(const std::string_view& input) {
-            m_input = CssTokenizerInputStream(m_input);
+        void reset(const std::string_view& input) noexcept {
+            m_input = CssTokenizerInputStream(input);
             m_tokenList.clear();
             m_stringList.clear();
         }

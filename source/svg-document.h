@@ -21,9 +21,7 @@ namespace plutobook {
 
         void parseAttribute(GlobalString name,
                             const HeapString& value) override;
-        void collectAttributeStyle(std::string& output,
-                                   GlobalString name,
-                                   const HeapString& value) const override;
+        void collectAttributeStyle(AttributeStyle& style) const override;
         void addProperty(GlobalString name, SvgProperty& value);
         SvgProperty* getProperty(GlobalString name) const;
         Size currentViewportSize() const;
@@ -106,9 +104,7 @@ namespace plutobook {
         void computeIntrinsicDimensions(float& intrinsicWidth,
                                         float& intrinsicHeight,
                                         double& intrinsicRatio);
-        void collectAttributeStyle(std::string& output,
-                                   GlobalString name,
-                                   const HeapString& value) const final;
+        void collectAttributeStyle(AttributeStyle& style) const final;
         Box* createBox(const RefPtr<BoxStyle>& style) final;
 
     private:
@@ -312,8 +308,7 @@ namespace plutobook {
 
     class SvgTextPositioningElement : public SvgGraphicsElement {
     public:
-        SvgTextPositioningElement(Document* document,
-                                  GlobalString tagName);
+        SvgTextPositioningElement(Document* document, GlobalString tagName);
 
         const SvgLengthList& x() const { return m_x; }
         const SvgLengthList& y() const { return m_y; }

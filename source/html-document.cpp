@@ -166,24 +166,14 @@ void HtmlElement::buildBox(Counters& counters, Box* parent)
     buildElementBox(counters, box);
 }
 
-static void addHtmlAttributeStyle(std::string& output, const std::string_view& name, const std::string_view& value)
+void HtmlElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    if(value.empty())
-        return;
-    output += name;
-    output += ':';
-    output += value;
-    output += ';';
-}
-
-void HtmlElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
-{
-    if(name == hiddenAttr) {
-        addHtmlAttributeStyle(output, "display", "none");
-    } else if(name == alignAttr) {
-        addHtmlAttributeStyle(output, "text-align", value);
-    } else {
-        Element::collectAttributeStyle(output, name, value);
+    Element::collectAttributeStyle(style);
+    if (hasAttribute(hiddenAttr)) {
+        style.addProperty(CssPropertyID::Display, CssValueID::None);
+    }
+    if (auto attr = findAttribute(alignAttr)) {
+        style.addProperty(CssPropertyID::TextAlign, attr->value());
     }
 }
 
@@ -216,46 +206,20 @@ Optional<T> HtmlElement::parseIntegerAttribute(GlobalString name) const
     return std::nullopt;
 }
 
-static void addHtmlLengthAttributeStyle(std::string& output, const std::string_view& name, const std::string_view& value)
+static void addHtmlLengthAttributeStyle(AttributeStyle& style, CssPropertyID id, std::string_view input)
 {
-    if(value.empty())
+    stripLeadingAndTrailingSpaces(input);
+    if(input.empty())
         return;
-    size_t index = 0;
-    while(index < value.length() && isSpace(value[index]))
-        ++index;
-    size_t begin = index;
-    while(index < value.length() && isDigit(value[index])) {
-        ++index;
-    }
-
-    if(index == begin)
+    float value;
+    const auto end = input.data() + input.size();
+    const auto [p, ec] = std::from_chars(input.data(), end, value);
+    if (ec != std::errc())
         return;
-    if(index < value.length() && value[index] == '.') {
-        ++index;
-        while(index < value.length() && isDigit(value[index])) {
-            ++index;
-        }
-    }
-
-    output += name;
-    output += ':';
-    output += value.substr(begin, index - begin);
-    if(index < value.length() && value[index] == '%') {
-        output += "%;";
-    } else {
-        output += "px;";
-    }
-}
-
-static void addHtmlLengthAttributeStyle(std::string& output, const std::string_view& name, int value)
-{
-    output += name;
-    output += ':';
-    output += toString(value);
-    if(value) {
-        output += "px;";
-    } else {
-        output += ';';
+    if (p == end) {
+        style.addProperty(id, CssLengthValue::create(value));
+    } else if (std::string_view(p, end) == "%") {
+        style.addProperty(id, CssPercentValue::create(value));
     }
 }
 
@@ -275,16 +239,17 @@ HtmlBodyElement::HtmlBodyElement(Document* document)
 {
 }
 
-void HtmlBodyElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
+void HtmlBodyElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    if(name == textAttr) {
-        addHtmlAttributeStyle(output, "color", value);
-    } else if(name == bgcolorAttr) {
-        addHtmlAttributeStyle(output, "background-color", value);
-    } else if(name == backgroundAttr) {
-        addHtmlUrlAttributeStyle(output, "background-image", value);
-    } else {
-        HtmlElement::collectAttributeStyle(output, name, value);
+    HtmlElement::collectAttributeStyle(style);
+    if (auto attr = findAttribute(textAttr)) {
+        style.addProperty(CssPropertyID::Color, attr->value());
+    }
+    if (auto attr = findAttribute(bgcolorAttr)) {
+        style.addProperty(CssPropertyID::BackgroundColor, attr->value());
+    }
+    if (auto attr = findAttribute(backgroundAttr)) {
+        style.addProperty(CssPropertyID::BackgroundImage, attr->value());
     }
 }
 
@@ -293,7 +258,7 @@ HtmlFontElement::HtmlFontElement(Document* document)
 {
 }
 
-static void addHtmlFontSizeAttributeStyle(std::string& output, std::string_view input)
+static Optional<CssValueID> parseHtmlFontSizeAttribute(std::string_view input)
 {
     bool hasPlusSign = false;
     bool hasMinusSign = false;
@@ -307,7 +272,7 @@ static void addHtmlFontSizeAttributeStyle(std::string& output, std::string_view 
     }
 
     if(input.empty() || !isDigit(input.front()))
-        return;
+        return std::nullopt;
     int value = 0;
     do {
         value = value * 10 + input.front() - '0';
@@ -326,44 +291,39 @@ static void addHtmlFontSizeAttributeStyle(std::string& output, std::string_view 
         value = 1;
     }
 
-    output += "font-size:";
     switch(value) {
     case 1:
-        output += "x-small;";
-        break;
+        return CssValueID::XSmall;
     case 2:
-        output += "small;";
-        break;
+        return CssValueID::Small;
     case 3:
-        output += "medium;";
-        break;
+        return CssValueID::Medium;
     case 4:
-        output += "large;";
-        break;
+        return CssValueID::Large;
     case 5:
-        output += "x-large;";
-        break;
+        return CssValueID::XLarge;
     case 6:
-        output += "xx-large;";
-        break;
+        return CssValueID::XxLarge;
     case 7:
-        output += "xxx-large;";
-        break;
+        return CssValueID::XxxLarge;
     default:
-        assert(false);
+        std::unreachable();
     }
 }
 
-void HtmlFontElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
+void HtmlFontElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    if(name == sizeAttr) {
-        addHtmlFontSizeAttributeStyle(output, value);
-    } else if(name == faceAttr) {
-        addHtmlAttributeStyle(output, "font-family", value);
-    } else if(name == colorAttr) {
-        addHtmlAttributeStyle(output, "color", value);
-    } else {
-        HtmlElement::collectAttributeStyle(output, name, value);
+    HtmlElement::collectAttributeStyle(style);
+    if (auto attr = findAttribute(sizeAttr)) {
+        if (auto fontSize = parseHtmlFontSizeAttribute(attr->value())) {
+            style.addProperty(CssPropertyID::FontSize, *fontSize);
+        }
+    }
+    if (auto attr = findAttribute(faceAttr)) {
+        style.addProperty(CssPropertyID::FontFamily, attr->value());
+    }
+    if (auto attr = findAttribute(colorAttr)) {
+        style.addProperty(CssPropertyID::Color, attr->value());
     }
 }
 
@@ -372,25 +332,29 @@ HtmlImageElement::HtmlImageElement(Document* document)
 {
 }
 
-void HtmlImageElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
+void HtmlImageElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    if(name == widthAttr) {
-        addHtmlLengthAttributeStyle(output, "width", value);
-    } else if(name == heightAttr) {
-        addHtmlLengthAttributeStyle(output, "height", value);
-    } else if(name == hspaceAttr) {
-        addHtmlLengthAttributeStyle(output, "margin-left", value);
-        addHtmlLengthAttributeStyle(output, "margin-right", value);
-    } else if(name == vspaceAttr) {
-        addHtmlLengthAttributeStyle(output, "margin-top", value);
-        addHtmlLengthAttributeStyle(output, "margin-bottom", value);
-    } else if(name == borderAttr) {
-        addHtmlLengthAttributeStyle(output, "border-width", value);
-        addHtmlAttributeStyle(output, "border-style", "solid");
-    } else if(name == valignAttr) {
-        addHtmlAttributeStyle(output, "vertical-align", value);
-    } else {
-        HtmlElement::collectAttributeStyle(output, name, value);
+    HtmlElement::collectAttributeStyle(style);
+    if (auto attr = findAttribute(widthAttr)) {
+        addHtmlLengthAttributeStyle(style, CssPropertyID::Width, attr->value());
+    }
+    if (auto attr = findAttribute(heightAttr)) {
+        addHtmlLengthAttributeStyle(style, CssPropertyID::Height, attr->value());
+    }
+    if (auto attr = findAttribute(hspaceAttr)) {
+        addHtmlLengthAttributeStyle(style, CssPropertyID::MarginLeft, attr->value());
+        addHtmlLengthAttributeStyle(style, CssPropertyID::MarginRight, attr->value());
+    }
+    if (auto attr = findAttribute(vspaceAttr)) {
+        addHtmlLengthAttributeStyle(style, CssPropertyID::MarginTop, attr->value());
+        addHtmlLengthAttributeStyle(style, CssPropertyID::MarginBottom, attr->value());
+    }
+    if (auto attr = findAttribute(borderAttr)) {
+        addHtmlLengthAttributeStyle(style, CssPropertyID::BorderWidth, attr->value());
+        style.addProperty(CssPropertyID::BorderStyle, CssValueID::Solid);
+    }
+    if (auto attr = findAttribute(valignAttr)) {
+        style.addProperty(CssPropertyID::VerticalAlign, attr->value());
     }
 }
 
@@ -431,38 +395,42 @@ HtmlHrElement::HtmlHrElement(Document* document)
 {
 }
 
-void HtmlHrElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
+void HtmlHrElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    if(name == widthAttr) {
-        addHtmlLengthAttributeStyle(output, "width", value);
-    } else if(name == sizeAttr) {
-        auto size = parseHtmlInteger<int>(value);
-        if(size && size.value() > 1) {
-            addHtmlLengthAttributeStyle(output, "height", size.value() - 2);
+    HtmlElement::collectAttributeStyle(style);
+    if (auto attr = findAttribute(widthAttr)) {
+        addHtmlLengthAttributeStyle(style, CssPropertyID::Width, attr->value());
+    }
+    if (auto attr = findAttribute(sizeAttr)) {
+        const auto size = parseHtmlInteger<int>(attr->value()).value_or(0);
+        if(size > 1) {
+            style.addProperty(CssPropertyID::Height, CssLengthValue::create(size - 2));
         } else {
-            addHtmlLengthAttributeStyle(output, "border-bottom-width", 0);
+            style.addProperty(CssPropertyID::BorderBottomWidth, CssLengthValue::create(0));
         }
-    } else if(name == alignAttr) {
-        if(equalsIgnoringCase(value, "left")) {
-            addHtmlLengthAttributeStyle(output, "margin-left", 0);
-            addHtmlAttributeStyle(output, "margin-right", "auto");
-        } else if(equalsIgnoringCase(value, "right")) {
-            addHtmlAttributeStyle(output, "margin-left", "auto");
-            addHtmlLengthAttributeStyle(output, "margin-right", 0);
+    }
+    if (auto attr = findAttribute(alignAttr)) {
+        if (equalsIgnoringCase(attr->value(), "left")) {
+            style.addProperty(CssPropertyID::MarginLeft, CssLengthValue::create(0));
+            style.addProperty(CssPropertyID::MarginRight, CssValueID::Auto);
+        } else if (equalsIgnoringCase(attr->value(), "right")) {
+            style.addProperty(CssPropertyID::MarginLeft, CssValueID::Auto);
+            style.addProperty(CssPropertyID::MarginRight, CssLengthValue::create(0));
         } else {
-            addHtmlAttributeStyle(output, "margin-left", "auto");
-            addHtmlAttributeStyle(output, "margin-right", "auto");
+            style.addProperty(CssPropertyID::MarginLeft, CssValueID::Auto);
+            style.addProperty(CssPropertyID::MarginRight, CssValueID::Auto);
         }
-    } else if(name == colorAttr) {
-        addHtmlAttributeStyle(output, "border-style", "solid");
-        addHtmlAttributeStyle(output, "border-color", value);
-        addHtmlAttributeStyle(output, "background-color", value);
-    } else if(name == noshadeAttr) {
-        addHtmlAttributeStyle(output, "border-style", "solid");
-        addHtmlAttributeStyle(output, "border-color", "darkgray");
-        addHtmlAttributeStyle(output, "background-color", "darkgray");
-    } else {
-        HtmlElement::collectAttributeStyle(output, name, value);
+    }
+    if (auto attr = findAttribute(colorAttr)) {
+        style.addProperty(CssPropertyID::BorderStyle, CssValueID::Solid);
+        style.addProperty(CssPropertyID::BorderColor, attr->value());
+        style.addProperty(CssPropertyID::BackgroundColor, attr->value());
+    }
+    if (hasAttribute(noshadeAttr)) {
+        style.addProperty(CssPropertyID::BorderStyle, CssValueID::Solid);
+        const auto darkGray = CssColorValue::create(*Color::named("darkgray"));
+        style.addProperty(CssPropertyID::BorderColor, darkGray);
+        style.addProperty(CssPropertyID::BackgroundColor, darkGray);
     }
 }
 
@@ -513,12 +481,11 @@ std::string_view listTypeAttributeToStyleName(const std::string_view& value)
     return value;
 }
 
-void HtmlLiElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
+void HtmlLiElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    if(name == typeAttr) {
-        addHtmlAttributeStyle(output, "list-style-type", listTypeAttributeToStyleName(value));
-    } else {
-        HtmlElement::collectAttributeStyle(output, name, value);
+    HtmlElement::collectAttributeStyle(style);
+    if (auto attr = findAttribute(typeAttr)) {
+        style.addProperty(CssPropertyID::ListStyleType, listTypeAttributeToStyleName(attr->value()));
     }
 }
 
@@ -532,12 +499,11 @@ int HtmlOlElement::start() const
     return parseIntegerAttribute<int>(startAttr).value_or(1);
 }
 
-void HtmlOlElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
+void HtmlOlElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    if(name == typeAttr) {
-        addHtmlAttributeStyle(output, "list-style-type", listTypeAttributeToStyleName(value));
-    } else {
-        HtmlElement::collectAttributeStyle(output, name, value);
+    HtmlElement::collectAttributeStyle(style);
+    if (auto attr = findAttribute(typeAttr)) {
+        style.addProperty(CssPropertyID::ListStyleType, listTypeAttributeToStyleName(attr->value()));
     }
 }
 
@@ -561,35 +527,43 @@ void HtmlTableElement::parseAttribute(GlobalString name, const HeapString& value
     }
 }
 
-void HtmlTableElement::collectAdditionalCellAttributeStyle(std::string& output) const
+void HtmlTableElement::collectAdditionalCellAttributeStyle(AttributeStyle& style) const
 {
     if(m_padding > 0) {
-        addHtmlLengthAttributeStyle(output, "padding", m_padding);
+        style.addProperty(CssPropertyID::Padding, CssLengthValue::create(m_padding));
     }
 
     if(m_border > 0 && m_rules == Rules::Unset) {
-        addHtmlAttributeStyle(output, "border-width", "inset");
-        addHtmlAttributeStyle(output, "border-style", "solid");
-        addHtmlAttributeStyle(output, "border-color", "inherit");
+        style.addProperty(CssPropertyID::BorderWidth, CssValueID::Inset);
+        style.addProperty(CssPropertyID::BorderStyle, CssValueID::Solid);
+        style.addProperty(CssPropertyID::BorderColor, CssInheritValue::create());
     } else {
         switch(m_rules) {
         case Rules::Rows:
-            addHtmlAttributeStyle(output, "border-top-width", "thin");
-            addHtmlAttributeStyle(output, "border-bottom-width", "thin");
-            addHtmlAttributeStyle(output, "border-top-style", "solid");
-            addHtmlAttributeStyle(output, "border-bottom-style", "solid");
-            addHtmlAttributeStyle(output, "border-color", "inherit");
+            style.addProperty(CssPropertyID::BorderTopWidth, CssValueID::Thin);
+            style.addProperty(CssPropertyID::BorderBottomWidth,
+                              CssValueID::Thin);
+            style.addProperty(CssPropertyID::BorderTopStyle, CssValueID::Solid);
+            style.addProperty(CssPropertyID::BorderBottomStyle,
+                              CssValueID::Solid);
+            style.addProperty(CssPropertyID::BorderColor,
+                              CssInheritValue::create());
         case Rules::Cols:
-            addHtmlAttributeStyle(output, "border-left-width", "thin");
-            addHtmlAttributeStyle(output, "border-right-width", "thin");
-            addHtmlAttributeStyle(output, "border-left-style", "solid");
-            addHtmlAttributeStyle(output, "border-right-style", "solid");
-            addHtmlAttributeStyle(output, "border-color", "inherit");
+            style.addProperty(CssPropertyID::BorderLeftWidth, CssValueID::Thin);
+            style.addProperty(CssPropertyID::BorderRightWidth,
+                              CssValueID::Thin);
+            style.addProperty(CssPropertyID::BorderLeftStyle,
+                              CssValueID::Solid);
+            style.addProperty(CssPropertyID::BorderRightStyle,
+                              CssValueID::Solid);
+            style.addProperty(CssPropertyID::BorderColor,
+                              CssInheritValue::create());
             break;
         case Rules::All:
-            addHtmlAttributeStyle(output, "border-width", "thin");
-            addHtmlAttributeStyle(output, "border-style", "solid");
-            addHtmlAttributeStyle(output, "border-color", "inherit");
+            style.addProperty(CssPropertyID::BorderWidth, CssValueID::Thin);
+            style.addProperty(CssPropertyID::BorderStyle, CssValueID::Solid);
+            style.addProperty(CssPropertyID::BorderColor,
+                              CssInheritValue::create());
             break;
         default:
             break;
@@ -597,100 +571,111 @@ void HtmlTableElement::collectAdditionalCellAttributeStyle(std::string& output) 
     }
 }
 
-void HtmlTableElement::collectAdditionalRowGroupAttributeStyle(std::string& output) const
+void HtmlTableElement::collectAdditionalRowGroupAttributeStyle(AttributeStyle& style) const
 {
     if(m_rules == Rules::Groups) {
-        addHtmlAttributeStyle(output, "border-top-width", "thin");
-        addHtmlAttributeStyle(output, "border-bottom-width", "thin");
-        addHtmlAttributeStyle(output, "border-top-style", "solid");
-        addHtmlAttributeStyle(output, "border-bottom-style", "solid");
+        style.addProperty(CssPropertyID::BorderTopWidth, CssValueID::Thin);
+        style.addProperty(CssPropertyID::BorderBottomWidth,
+            CssValueID::Thin);
+        style.addProperty(CssPropertyID::BorderTopStyle, CssValueID::Solid);
+        style.addProperty(CssPropertyID::BorderBottomStyle,
+            CssValueID::Solid);
     }
 }
 
-void HtmlTableElement::collectAdditionalColGroupAttributeStyle(std::string& output) const
+void HtmlTableElement::collectAdditionalColGroupAttributeStyle(AttributeStyle& style) const
 {
     if(m_rules == Rules::Groups) {
-        addHtmlAttributeStyle(output, "border-left-width", "thin");
-        addHtmlAttributeStyle(output, "border-right-width", "thin");
-        addHtmlAttributeStyle(output, "border-left-style", "solid");
-        addHtmlAttributeStyle(output, "border-right-style", "solid");
+        style.addProperty(CssPropertyID::BorderLeftWidth, CssValueID::Thin);
+        style.addProperty(CssPropertyID::BorderRightWidth,
+            CssValueID::Thin);
+        style.addProperty(CssPropertyID::BorderLeftStyle,
+            CssValueID::Solid);
+        style.addProperty(CssPropertyID::BorderRightStyle,
+            CssValueID::Solid);
     }
 }
 
-void HtmlTableElement::collectAdditionalAttributeStyle(std::string& output) const
+void HtmlTableElement::collectAdditionalAttributeStyle(AttributeStyle& style) const
 {
-    HtmlElement::collectAdditionalAttributeStyle(output);
-    if(m_rules > Rules::Unset) {
-        addHtmlAttributeStyle(output, "border-collapse", "collapse");
+    if (m_rules > Rules::Unset) {
+        style.addProperty(CssPropertyID::BorderCollapse, CssValueID::Collapse);
     }
 
-    if(m_frame > Frame::Unset) {
-        auto topStyle = "hidden";
-        auto bottomStyle = "hidden";
-        auto leftStyle = "hidden";
-        auto rightStyle = "hidden";
-        switch(m_frame) {
+    if (m_frame > Frame::Unset) {
+        auto topStyle = CssValueID::Hidden;
+        auto bottomStyle = CssValueID::Hidden;
+        auto leftStyle = CssValueID::Hidden;
+        auto rightStyle = CssValueID::Hidden;
+        switch (m_frame) {
         case Frame::Above:
-            topStyle = "solid";
+            topStyle = CssValueID::Solid;
             break;
         case Frame::Below:
-            bottomStyle = "solid";
+            bottomStyle = CssValueID::Solid;
             break;
         case Frame::Hsides:
-            topStyle = bottomStyle = "solid";
+            topStyle = bottomStyle = CssValueID::Solid;
             break;
         case Frame::Lhs:
-            leftStyle = "solid";
+            leftStyle = CssValueID::Solid;
             break;
         case Frame::Rhs:
-            rightStyle = "solid";
+            rightStyle = CssValueID::Solid;
             break;
         case Frame::Vsides:
-            leftStyle = rightStyle = "solid";
+            leftStyle = rightStyle = CssValueID::Solid;
             break;
         case Frame::Box:
         case Frame::Border:
-            topStyle = bottomStyle = "solid";
-            leftStyle = rightStyle = "solid";
+            topStyle = bottomStyle = CssValueID::Solid;
+            leftStyle = rightStyle = CssValueID::Solid;
             break;
         default:
             break;
         }
 
-        addHtmlAttributeStyle(output, "border-width", "thin");
-        addHtmlAttributeStyle(output, "border-top-style", topStyle);
-        addHtmlAttributeStyle(output, "border-bottom-style", bottomStyle);
-        addHtmlAttributeStyle(output, "border-left-style", leftStyle);
-        addHtmlAttributeStyle(output, "border-right-style", rightStyle);
+        style.addProperty(CssPropertyID::BorderWidth, CssValueID::Thin);
+        style.addProperty(CssPropertyID::BorderTopStyle, topStyle);
+        style.addProperty(CssPropertyID::BorderBottomStyle, bottomStyle);
+        style.addProperty(CssPropertyID::BorderLeftStyle, leftStyle);
+        style.addProperty(CssPropertyID::BorderRightStyle, rightStyle);
     } else {
-        if(m_border > 0) {
-            addHtmlLengthAttributeStyle(output, "border-width", m_border);
-            addHtmlAttributeStyle(output, "border-style", "outset");
-        } else if(m_rules > Rules::Unset) {
-            addHtmlAttributeStyle(output, "border-style", "hidden");
+        if (m_border > 0) {
+            style.addProperty(CssPropertyID::BorderWidth, CssLengthValue::create(m_border));
+            style.addProperty(CssPropertyID::BorderStyle, CssValueID::Outset);
+        } else if (m_rules > Rules::Unset) {
+            style.addProperty(CssPropertyID::BorderStyle, CssValueID::Hidden);
         }
     }
 }
 
-void HtmlTableElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
+void HtmlTableElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    if(name == widthAttr) {
-        addHtmlLengthAttributeStyle(output, "width", value);
-    } else if(name == heightAttr) {
-        addHtmlLengthAttributeStyle(output, "height", value);
-    } else if(name == valignAttr) {
-        addHtmlAttributeStyle(output, "vertical-align", value);
-    } else if(name == cellspacingAttr) {
-        addHtmlLengthAttributeStyle(output, "border-spacing", value);
-    } else if(name == bordercolorAttr) {
-        addHtmlAttributeStyle(output, "border-color", value);
-    } else if(name == bgcolorAttr) {
-        addHtmlAttributeStyle(output, "background-color", value);
-    } else if(name == backgroundAttr) {
-        addHtmlUrlAttributeStyle(output, "background-image", value);
-    } else {
-        HtmlElement::collectAttributeStyle(output, name, value);
+    HtmlElement::collectAttributeStyle(style);
+    if (auto attr = findAttribute(widthAttr)) {
+        addHtmlLengthAttributeStyle(style, CssPropertyID::Width, attr->value());
     }
+    if (auto attr = findAttribute(heightAttr)) {
+        addHtmlLengthAttributeStyle(style, CssPropertyID::Height, attr->value());
+    }
+    if (auto attr = findAttribute(valignAttr)) {
+        style.addProperty(CssPropertyID::VerticalAlign, attr->value());
+    }
+    if (auto attr = findAttribute(cellspacingAttr)) {
+        addHtmlLengthAttributeStyle(style, CssPropertyID::BorderSpacing, attr->value());
+    }
+    if (auto attr = findAttribute(bordercolorAttr)) {
+        style.addProperty(CssPropertyID::BorderColor, attr->value());
+    }
+    if (auto attr = findAttribute(bgcolorAttr)) {
+        style.addProperty(CssPropertyID::BackgroundColor, attr->value());
+    }
+    if (auto attr = findAttribute(backgroundAttr)) {
+        style.addProperty(CssPropertyID::BackgroundImage, attr->value());
+    }
+
+    collectAdditionalAttributeStyle(style);
 }
 
 HtmlTableElement::Rules HtmlTableElement::parseRulesAttribute(std::string_view value)
@@ -744,18 +729,20 @@ HtmlTableElement* HtmlTablePartElement::findParentTable() const
     return static_cast<HtmlTableElement*>(parent);
 }
 
-void HtmlTablePartElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
+void HtmlTablePartElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    if(name == heightAttr) {
-        addHtmlLengthAttributeStyle(output, "height", value);
-    } else if(name == valignAttr) {
-        addHtmlAttributeStyle(output, "vertical-align", value);
-    } else if(name == bgcolorAttr) {
-        addHtmlAttributeStyle(output, "background-color", value);
-    } else if(name == backgroundAttr) {
-        addHtmlUrlAttributeStyle(output, "background-image", value);
-    } else {
-        HtmlElement::collectAttributeStyle(output, name, value);
+    HtmlElement::collectAttributeStyle(style);
+    if (auto attr = findAttribute(heightAttr)) {
+        addHtmlLengthAttributeStyle(style, CssPropertyID::Height, attr->value());
+    }
+    if (auto attr = findAttribute(valignAttr)) {
+        style.addProperty(CssPropertyID::VerticalAlign, attr->value());
+    }
+    if (auto attr = findAttribute(bgcolorAttr)) {
+        style.addProperty(CssPropertyID::BackgroundColor, attr->value());
+    }
+    if (auto attr = findAttribute(backgroundAttr)) {
+        style.addProperty(CssPropertyID::BackgroundImage, attr->value());
     }
 }
 
@@ -764,11 +751,11 @@ HtmlTableSectionElement::HtmlTableSectionElement(Document* document, GlobalStrin
 {
 }
 
-void HtmlTableSectionElement::collectAdditionalAttributeStyle(std::string& output) const
+void HtmlTableSectionElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    HtmlTablePartElement::collectAdditionalAttributeStyle(output);
+    HtmlTablePartElement::collectAttributeStyle(style);
     if(auto table = findParentTable()) {
-        table->collectAdditionalRowGroupAttributeStyle(output);
+        table->collectAdditionalRowGroupAttributeStyle(style);
     }
 }
 
@@ -787,12 +774,12 @@ unsigned HtmlTableColElement::span() const
     return parseIntegerAttribute<unsigned>(spanAttr).value_or(1);
 }
 
-void HtmlTableColElement::collectAdditionalAttributeStyle(std::string& output) const
+void HtmlTableColElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    HtmlTablePartElement::collectAdditionalAttributeStyle(output);
+    HtmlTablePartElement::collectAttributeStyle(style);
     if(tagName() == colgroupTag) {
         if(auto table = findParentTable()) {
-            table->collectAdditionalColGroupAttributeStyle(output);
+            table->collectAdditionalColGroupAttributeStyle(style);
         }
     }
 }
@@ -820,11 +807,11 @@ unsigned HtmlTableCellElement::rowSpan() const
     return parseIntegerAttribute<unsigned>(rowspanAttr).value_or(1);
 }
 
-void HtmlTableCellElement::collectAdditionalAttributeStyle(std::string& output) const
+void HtmlTableCellElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    HtmlTablePartElement::collectAdditionalAttributeStyle(output);
+    HtmlTablePartElement::collectAttributeStyle(style);
     if(auto table = findParentTable()) {
-        table->collectAdditionalCellAttributeStyle(output);
+        table->collectAdditionalCellAttributeStyle(style);
     }
 }
 

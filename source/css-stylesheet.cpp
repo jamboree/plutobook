@@ -486,7 +486,9 @@ private:
 RefPtr<BoxStyle> ElementStyleBuilder::build()
 {
     if(m_pseudoType == PseudoType::None) {
-        merge(0, 0, m_element->presentationAttributeStyle());
+        AttributeStyle attrStyle(m_element);
+        m_element->collectAttributeStyle(attrStyle);
+        merge(0, 0, attrStyle.properties());
         merge(0, 0, m_element->inlineStyle());
     }
 

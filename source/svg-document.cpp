@@ -3,6 +3,7 @@
 #include "svg-resource-box.h"
 #include "svg-geometry-box.h"
 #include "svg-text-box.h"
+#include "css-rule.h"
 #include "image-resource.h"
 #include "string-utils.h"
 
@@ -24,71 +25,61 @@ void SvgElement::parseAttribute(GlobalString name, const HeapString& value)
     }
 }
 
-static void addSvgAttributeStyle(std::string& output, const std::string_view& name, const std::string_view& value)
+void SvgElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    if(value.empty())
-        return;
-    output += name;
-    output += ':';
-    output += value;
-    output += ';';
-}
-
-void SvgElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
-{
-    static const boost::unordered_flat_set<GlobalString> presentationAttrs = {
-        "alignment-baseline"_glo,
-        "baseline-shift"_glo,
-        "clip"_glo,
-        "clip-path"_glo,
-        "clip-rule"_glo,
-        "color"_glo,
-        "direction"_glo,
-        "display"_glo,
-        "dominant-baseline"_glo,
-        "fill"_glo,
-        "fill-opacity"_glo,
-        "fill-rule"_glo,
-        "font-family"_glo,
-        "font-size"_glo,
-        "font-stretch"_glo,
-        "font-style"_glo,
-        "font-variant"_glo,
-        "font-weight"_glo,
-        "letter-spacing"_glo,
-        "marker-end"_glo,
-        "marker-mid"_glo,
-        "marker-start"_glo,
-        "mask"_glo,
-        "mask-type"_glo,
-        "opacity"_glo,
-        "overflow"_glo,
-        "paint-order"_glo,
-        "stop-color"_glo,
-        "stop-opacity"_glo,
-        "stroke"_glo,
-        "stroke-dasharray"_glo,
-        "stroke-dashoffset"_glo,
-        "stroke-linecap"_glo,
-        "stroke-linejoin"_glo,
-        "stroke-miterlimit"_glo,
-        "stroke-opacity"_glo,
-        "stroke-width"_glo,
-        "text-anchor"_glo,
-        "text-decoration"_glo,
-        "text-orientation"_glo,
-        "transform-origin"_glo,
-        "unicode-bidi"_glo,
-        "vector-effect"_glo,
-        "visibility"_glo,
-        "word-spacing"_glo,
-        "writing-mode"_glo
-    };
-
-    if(presentationAttrs.contains(name)) {
-        addSvgAttributeStyle(output, name, value);
-    } else {
-        Element::collectAttributeStyle(output, name, value);
+    Element::collectAttributeStyle(style);
+    for (const auto& attr : attributes()) {
+        const auto id = csspropertyid(attr.name());
+        switch (id) {
+        case CssPropertyID::AlignmentBaseline:
+        case CssPropertyID::BaselineShift:
+        case CssPropertyID::Clip:
+        case CssPropertyID::ClipPath:
+        case CssPropertyID::ClipRule:
+        case CssPropertyID::Color:
+        case CssPropertyID::Direction:
+        case CssPropertyID::Display:
+        case CssPropertyID::DominantBaseline:
+        case CssPropertyID::Fill:
+        case CssPropertyID::FillOpacity:
+        case CssPropertyID::FillRule:
+        case CssPropertyID::FontFamily:
+        case CssPropertyID::FontSize:
+        case CssPropertyID::FontStretch:
+        case CssPropertyID::FontStyle:
+        case CssPropertyID::FontVariant:
+        case CssPropertyID::FontWeight:
+        case CssPropertyID::LetterSpacing:
+        case CssPropertyID::MarkerEnd:
+        case CssPropertyID::MarkerMid:
+        case CssPropertyID::MarkerStart:
+        case CssPropertyID::Mask:
+        case CssPropertyID::MaskType:
+        case CssPropertyID::Opacity:
+        case CssPropertyID::Overflow:
+        case CssPropertyID::PaintOrder:
+        case CssPropertyID::StopColor:
+        case CssPropertyID::StopOpacity:
+        case CssPropertyID::Stroke:
+        case CssPropertyID::StrokeDasharray:
+        case CssPropertyID::StrokeDashoffset:
+        case CssPropertyID::StrokeLinecap:
+        case CssPropertyID::StrokeLinejoin:
+        case CssPropertyID::StrokeMiterlimit:
+        case CssPropertyID::StrokeOpacity:
+        case CssPropertyID::StrokeWidth:
+        case CssPropertyID::TextAnchor:
+        case CssPropertyID::TextDecoration:
+        case CssPropertyID::TextOrientation:
+        case CssPropertyID::TransformOrigin:
+        case CssPropertyID::UnicodeBidi:
+        case CssPropertyID::VectorEffect:
+        case CssPropertyID::Visibility:
+        case CssPropertyID::WordSpacing:
+        case CssPropertyID::WritingMode:
+            style.addProperty(id, attr.value());
+            break;
+        }
     }
 }
 
@@ -257,31 +248,28 @@ void SvgSvgElement::computeIntrinsicDimensions(float& intrinsicWidth, float& int
     }
 }
 
-static void addSvgTransformAttributeStyle(std::string& output, const Transform& matrix)
+void SvgSvgElement::collectAttributeStyle(AttributeStyle& style) const
 {
-    output += "transform:matrix(";
-    output += toString(matrix.a);
-    output += ',';
-    output += toString(matrix.b);
-    output += ',';
-    output += toString(matrix.c);
-    output += ',';
-    output += toString(matrix.d);
-    output += ',';
-    output += toString(matrix.e);
-    output += ',';
-    output += toString(matrix.f);
-    output += ");";
-}
-
-void SvgSvgElement::collectAttributeStyle(std::string& output, GlobalString name, const HeapString& value) const
-{
-    if(name == transformAttr && isSvgRootNode()) {
-        addSvgTransformAttributeStyle(output, transform());
-    } else if(isSvgRootNode() && (name == widthAttr || name == heightAttr)) {
-        addSvgAttributeStyle(output, name, value);
-    } else {
-        SvgElement::collectAttributeStyle(output, name, value);
+    SvgElement::collectAttributeStyle(style);
+    if (isSvgRootNode()) {
+        if (hasAttribute(transformAttr)) {
+            const auto matrix = transform();
+            style.addProperty(CssPropertyID::Transform,
+                CssFunctionValue::create(CssFunctionID::Matrix, {
+                    CssNumberValue::create(matrix.a),
+                    CssNumberValue::create(matrix.b),
+                    CssNumberValue::create(matrix.c),
+                    CssNumberValue::create(matrix.d),
+                    CssNumberValue::create(matrix.e),
+                    CssNumberValue::create(matrix.f),
+                    }));
+        }
+        if (auto attr = findAttribute(widthAttr)) {
+            style.addProperty(CssPropertyID::Width, attr->value());
+        }
+        if (auto attr = findAttribute(heightAttr)) {
+            style.addProperty(CssPropertyID::Height, attr->value());
+        }
     }
 }
 
