@@ -581,16 +581,12 @@ float Document::height() const
 
 float Document::viewportWidth() const
 {
-    if(m_book)
-        return m_book->viewportWidth();
-    return 0.f;
+    return m_book ? m_book->viewportWidth() : 0.f;
 }
 
 float Document::viewportHeight() const
 {
-    if(m_book)
-        return m_book->viewportHeight();
-    return 0.f;
+    return m_book ? m_book->viewportHeight() : 0.f;
 }
 
 bool Document::setContainerSize(float containerWidth, float containerHeight)
@@ -850,6 +846,7 @@ bool Document::supportsMediaFeature(const CssMediaFeature& feature) const
 {
     const auto viewportWidth = m_book->viewportWidth();
     const auto viewportHeight = m_book->viewportHeight();
+
     if(feature.id() == CssPropertyID::Orientation) {
         const auto& orientation = to<CssIdentValue>(*feature.value());
         if(orientation.value() == CssValueID::Portrait)
@@ -857,22 +854,17 @@ bool Document::supportsMediaFeature(const CssMediaFeature& feature) const
         assert(orientation.value() == CssValueID::Landscape);
         return viewportWidth > viewportHeight;
     }
-
-    const auto value = CssLengthResolver(this, nullptr).resolveLength(*feature.value());
-    if(feature.id() == CssPropertyID::Width)
-        return viewportWidth == value;
-    if(feature.id() == CssPropertyID::MinWidth)
-        return viewportWidth >= value;
-    if(feature.id() == CssPropertyID::MaxWidth) {
-        return viewportWidth <= value;
+    const auto value =
+        CssLengthResolver(this, nullptr).resolveLength(*feature.value());
+    switch (feature.id()) {
+    case CssPropertyID::Width: return viewportWidth == value;
+    case CssPropertyID::MinWidth: return viewportWidth >= value;
+    case CssPropertyID::MaxWidth: return viewportWidth <= value;
+    case CssPropertyID::Height: return viewportHeight == value;
+    case CssPropertyID::MinHeight: return viewportHeight >= value;
+    case CssPropertyID::MaxHeight: return viewportHeight <= value;
+    default: std::unreachable();
     }
-
-    if(feature.id() == CssPropertyID::Height)
-        return viewportHeight == value;
-    if(feature.id() == CssPropertyID::MinHeight)
-        return viewportHeight >= value;
-    assert(feature.id() == CssPropertyID::MaxHeight);
-    return viewportHeight <= value;
 }
 
 bool Document::supportsMediaFeatures(const CssMediaFeatureList& features) const
