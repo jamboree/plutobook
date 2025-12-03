@@ -635,7 +635,7 @@ void PageLayout::layout()
     auto book = m_document->book();
     auto box = m_document->box();
 
-    auto pageStyle = m_document->styleForPage(emptyGlo, 0, PseudoType::FirstPage);
+    auto pageStyle = m_document->styleSheet().styleForPage(emptyGlo, 0, PseudoType::FirstPage);
     auto pageSize = pageStyle->getPageSize(book->pageSize());
     auto pageScale = pageStyle->pageScale();
 
@@ -671,7 +671,7 @@ void PageLayout::layout()
     if(m_document->containerHeight() > 0.f) {
         Counters counters(m_document, std::ceil(m_document->height() / m_document->containerHeight()));
         for(uint32_t pageIndex = 0; pageIndex < counters.pageCount(); ++pageIndex) {
-            if(pageIndex > 0) pageStyle = m_document->styleForPage(emptyGlo, pageIndex, pagePseudoType(pageIndex));
+            if(pageIndex > 0) pageStyle = m_document->styleSheet().styleForPage(emptyGlo, pageIndex, pagePseudoType(pageIndex));
             auto pageBox = PageBox::create(pageStyle, emptyGlo, pageIndex, pageWidth, pageHeight, pageScaleFactor);
 
             pageBox->setX(marginLeft);
@@ -698,7 +698,7 @@ void PageLayout::layout()
 
 void PageLayout::buildPageMargin(const Counters& counters, PageBox* pageBox, PageMarginType marginType)
 {
-    auto marginStyle = m_document->styleForPageMargin(pageBox->pageName(), pageBox->pageIndex(), marginType, pageBox->style());
+    auto marginStyle = m_document->styleSheet().styleForPageMargin(pageBox->pageName(), pageBox->pageIndex(), marginType, pageBox->style());
     if(marginStyle == nullptr) {
         return;
     }

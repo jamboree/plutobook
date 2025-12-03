@@ -351,7 +351,7 @@ const Attribute* Element::findAttributePossiblyIgnoringCase(GlobalString name) c
     if(m_isCaseSensitive)
         return findAttribute(name);
     for(const auto& attribute : m_attributes) {
-        if(equalsIgnoringCase(name, attribute.name())) {
+        if(name == attribute.name()) {
             return &attribute;
         }
     }
@@ -520,14 +520,13 @@ Box* Element::createBox(const RefPtr<BoxStyle>& style)
 
 void Element::buildBox(Counters& counters, Box* parent)
 {
-    auto style = document()->styleForElement(this, parent->style());
+    auto style = document()->styleSheet().styleForElement(this, parent->style());
     if(style == nullptr || style->display() == Display::None)
         return;
-    auto box = createBox(style);
-    if(box == nullptr)
-        return;
-    parent->addChild(box);
-    buildChildrenBox(counters, box);
+    if (auto box = createBox(style)) {
+        parent->addChild(box);
+        buildChildrenBox(counters, box);
+    }
 }
 
 void Element::finishParsingDocument()
@@ -613,97 +612,108 @@ TextNode* Document::createTextNode(const std::string_view& value)
 Element* Document::createElement(GlobalString namespaceURI, GlobalString tagName)
 {
     if(namespaceURI == xhtmlNs) {
-        if(tagName == bodyTag)
+        switch (tagName.asId()) {
+        case bodyTag:
             return new HtmlBodyElement(this);
-        if(tagName == fontTag)
+        case fontTag:
             return new HtmlFontElement(this);
-        if(tagName == imgTag)
+        case imgTag:
             return new HtmlImageElement(this);
-        if(tagName == hrTag)
+        case hrTag:
             return new HtmlHrElement(this);
-        if(tagName == brTag)
+        case brTag:
             return new HtmlBrElement(this);
-        if(tagName == wbrTag)
+        case wbrTag:
             return new HtmlWbrElement(this);
-        if(tagName == liTag)
+        case liTag:
             return new HtmlLiElement(this);
-        if(tagName == olTag)
+        case olTag:
             return new HtmlOlElement(this);
-        if(tagName == tableTag)
+        case tableTag:
             return new HtmlTableElement(this);
-        if(tagName == theadTag || tagName == tbodyTag || tagName == tfootTag)
+        case theadTag:
+        case tbodyTag:
+        case tfootTag:
             return new HtmlTableSectionElement(this, tagName);
-        if(tagName == trTag)
+        case trTag:
             return new HtmlTableRowElement(this);
-        if(tagName == colTag || tagName == colgroupTag)
+        case colTag:
+        case colgroupTag:
             return new HtmlTableColElement(this, tagName);
-        if(tagName == tdTag || tagName == thTag)
+        case tdTag:
+        case thTag:
             return new HtmlTableCellElement(this, tagName);
-        if(tagName == inputTag)
+        case inputTag:
             return new HtmlInputElement(this);
-        if(tagName == textareaTag)
+        case textareaTag:
             return new HtmlTextAreaElement(this);
-        if(tagName == selectTag)
+        case selectTag:
             return new HtmlSelectElement(this);
-        if(tagName == styleTag)
+        case styleTag:
             return new HtmlStyleElement(this);
-        if(tagName == linkTag)
+        case linkTag:
             return new HtmlLinkElement(this);
-        if(tagName == titleTag)
+        case titleTag:
             return new HtmlTitleElement(this);
-        if(tagName == baseTag)
+        case baseTag:
             return new HtmlBaseElement(this);
-        return new HtmlElement(this, tagName);
+        default:
+            return new HtmlElement(this, tagName);
+        }
     }
 
     if(namespaceURI == svgNs) {
-        if(tagName == svgTag)
+        switch (tagName.asId()) {
+        case svgTag:
             return new SvgSvgElement(this);
-        if(tagName == useTag)
+        case useTag:
             return new SvgUseElement(this);
-        if(tagName == imageTag)
+        case imageTag:
             return new SvgImageElement(this);
-        if(tagName == symbolTag)
+        case symbolTag:
             return new SvgSymbolElement(this);
-        if(tagName == aTag)
+        case aTag:
             return new SvgAElement(this);
-        if(tagName == gTag)
+        case gTag:
             return new SvgGElement(this);
-        if(tagName == defsTag)
+        case defsTag:
             return new SvgDefsElement(this);
-        if(tagName == lineTag)
+        case lineTag:
             return new SvgLineElement(this);
-        if(tagName == rectTag)
+        case rectTag:
             return new SvgRectElement(this);
-        if(tagName == circleTag)
+        case circleTag:
             return new SvgCircleElement(this);
-        if(tagName == ellipseTag)
+        case ellipseTag:
             return new SvgEllipseElement(this);
-        if(tagName == polylineTag || tagName == polygonTag)
+        case polylineTag:
+        case polygonTag:
             return new SvgPolyElement(this, tagName);
-        if(tagName == pathTag)
+        case pathTag:
             return new SvgPathElement(this);
-        if(tagName == tspanTag)
+        case tspanTag:
             return new SvgTSpanElement(this);
-        if(tagName == textTag)
+        case textTag:
             return new SvgTextElement(this);
-        if(tagName == markerTag)
+        case markerTag:
             return new SvgMarkerElement(this);
-        if(tagName == clipPathTag)
+        case clipPathTag:
             return new SvgClipPathElement(this);
-        if(tagName == maskTag)
+        case maskTag:
             return new SvgMaskElement(this);
-        if(tagName == patternTag)
+        case patternTag:
             return new SvgPatternElement(this);
-        if(tagName == stopTag)
+        case stopTag:
             return new SvgStopElement(this);
-        if(tagName == linearGradientTag)
+        case linearGradientTag:
             return new SvgLinearGradientElement(this);
-        if(tagName == radialGradientTag)
+        case radialGradientTag:
             return new SvgRadialGradientElement(this);
-        if(tagName == styleTag)
+        case styleTag:
             return new SvgStyleElement(this);
-        return new SvgElement(this, tagName);
+        default:
+            return new SvgElement(this, tagName);
+        }
     }
 
     return new Element(ClassKind::Element, this, namespaceURI, tagName);
@@ -804,19 +814,19 @@ HeapString Document::getCountersText(const CounterMap& counters, GlobalString na
 {
     auto it = counters.find(name);
     if(it == counters.end())
-        return createString(getCounterText(0, listStyle));
+        return createString(m_styleSheet.getCounterText(0, listStyle));
     if(separator.empty()) {
         int value = 0;
         if(!it->second.empty())
             value = it->second.back();
-        return createString(getCounterText(value, listStyle));
+        return createString(m_styleSheet.getCounterText(value, listStyle));
     }
 
     std::string text;
     for(auto value : it->second) {
         if(!text.empty())
             text += separator.value();
-        text += getCounterText(value, listStyle);
+        text += m_styleSheet.getCounterText(value, listStyle);
     }
 
     return createString(text);
@@ -914,41 +924,6 @@ bool Document::supportsMedia(const std::string_view& type, const std::string_vie
     }
 
     return false;
-}
-
-RefPtr<BoxStyle> Document::styleForElement(Element* element, const BoxStyle* parentStyle) const
-{
-    return m_styleSheet.styleForElement(element, parentStyle);
-}
-
-RefPtr<BoxStyle> Document::pseudoStyleForElement(Element* element, PseudoType pseudoType, const BoxStyle* parentStyle) const
-{
-    return m_styleSheet.pseudoStyleForElement(element, pseudoType, parentStyle);
-}
-
-RefPtr<BoxStyle> Document::styleForPage(GlobalString pageName, uint32_t pageIndex, PseudoType pseudoType) const
-{
-    return m_styleSheet.styleForPage(pageName, pageIndex, pseudoType);
-}
-
-RefPtr<BoxStyle> Document::styleForPageMargin(GlobalString pageName, uint32_t pageIndex, PageMarginType marginType, const BoxStyle* pageStyle) const
-{
-    return m_styleSheet.styleForPageMargin(pageName, pageIndex, marginType, pageStyle);
-}
-
-std::string Document::getCounterText(int value, GlobalString listType)
-{
-    return m_styleSheet.getCounterText(value, listType);
-}
-
-std::string Document::getMarkerText(int value, GlobalString listType)
-{
-    return m_styleSheet.getMarkerText(value, listType);
-}
-
-RefPtr<FontData> Document::getFontData(GlobalString family, const FontDataDescription& description)
-{
-    return m_styleSheet.getFontData(family, description);
 }
 
 RefPtr<Font> Document::createFont(const FontDescription& description)

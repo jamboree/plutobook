@@ -370,7 +370,7 @@ CssToken CssTokenizer::consumeIdentLikeToken()
     if(isUnicodeRangeSequence())
         return consumeUnicodeRangeToken();
     auto name = consumeName();
-    if(equals(name, "url", false) && m_input.peek() == '(') {
+    if(iequals(name, "url") && m_input.peek() == '(') {
         auto cc = m_input.consume();
         while(isSpace(cc)) {
             cc = m_input.consume();

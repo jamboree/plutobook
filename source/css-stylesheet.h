@@ -48,10 +48,8 @@ namespace plutobook {
 
     template<typename T>
     const CssRuleDataList* CssRuleDataMap<T>::get(const T& name) const {
-        auto it = m_table.find(name);
-        if (it == m_table.end())
-            return nullptr;
-        return &it->second;
+        const auto it = m_table.find(name);
+        return it == m_table.end() ? nullptr : &it->second;
     }
 
     class HeapString;

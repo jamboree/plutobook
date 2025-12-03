@@ -19,7 +19,7 @@ namespace plutobook {
         void parseAttribute(GlobalString name,
                             const HeapString& value) override;
         void collectAttributeStyle(AttributeStyle& style) const override;
-        virtual SvgProperty* getProperty(GlobalString name) {
+        virtual SvgPropertyPtr getProperty(GlobalString name) {
             return nullptr;
         }
         Size currentViewportSize() const;
@@ -74,7 +74,7 @@ namespace plutobook {
     public:
         SvgGraphicsElement(Document* document, GlobalString tagName);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const Transform& transform() const { return m_transform.value(); }
         SvgResourcePaintServerBox* getPainter(const std::string_view& id) const;
@@ -90,7 +90,7 @@ namespace plutobook {
     public:
         SvgSvgElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgLength& x() const { return m_x; }
         const SvgLength& y() const { return m_y; }
@@ -114,7 +114,7 @@ namespace plutobook {
     public:
         SvgUseElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgLength& x() const { return m_x; }
         const SvgLength& y() const { return m_y; }
@@ -138,7 +138,7 @@ namespace plutobook {
     public:
         SvgImageElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgLength& x() const { return m_x; }
         const SvgLength& y() const { return m_y; }
@@ -164,7 +164,7 @@ namespace plutobook {
     public:
         SvgSymbolElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         Box* createBox(const RefPtr<BoxStyle>& style) final;
     };
@@ -174,7 +174,7 @@ namespace plutobook {
     public:
         SvgAElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         Box* createBox(const RefPtr<BoxStyle>& style) final;
     };
@@ -206,7 +206,7 @@ namespace plutobook {
     public:
         SvgPathElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const Path& path() const { return m_d.value(); }
 
@@ -229,7 +229,7 @@ namespace plutobook {
     public:
         SvgLineElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgLength& x1() const { return m_x1; }
         const SvgLength& y1() const { return m_y1; }
@@ -249,7 +249,7 @@ namespace plutobook {
     public:
         SvgRectElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgLength& x() const { return m_x; }
         const SvgLength& y() const { return m_y; }
@@ -273,7 +273,7 @@ namespace plutobook {
     public:
         SvgEllipseElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgLength& cx() const { return m_cx; }
         const SvgLength& cy() const { return m_cy; }
@@ -293,7 +293,7 @@ namespace plutobook {
     public:
         SvgCircleElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgLength& cx() const { return m_cx; }
         const SvgLength& cy() const { return m_cy; }
@@ -311,7 +311,7 @@ namespace plutobook {
     public:
         SvgPolyElement(Document* document, GlobalString tagName);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgPointList& points() const { return m_points; }
 
@@ -325,7 +325,7 @@ namespace plutobook {
     public:
         SvgTextPositioningElement(Document* document, GlobalString tagName);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgLengthList& x() const { return m_x; }
         const SvgLengthList& y() const { return m_y; }
@@ -359,7 +359,7 @@ namespace plutobook {
     public:
         SvgMarkerElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgLength& refX() const { return m_refX; }
         const SvgLength& refY() const { return m_refY; }
@@ -384,7 +384,7 @@ namespace plutobook {
     public:
         SvgClipPathElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgUnitsType clipPathUnits() const {
             return m_clipPathUnits.value();
@@ -399,7 +399,7 @@ namespace plutobook {
     public:
         SvgMaskElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgLength& x() const { return m_x; }
         const SvgLength& y() const { return m_y; }
@@ -428,7 +428,7 @@ namespace plutobook {
     public:
         SvgPatternElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgLength& x() const { return m_x; }
         const SvgLength& y() const { return m_y; }
@@ -567,7 +567,7 @@ namespace plutobook {
     public:
         SvgStopElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const float offset() const { return m_offset.value(); }
         Color stopColorIncludingOpacity() const;
@@ -583,7 +583,7 @@ namespace plutobook {
     public:
         SvgGradientElement(Document* document, GlobalString tagName);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const Transform& gradientTransform() const {
             return m_gradientTransform.value();
@@ -667,7 +667,7 @@ namespace plutobook {
     public:
         SvgLinearGradientElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgLength& x1() const { return m_x1; }
         const SvgLength& y1() const { return m_y1; }
@@ -731,7 +731,7 @@ namespace plutobook {
     public:
         SvgRadialGradientElement(Document* document);
 
-        SvgProperty* getProperty(GlobalString name) override;
+        SvgPropertyPtr getProperty(GlobalString name) override;
 
         const SvgLength& cx() const { return m_cx; }
         const SvgLength& cy() const { return m_cy; }

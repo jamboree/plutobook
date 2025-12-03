@@ -1517,7 +1517,7 @@ bool BoxStyle::hasColumns() const
 
 const HeapString& BoxStyle::getQuote(bool open, size_t depth) const
 {
-    static const GlobalString defaultQuote("\"");
+    static const auto defaultQuote = GlobalString::get("\"");
     auto value = get(CssPropertyID::Quotes);
     if(value == nullptr)
         return defaultQuote;

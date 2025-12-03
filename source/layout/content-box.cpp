@@ -74,9 +74,9 @@ void ContentBoxBuilder::addLeader(const CssValue& value)
         return;
     }
 
-    static const GlobalString dotted(".");
-    static const GlobalString solid("_");
-    static const GlobalString space(" ");
+    static const auto dotted = GlobalString::get(".");
+    static const auto solid = GlobalString::get("_");
+    static const auto space = GlobalString::get(" ");
 
     const auto& ident = to<CssIdentValue>(value);
     switch(ident.value()) {
@@ -240,9 +240,9 @@ void ContentBoxBuilder::build()
             return;
         }
 
-        static const GlobalString disc("\u2022 ");
-        static const GlobalString circle("\u25E6 ");
-        static const GlobalString square("\u25AA ");
+        static const auto disc = GlobalString::get("\u2022 ");
+        static const auto circle = GlobalString::get("\u25E6 ");
+        static const auto square = GlobalString::get("\u25AA ");
 
         auto listStyleType = m_style->get(CssPropertyID::ListStyleType);
         if(listStyleType == nullptr) {

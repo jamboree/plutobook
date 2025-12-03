@@ -3,6 +3,7 @@
 #include "svg-document.h"
 #include "graphics-context.h"
 #include "string-utils.h"
+#include "ident-table.h"
 
 #include "plutobook.hpp"
 
@@ -44,21 +45,31 @@ RefPtr<ImageResource> ImageResource::create(Document* document, const Url& url)
 
 RefPtr<Image> ImageResource::decode(const char* data, size_t size, const std::string_view& mimeType, const std::string_view& textEncoding, const std::string_view& baseUrl, ResourceFetcher* fetcher)
 {
-    if(equals(mimeType, "image/svg+xml", false))
+    if(iequals(mimeType, "image/svg+xml"))
         return SvgImage::create(TextResource::decode(data, size, mimeType, textEncoding), baseUrl, fetcher);
     return BitmapImage::create(data, size);
 }
 
 bool ImageResource::supportsMimeType(const std::string_view& mimeType)
 {
-    return equals(mimeType, "image/jpeg", false)
-        || equals(mimeType, "image/png", false)
+    char buffer[16];
+    if (mimeType.length() > sizeof(buffer))
+        return false;
+    auto lower = toLower(mimeType, buffer);
+    if (!lower.starts_with("image/"))
+        return false;
+    lower.remove_prefix(6);
+    return makeIdentSet({
+                            "jpeg",
+                            "png",
+                            "svg+xml",
+                            "gif",
+                            "bmp",
 #ifdef PLUTOBOOK_HAS_WEBP
-        || equals(mimeType, "image/webp", false)
+                            "webp",
 #endif
-        || equals(mimeType, "image/svg+xml", false)
-        || equals(mimeType, "image/gif", false)
-        || equals(mimeType, "image/bmp", false);
+                        })
+        .contains(lower);
 }
 
 #ifdef CAIRO_HAS_PNG_FUNCTIONS

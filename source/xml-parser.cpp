@@ -75,9 +75,9 @@ QualifiedName QualifiedName::parse(const std::string_view& name)
 {
     auto index = name.rfind(kXmlNamespaceSep);
     if(index == std::string_view::npos)
-        return QualifiedName(emptyGlo, GlobalString(name));
-    GlobalString namespaceURI(name.substr(0, index));
-    GlobalString localName(name.substr(index + 1));
+        return QualifiedName(emptyGlo, GlobalString::get(name));
+    const auto namespaceURI = GlobalString::get(name.substr(0, index));
+    const auto localName = GlobalString::get(name.substr(index + 1));
     return QualifiedName(namespaceURI, localName);
 }
 

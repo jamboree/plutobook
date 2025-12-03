@@ -210,11 +210,7 @@ Optional<Color> Color::named(const std::string_view& name)
     char buffer[32];
     if(name.length() > sizeof(buffer))
         return std::nullopt;
-    for(size_t i = 0; i < name.length(); ++i) {
-        buffer[i] = toLower(name[i]);
-    }
-
-    std::string_view lowerName(buffer, name.length());
+    const auto lowerName = toLower(name, buffer);
     auto it = std::lower_bound(table, std::end(table), lowerName, [](const auto& item, const auto& name) { return item.name < name; });
     if(it == std::end(table) || it->name != lowerName)
         return std::nullopt;

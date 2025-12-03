@@ -87,7 +87,7 @@ namespace plutobook {
 
         void endAttribute() {
             assert(m_type == Type::StartTag || m_type == Type::EndTag);
-            auto name = GlobalString(m_attributeName);
+            auto name = GlobalString::get(m_attributeName);
             auto value = createString(m_attributeValue);
             m_attributes.emplace_back(name, value);
         }
@@ -211,7 +211,7 @@ namespace plutobook {
             case HtmlToken::Type::StartTag:
             case HtmlToken::Type::EndTag:
                 m_selfClosing = token.selfClosing();
-                m_tagName = GlobalString(token.data());
+                m_tagName = GlobalString::get(token.data());
                 m_attributes = token.attributes();
                 break;
             case HtmlToken::Type::Comment:

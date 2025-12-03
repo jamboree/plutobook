@@ -235,10 +235,8 @@ Box* Box::create(Node* node, const RefPtr<BoxStyle>& style)
     case Display::TableFooterGroup:
         return new TableSectionBox(node, style);
     default:
-        assert(false);
+        std::unreachable();
     }
-
-    return nullptr;
 }
 
 Box* Box::createAnonymous(Display display, const BoxStyle* parentStyle)

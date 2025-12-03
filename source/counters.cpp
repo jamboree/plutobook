@@ -139,7 +139,7 @@ HeapString Counters::markerText(GlobalString listStyle) const
     auto it = m_values.find(listItemGlo);
     if(it != m_values.end() && !it->second.empty())
         value = it->second.back();
-    return createString(m_document->getMarkerText(value, listStyle));
+    return createString(m_document->styleSheet().getMarkerText(value, listStyle));
 }
 
 } // namespace plutobook

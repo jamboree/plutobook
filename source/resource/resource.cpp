@@ -1,6 +1,7 @@
 #include "resource.h"
 #include "string-utils.h"
 #include "url.h"
+#include "ident-table.h"
 
 #include "plutobook.hpp"
 
@@ -13,7 +14,6 @@
 #include <filesystem>
 #include <cstring>
 #include <vector>
-#include <boost/unordered/unordered_flat_map.hpp>
 
 namespace plutobook {
 
@@ -43,7 +43,7 @@ static void parseContentType(std::string_view input, std::string& mimeType, std:
         auto name = parameter.substr(0, parameter.find('='));
         parameter.remove_prefix(name.size());
         stripLeadingAndTrailingSpaces(name);
-        if(!parameter.empty() && equals(name, "charset", false)) {
+        if(!parameter.empty() && iequals(name, "charset")) {
             parameter.remove_prefix(1);
             if(!parameter.empty() && parameter.front() == '\"')
                 parameter.remove_prefix(1);
@@ -175,7 +175,7 @@ static ResourceData loadDataUrl(std::string_view input)
 
     auto content = ByteArrayCreate();
     input.remove_prefix(headerEnd + 1);
-    if(!equals(formatType, "base64", false)) {
+    if(!iequals(formatType, "base64")) {
         content->reserve(input.length());
         content->assign(input.begin(), input.end());
     } else {
@@ -194,7 +194,7 @@ static bool mimeTypeFromPath(std::string& mimeType, const std::string_view& path
     auto index = path.rfind('.');
     if(index == std::string_view::npos)
         return false;
-    static boost::unordered_flat_map<std::string_view, std::string_view> table = {
+    static constexpr auto table = makeIdentTable<std::string_view>({
         {"xhtml", "application/xhtml+xml"},
         {"html", "text/html"},
         {"htm", "text/html"},
@@ -208,7 +208,7 @@ static bool mimeTypeFromPath(std::string& mimeType, const std::string_view& path
         {"svg", "image/svg+xml"},
         {"gif", "image/gif"},
         {"bmp", "image/bmp"}
-    };
+    });
 
     auto it = table.find(path.substr(index + 1));
     if(it == table.end())

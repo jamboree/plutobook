@@ -11,7 +11,6 @@
 #include <boost/unordered/unordered_flat_set.hpp>
 #include <forward_list>
 #include <memory>
-#include <numbers>
 #include <vector>
 
 namespace plutobook {
@@ -572,19 +571,6 @@ namespace plutobook {
         float m_value;
         Unit m_unit;
     };
-
-    inline float CssAngleValue::valueInDegrees() const {
-        switch (m_unit) {
-        case CssAngleValue::Unit::Degrees: return m_value;
-        case CssAngleValue::Unit::Radians:
-            return m_value * 180.0 / std::numbers::pi;
-        case CssAngleValue::Unit::Gradians: return m_value * 360.0 / 400.0;
-        case CssAngleValue::Unit::Turns: return m_value * 360.0;
-        default: assert(false);
-        }
-
-        return 0.0;
-    }
 
     inline RefPtr<CssAngleValue> CssAngleValue::create(float value, Unit unit) {
         return adoptPtr(new CssAngleValue(value, unit));

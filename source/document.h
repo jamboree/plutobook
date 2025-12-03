@@ -389,24 +389,8 @@ namespace plutobook {
         bool supportsMedia(const std::string_view& type,
                            const std::string_view& media) const;
 
-        RefPtr<BoxStyle> styleForElement(Element* element,
-                                         const BoxStyle* parentStyle) const;
-        RefPtr<BoxStyle>
-        pseudoStyleForElement(Element* element, PseudoType pseudoType,
-                              const BoxStyle* parentStyle) const;
+        CssStyleSheet& styleSheet() { return m_styleSheet; }
 
-        RefPtr<BoxStyle> styleForPage(GlobalString pageName, uint32_t pageIndex,
-                                      PseudoType pseudoType) const;
-        RefPtr<BoxStyle> styleForPageMargin(GlobalString pageName,
-                                            uint32_t pageIndex,
-                                            PageMarginType marginType,
-                                            const BoxStyle* pageStyle) const;
-
-        std::string getCounterText(int value, GlobalString listType);
-        std::string getMarkerText(int value, GlobalString listType);
-
-        RefPtr<FontData> getFontData(GlobalString family,
-                                     const FontDataDescription& description);
         RefPtr<Font> createFont(const FontDescription& description);
 
         RefPtr<TextResource> fetchTextResource(const Url& url);

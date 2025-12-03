@@ -179,8 +179,12 @@ inline bool isHtmlIntegrationPoint(const Element* element)
         if(attribute == nullptr)
             return false;
         const auto& encoding = attribute->value();
-        return equals(encoding, "text/html", false)
-            || equals(encoding, "application/xhtml+xml", false);
+        char buffer[32];
+        if (encoding.length() > sizeof(buffer))
+            return false;
+        const auto lower = toLower(encoding, buffer);
+        return lower == "text/html"
+            || lower == "application/xhtml+xml";
     }
 
     if(element->namespaceURI() == svgNs) {
@@ -939,10 +943,10 @@ void HtmlParser::adjustSvgAttributes(HtmlTokenView& token)
 
 void HtmlParser::adjustMathMLAttributes(HtmlTokenView& token)
 {
-    static const GlobalString definitionurl("definitionurl");
+    static const auto definitionurl = GlobalString::get("definitionurl");
     for(auto& attribute : token.attributes()) {
         if(definitionurl == attribute.name()) {
-            static const GlobalString definitionUrlAttr("definitionUrl");
+            static const auto definitionUrlAttr = GlobalString::get("definitionUrl");
             attribute.setName(definitionUrlAttr);
             token.setHasCamelCase(true);
         }
@@ -951,7 +955,7 @@ void HtmlParser::adjustMathMLAttributes(HtmlTokenView& token)
 
 void HtmlParser::adjustForeignAttributes(HtmlTokenView& token)
 {
-    static const GlobalString xlinkhref("xlink:href");
+    static const auto xlinkhref = GlobalString::get("xlink:href");
     for(auto& attribute : token.attributes()) {
         if(xlinkhref == attribute.name()) {
             attribute.setName(hrefAttr);
@@ -1653,7 +1657,7 @@ void HtmlParser::handleInBodyMode(HtmlTokenView& token)
             reconstructActiveFormattingElements();
             insertSelfClosingHtmlElement(token);
             auto typeAttribute = token.findAttribute(typeAttr);
-            if(typeAttribute == nullptr || !equals(typeAttribute->value(), "hidden", false))
+            if(typeAttribute == nullptr || !iequals(typeAttribute->value(), "hidden"))
                 m_framesetOk = false;
             return;
         }
@@ -2076,7 +2080,7 @@ void HtmlParser::handleInTableMode(HtmlTokenView& token)
 
         if(token.tagName() == inputTag) {
             auto typeAttribute = token.findAttribute(typeAttr);
-            if(typeAttribute && equals(typeAttribute->value(), "hidden", false)) {
+            if(typeAttribute && iequals(typeAttribute->value(), "hidden")) {
                 handleErrorToken(token);
                 insertSelfClosingHtmlElement(token);
                 return;

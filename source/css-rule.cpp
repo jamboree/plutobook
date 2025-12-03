@@ -7,6 +7,7 @@
 #include "ua-stylesheet.h"
 #include "string-utils.h"
 
+#include <numbers>
 #include <unicode/uiter.h>
 
 namespace plutobook {
@@ -128,6 +129,20 @@ float CssLengthResolver::viewportMax() const
     if(m_document)
         return std::max(m_document->viewportWidth(), m_document->viewportHeight());
     return 0.f;
+}
+
+float CssAngleValue::valueInDegrees() const
+{
+    switch (m_unit) {
+    case CssAngleValue::Unit::Degrees: return m_value;
+    case CssAngleValue::Unit::Radians:
+        return m_value * 180.0 / std::numbers::pi;
+    case CssAngleValue::Unit::Gradians: return m_value * 360.0 / 400.0;
+    case CssAngleValue::Unit::Turns: return m_value * 360.0;
+    default: assert(false);
+    }
+
+    return 0.0;
 }
 
 float CssCalcValue::resolve(const CssLengthResolver& resolver) const
@@ -284,7 +299,7 @@ bool CssVariableData::resolve(const BoxStyle* style, CssTokenList& tokens, boost
 bool CssVariableData::resolve(CssTokenStream input, const BoxStyle* style, CssTokenList& tokens, boost::unordered_flat_set<CssVariableData*>& references) const
 {
     while(!input.empty()) {
-        if(input->type() == CssToken::Type::Function && equalsIgnoringCase("var", input->data())) {
+        if(input->type() == CssToken::Type::Function && input->data() == "var") {
             auto block = input.consumeBlock();
             if(!resolveVar(block, style, tokens, references))
                 return false;
@@ -637,7 +652,7 @@ bool CssRuleData::matchTagSelector(const Element* element, const CssSimpleSelect
 {
     if(element->isCaseSensitive())
         return element->tagName() == selector.name();
-    return equalsIgnoringCase(element->tagName(), selector.name());
+    return element->tagName() == selector.name();
 }
 
 bool CssRuleData::matchIdSelector(const Element* element, const CssSimpleSelector& selector)
@@ -1235,7 +1250,7 @@ GlobalString CssCounterStyle::extendsName() const
 
 GlobalString CssCounterStyle::fallbackName() const
 {
-    static const GlobalString defaultFallback("decimal");
+    static const auto defaultFallback = GlobalString::get("decimal");
     if(m_fallback)
         return m_fallback->value();
     return defaultFallback;
@@ -1257,7 +1272,7 @@ const HeapString& CssCounterStyle::prefix() const
 
 const HeapString& CssCounterStyle::suffix() const
 {
-    static const GlobalString defaultSuffix(". ");
+    static const auto defaultSuffix = GlobalString::get(". ");
     if(m_suffix)
         return counterStyleSymbol(*m_suffix);
     return defaultSuffix;
@@ -1281,8 +1296,7 @@ void CssCounterStyle::extend(const CssCounterStyle& extended)
 CssCounterStyle& CssCounterStyle::defaultStyle()
 {
     static CssCounterStyle* defaultStyle = []() {
-        const GlobalString decimal("decimal");
-        return userAgentCounterStyleMap()->findCounterStyle(decimal);
+        return userAgentCounterStyleMap()->findCounterStyle(GlobalString::get("decimal"));
     }();
 
     return *defaultStyle;

@@ -304,11 +304,11 @@ Url::Url(const std::string_view& input)
     bool isHttp = false;
     bool isHttps = false;
     bool isFile = false;
-    if(equals(inputData, schemeEnd, "http", 4, false))
+    if(matchLower(std::string_view(inputData, schemeEnd), "http"))
         isHttp = true;
-    else if(equals(inputData, schemeEnd, "https", 5, false))
+    else if(matchLower(std::string_view(inputData, schemeEnd), "https"))
         isHttps = true;
-    else if(equals(inputData, schemeEnd, "file", 4, false)) {
+    else if(matchLower(std::string_view(inputData, schemeEnd), "file")) {
         isFile = true;
     }
 
@@ -620,7 +620,7 @@ Url Url::complete(std::string_view input) const
 
 bool Url::protocolIs(const std::string_view& protocol) const
 {
-    return equals(m_value.data(), m_schemeEnd, protocol.data(), protocol.length(), false);
+    return iequals(std::string_view(m_value.data(), m_schemeEnd), protocol);
 }
 
 } // namespace plutobook

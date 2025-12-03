@@ -73,9 +73,9 @@ static GlobalStringTable* globalStringTable()
     return &table;
 }
 
-GlobalString::GlobalString(const std::string_view& value)
-    : m_index(globalStringTable()->add(value))
+GlobalString GlobalString::get(const std::string_view& value)
 {
+    return GlobalString(globalStringTable()->add(value));
 }
 
 const HeapString& GlobalString::value() const
@@ -113,7 +113,7 @@ GlobalString GlobalString::foldCase() const
         buffer[i] = toLower(data[i]);
     }
 
-    return GlobalString({buffer, size});
+    return GlobalString::get({buffer, size});
 }
 
 } // namespace plutobook

@@ -19,7 +19,7 @@ SvgElement::SvgElement(Document* document, GlobalString tagName)
 void SvgElement::parseAttribute(GlobalString name, const HeapString& value)
 {
     if(auto property = getProperty(name)) {
-        property->parse(value);
+        property.parse(value);
     } else {
         Element::parseAttribute(name, value);
     }
@@ -133,7 +133,7 @@ SvgGraphicsElement::SvgGraphicsElement(Document* document, GlobalString tagName)
     : SvgElement(document, tagName)
 {}
 
-SvgProperty* SvgGraphicsElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgGraphicsElement::getProperty(GlobalString name)
 {
     if(name == transformAttr)
         return &m_transform;
@@ -198,7 +198,7 @@ SvgSvgElement::SvgSvgElement(Document* document)
     , m_height(100.f, SvgLengthType::Percentage, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
 {}
 
-SvgProperty* SvgSvgElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgSvgElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case xAttr: return &m_x;
@@ -277,7 +277,7 @@ SvgUseElement::SvgUseElement(Document* document)
     , m_height(100.f, SvgLengthType::Percentage, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
 {}
 
-SvgProperty* SvgUseElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgUseElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case xAttr: return &m_x;
@@ -375,7 +375,7 @@ SvgImageElement::SvgImageElement(Document* document)
     , m_height(100.f, SvgLengthType::Percentage, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
 {}
 
-SvgProperty* SvgImageElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgImageElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case xAttr: return &m_x;
@@ -407,7 +407,7 @@ SvgSymbolElement::SvgSymbolElement(Document* document)
 {
 }
 
-SvgProperty* SvgSymbolElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgSymbolElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
         // SvgFitToViewBox
@@ -427,7 +427,7 @@ SvgAElement::SvgAElement(Document* document)
 {
 }
 
-SvgProperty* SvgAElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgAElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
         // SvgURIReference
@@ -475,7 +475,7 @@ SvgPathElement::SvgPathElement(Document* document)
     : SvgGeometryElement(document, pathTag)
 {}
 
-SvgProperty* SvgPathElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgPathElement::getProperty(GlobalString name)
 {
     if(name == dAttr)
         return &m_d;
@@ -505,7 +505,7 @@ SvgLineElement::SvgLineElement(Document* document)
     , m_y2(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
 {}
 
-SvgProperty* SvgLineElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgLineElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case x1Attr: return &m_x1;
@@ -539,7 +539,7 @@ SvgRectElement::SvgRectElement(Document* document)
     , m_ry(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
 {}
 
-SvgProperty* SvgRectElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgRectElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case xAttr: return &m_x;
@@ -584,7 +584,7 @@ SvgCircleElement::SvgCircleElement(Document* document)
     , m_r(SvgLengthDirection::Diagonal, SvgLengthNegativeValuesMode::Forbid)
 {}
 
-SvgProperty* SvgCircleElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgCircleElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case cxAttr: return &m_cx;
@@ -616,7 +616,7 @@ SvgEllipseElement::SvgEllipseElement(Document* document)
     , m_ry(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Forbid)
 {}
 
-SvgProperty* SvgEllipseElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgEllipseElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case cxAttr: return &m_cx;
@@ -646,7 +646,7 @@ SvgPolyElement::SvgPolyElement(Document* document, GlobalString tagName)
     : SvgShapeElement(document, tagName)
 {}
 
-SvgProperty* SvgPolyElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgPolyElement::getProperty(GlobalString name)
 {
     if (name == pointsAttr)
         return &m_points;
@@ -678,7 +678,7 @@ SvgTextPositioningElement::SvgTextPositioningElement(Document* document, GlobalS
     , m_dy(SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
 {}
 
-SvgProperty* SvgTextPositioningElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgTextPositioningElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case xAttr: return &m_x;
@@ -719,7 +719,7 @@ SvgMarkerElement::SvgMarkerElement(Document* document)
     , m_markerUnits(SvgMarkerUnitsTypeStrokeWidth)
 {}
 
-SvgProperty* SvgMarkerElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgMarkerElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case refXAttr: return &m_refX;
@@ -745,7 +745,7 @@ SvgClipPathElement::SvgClipPathElement(Document* document)
     , m_clipPathUnits(SvgUnitsTypeUserSpaceOnUse)
 {}
 
-SvgProperty* SvgClipPathElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgClipPathElement::getProperty(GlobalString name)
 {
     if(name == clipPathUnitsAttr)
         return &m_clipPathUnits;
@@ -767,7 +767,7 @@ SvgMaskElement::SvgMaskElement(Document* document)
     , m_maskContentUnits(SvgUnitsTypeUserSpaceOnUse)
 {}
 
-SvgProperty* SvgMaskElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgMaskElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case xAttr: return &m_x;
@@ -795,7 +795,7 @@ SvgPatternElement::SvgPatternElement(Document* document)
     , m_patternContentUnits(SvgUnitsTypeUserSpaceOnUse)
 {}
 
-SvgProperty* SvgPatternElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgPatternElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case xAttr: return &m_x;
@@ -870,7 +870,7 @@ SvgStopElement::SvgStopElement(Document* document)
     : SvgElement(document, stopTag)
 {}
 
-SvgProperty* SvgStopElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgStopElement::getProperty(GlobalString name)
 {
     if(name == offsetAttr)
         return &m_offset;
@@ -895,7 +895,7 @@ SvgGradientElement::SvgGradientElement(Document* document, GlobalString tagName)
     , m_spreadMethod(SvgSpreadMethodTypePad)
 {}
 
-SvgProperty* SvgGradientElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgGradientElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case gradientTransformAttr: return &m_gradientTransform;
@@ -933,7 +933,7 @@ SvgLinearGradientElement::SvgLinearGradientElement(Document* document)
     , m_y2(0.f, SvgLengthType::Percentage, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
 {}
 
-SvgProperty* SvgLinearGradientElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgLinearGradientElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case x1Attr: return &m_x1;
@@ -992,7 +992,7 @@ SvgRadialGradientElement::SvgRadialGradientElement(Document* document)
     , m_fy(0.f, SvgLengthType::Number, SvgLengthDirection::Vertical, SvgLengthNegativeValuesMode::Allow)
 {}
 
-SvgProperty* SvgRadialGradientElement::getProperty(GlobalString name)
+SvgPropertyPtr SvgRadialGradientElement::getProperty(GlobalString name)
 {
     switch (name.asId()) {
     case cxAttr: return &m_cx;

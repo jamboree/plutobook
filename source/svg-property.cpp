@@ -1,6 +1,7 @@
 #include "svg-property.h"
 #include "svg-document.h"
 #include "box-style.h"
+#include "ident-table.h"
 
 #include <cmath>
 
@@ -136,51 +137,44 @@ bool SvgString::parse(std::string_view input)
     return true;
 }
 
-bool SvgEnumerationBase::parse(std::string_view input)
+bool SvgEnumeration<SvgUnitsType>::parse(std::string_view input)
 {
     skipLeadingAndTrailingSpaces(input);
-    for(const auto& entry : m_entries) {
-        if(input == entry.second) {
-            m_value = entry.first;
-            return true;
-        }
+    static constexpr auto table = makeIdentTable<SvgUnitsType>(
+        {{"userSpaceOnUse", SvgUnitsTypeUserSpaceOnUse},
+         {"objectBoundingBox", SvgUnitsTypeObjectBoundingBox}});
+    if (const auto it = table.find(input); it != table.end()) {
+        m_value = it->second;
+        return true;
     }
-
     return false;
 }
 
-template<>
-const SvgEnumerationEntries& getEnumerationEntries<SvgUnitsType>()
+bool SvgEnumeration<SvgMarkerUnitsType>::parse(std::string_view input)
 {
-    static const SvgEnumerationEntries entries = {
-        {SvgUnitsTypeUserSpaceOnUse, "userSpaceOnUse"},
-        {SvgUnitsTypeObjectBoundingBox, "objectBoundingBox"}
-    };
-
-    return entries;
+    skipLeadingAndTrailingSpaces(input);
+    static constexpr auto table = makeIdentTable<SvgMarkerUnitsType>(
+        {{"userSpaceOnUse", SvgMarkerUnitsTypeUserSpaceOnUse},
+         {"strokeWidth", SvgMarkerUnitsTypeStrokeWidth}});
+    if (const auto it = table.find(input); it != table.end()) {
+        m_value = it->second;
+        return true;
+    }
+    return false;
 }
 
-template<>
-const SvgEnumerationEntries& getEnumerationEntries<SvgMarkerUnitsType>()
+bool SvgEnumeration<SvgSpreadMethodType>::parse(std::string_view input)
 {
-    static const SvgEnumerationEntries entries = {
-        {SvgMarkerUnitsTypeUserSpaceOnUse, "userSpaceOnUse"},
-        {SvgMarkerUnitsTypeStrokeWidth, "strokeWidth"}
-    };
-
-    return entries;
-}
-
-template<>
-const SvgEnumerationEntries& getEnumerationEntries<SvgSpreadMethodType>()
-{
-    static const SvgEnumerationEntries entries = {
-        {SvgSpreadMethodTypePad, "pad"},
-        {SvgSpreadMethodTypeReflect, "reflect"},
-        {SvgSpreadMethodTypeRepeat, "repeat"}
-    };
-
-    return entries;
+    skipLeadingAndTrailingSpaces(input);
+    static constexpr auto table = makeIdentTable<SvgSpreadMethodType>(
+        {{"pad", SvgSpreadMethodTypePad},
+         {"reflect", SvgSpreadMethodTypeReflect},
+         {"repeat", SvgSpreadMethodTypeRepeat}});
+    if (const auto it = table.find(input); it != table.end()) {
+        m_value = it->second;
+        return true;
+    }
+    return false;
 }
 
 bool SvgAngle::parse(std::string_view input)

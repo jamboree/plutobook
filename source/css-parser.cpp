@@ -2,23 +2,15 @@
 #include "css-tokenizer.h"
 #include "string-utils.h"
 #include "document.h"
+#include "ident-table.h"
 
 #include <sstream>
 #include <algorithm>
 #include <span>
 #include <cmath>
-#include <frozen/unordered_map.h>
-#include <frozen/string.h>
+#include <numbers>
 
 namespace plutobook {
-template<class T, unsigned N>
-using IdentTable = frozen::unordered_map<frozen::string, T, N>;
-
-template<class T, unsigned N>
-constexpr IdentTable<T, N>
-    makeIdentTable(const std::pair<frozen::string, T>(&items)[N]) {
-    return IdentTable<T, N>{items};
-}
 
 CssParser::CssParser(const CssParserContext& context)
     : m_context(context)
@@ -52,22 +44,6 @@ CssMediaQueryList CssParser::parseMediaQueries(const std::string_view& content)
     return queries;
 }
 
-static bool identMatches(const char* name, int length, const std::string_view& ident)
-{
-    if(length != ident.length())
-        return false;
-    const auto it = std::mismatch(name, name + length, ident.begin(), ident.end()).first;
-    for (int i = int(it - name); i != length; ++i) {
-        const auto c = name[i];
-        assert(!isUpper(c));
-        if(c != toLower(ident[i])) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 template<typename T, unsigned int N>
 static Optional<T> matchIdent(const IdentTable<T, N>& table, const std::string_view& ident)
 {
@@ -79,7 +55,7 @@ static Optional<T> matchIdent(const IdentTable<T, N>& table, const std::string_v
 
 static bool consumeIdentIncludingWhitespace(CssTokenStream& input, const char* name, int length)
 {
-    if(input->type() == CssToken::Type::Ident && identMatches(name, length, input->data())) {
+    if(input->type() == CssToken::Type::Ident && matchLower(input->data(), std::string_view(name, length))) {
         input.consumeIncludingWhitespace();
         return true;
     }
@@ -222,21 +198,21 @@ RefPtr<CssRule> CssParser::consumeAtRule(CssTokenStream& input)
         || input->type() == CssToken::Type::Semicolon) {
         if(input->type() == CssToken::Type::Semicolon)
             input.consume();
-        if(identMatches("import", 6, name))
+        if(matchLower(name, "import"))
             return consumeImportRule(prelude);
-        if(identMatches("namespace", 9, name))
+        if(matchLower(name, "namespace"))
             return consumeNamespaceRule(prelude);
         return nullptr;
     }
 
     auto block = input.consumeBlock();
-    if(identMatches("font-face", 9, name))
+    if(matchLower(name, "font-face"))
         return consumeFontFaceRule(prelude, block);
-    if(identMatches("media", 5, name))
+    if(matchLower(name, "media"))
         return consumeMediaRule(prelude, block);
-    if(identMatches("counter-style", 13, name))
+    if(matchLower(name, "counter-style"))
         return consumeCounterStyleRule(prelude, block);
-    if(identMatches("page", 4, name))
+    if(matchLower(name, "page"))
         return consumePageRule(prelude, block);
     return nullptr;
 }
@@ -268,7 +244,7 @@ static const CssToken* consumeUrlToken(CssTokenStream& input)
         return token;
     }
 
-    if(input->type() == CssToken::Type::Function && identMatches("url", 3, input->data())) {
+    if(input->type() == CssToken::Type::Function && matchLower(input->data(), "url")) {
         CssTokenStreamGuard guard(input);
         auto block = input.consumeBlock();
         block.consumeWhitespace();
@@ -313,14 +289,14 @@ RefPtr<CssNamespaceRule> CssParser::consumeNamespaceRule(CssTokenStream& input)
     GlobalString prefix;
     input.consumeWhitespace();
     if(input->type() == CssToken::Type::Ident) {
-        prefix = GlobalString(input->data());
+        prefix = GlobalString::get(input->data());
         input.consumeIncludingWhitespace();
     }
 
     auto token = consumeStringOrUrlToken(input);
     if(token == nullptr || !input.empty())
         return nullptr;
-    GlobalString uri(token->data());
+    const auto uri = GlobalString::get(token->data());
     if(prefix.isEmpty()) {
         m_defaultNamespace = uri;
     } else {
@@ -353,9 +329,9 @@ RefPtr<CssFontFaceRule> CssParser::consumeFontFaceRule(CssTokenStream& prelude, 
 RefPtr<CssCounterStyleRule> CssParser::consumeCounterStyleRule(CssTokenStream& prelude, CssTokenStream& block)
 {
     prelude.consumeWhitespace();
-    if(prelude->type() != CssToken::Type::Ident || identMatches("none", 4, prelude->data()))
+    if(prelude->type() != CssToken::Type::Ident || matchLower(prelude->data(), "none"))
         return nullptr;
-    GlobalString name(prelude->data());
+    const auto name = GlobalString::get(prelude->data());
     prelude.consumeIncludingWhitespace();
     if(!prelude.empty())
         return nullptr;
@@ -473,14 +449,14 @@ bool CssParser::consumePageSelector(CssTokenStream& input, CssPageSelector& sele
     }
 
     if(input->type() == CssToken::Type::Ident) {
-        selector.emplace_front(CssSimpleSelector::MatchType::PseudoPageName, GlobalString(input->data()));
+        selector.emplace_front(CssSimpleSelector::MatchType::PseudoPageName, GlobalString::get(input->data()));
         input.consumeIncludingWhitespace();
     }
 
     while(input->type() == CssToken::Type::Colon) {
         input.consumeIncludingWhitespace();
         if(input->type() == CssToken::Type::Function) {
-            if(!identMatches("nth", 3, input->data()))
+            if(!matchLower(input->data(), "nth"))
                 return false;
             auto block = input.consumeBlock();
             block.consumeWhitespace();
@@ -577,7 +553,7 @@ bool CssParser::consumeTagSelector(CssTokenStream& input, CssCompoundSelector& s
     GlobalString name;
     CssTokenStreamGuard guard(input);
     if(input->type() == CssToken::Type::Ident) {
-        name = GlobalString(input->data());
+        name = GlobalString::get(input->data());
         input.consume();
     } else if(input->type() == CssToken::Type::Delim && input->delim() == '*') {
         name = starGlo;
@@ -591,7 +567,7 @@ bool CssParser::consumeTagSelector(CssTokenStream& input, CssCompoundSelector& s
         input.consume();
         namespaceURI = determineNamespace(name);
         if(input->type() == CssToken::Type::Ident) {
-            name = GlobalString(input->data());
+            name = GlobalString::get(input->data());
             input.consume();
         } else if(input->type() == CssToken::Type::Delim && input->delim() == '*') {
             name = starGlo;
@@ -647,7 +623,7 @@ bool CssParser::consumeAttributeSelector(CssTokenStream& input, CssCompoundSelec
     block.consumeWhitespace();
     if(block->type() != CssToken::Type::Ident)
         return false;
-    GlobalString name(block->data());
+    auto name = GlobalString::get(block->data());
     if(m_context.inHtmlDocument())
         name = name.foldCase();
     block.consumeIncludingWhitespace();
@@ -874,13 +850,13 @@ bool CssParser::consumeMatchPattern(CssTokenStream& input, CssSimpleSelector::Ma
     }
 
     if(input->type() == CssToken::Type::Ident) {
-        if(identMatches("odd", 3, input->data())) {
+        if(matchLower(input->data(), "odd")) {
             pattern = std::make_pair(2, 1);
             input.consume();
             return true;
         }
 
-        if(identMatches("even", 4, input->data())) {
+        if(matchLower(input->data(), "even")) {
             pattern = std::make_pair(2, 0);
             input.consume();
             return true;
@@ -1050,29 +1026,30 @@ static RefPtr<CssValue> consumeWideKeyword(CssTokenStream& input)
     if(input->type() != CssToken::Type::Ident) {
         return nullptr;
     }
-
-    if(identMatches("initial", 7, input->data())) {
-        input.consumeIncludingWhitespace();
-        return CssInitialValue::create();
+    char buffer[8];
+    if (input->data().length() <= sizeof(buffer)) {
+        static constexpr auto table =
+            makeIdentTable<int>({{"initial", 0}, {"inherit", 1}, {"unset", 2}});
+        const auto it = table.find(toLower(input->data(), buffer));
+        if (it != table.end()) {
+            input.consumeIncludingWhitespace();
+            switch (it->second) {
+            case 0:
+                return CssInitialValue::create();
+            case 1:
+                return CssInheritValue::create();
+            case 2:
+                return CssUnsetValue::create();
+            }
+        }
     }
-
-    if(identMatches("inherit", 7, input->data())) {
-        input.consumeIncludingWhitespace();
-        return CssInheritValue::create();
-    }
-
-    if(identMatches("unset", 5, input->data())) {
-        input.consumeIncludingWhitespace();
-        return CssUnsetValue::create();
-    }
-
     return nullptr;
 }
 
 static bool containsVariableReferences(CssTokenStream input)
 {
     while(!input.empty()) {
-        if(input->type() == CssToken::Type::Function && identMatches("var", 3, input->data()))
+        if(input->type() == CssToken::Type::Function && matchLower(input->data(), "var"))
             return true;
         input.consumeIncludingWhitespace();
     }
@@ -1373,18 +1350,7 @@ CssPropertyID csspropertyid(const std::string_view& name)
     char buffer[32];
     if(name.length() > sizeof(buffer))
         return CssPropertyID::Unknown;
-    auto lowerName = name;
-    const auto up = std::ranges::find_if(name, [](char c) { return isUpper(c); });
-    if (up != name.end()) {
-        size_t i = up - name.begin();
-        std::memcpy(buffer, name.data(), i);
-        for (; i != name.length(); ++i) {
-            buffer[i] = toLower(name[i]);
-        }
-        lowerName = std::string_view(buffer, name.length());
-    }
-
-    const auto it = table.find(lowerName);
+    const auto it = table.find(toLower(name, buffer));
     return it == table.end() ? CssPropertyID::Unknown : it->second;
 }
 
@@ -1414,7 +1380,7 @@ bool CssParser::consumeDeclaraction(CssTokenStream& input, CssPropertyList& prop
     }
 
     bool important = false;
-    if(it->type() == CssToken::Type::Ident && identMatches("important", 9, it->data())) {
+    if(it->type() == CssToken::Type::Ident && matchLower(it->data(), "important")) {
         do {
             --it;
         } while(it->type() == CssToken::Type::Whitespace);
@@ -1430,7 +1396,7 @@ bool CssParser::consumeDeclaraction(CssTokenStream& input, CssPropertyList& prop
     if(id == CssPropertyID::Custom) {
         if(ruleType == CssRuleType::FontFace || ruleType == CssRuleType::CounterStyle)
             return false;
-        auto custom = CssCustomPropertyValue::create(GlobalString(name), CssVariableData::create(value));
+        auto custom = CssCustomPropertyValue::create(GlobalString::get(name), CssVariableData::create(value));
         addProperty(properties, id, important, std::move(custom));
         return true;
     }
@@ -2038,10 +2004,23 @@ static Optional<CssLengthUnits> matchUnitType(std::string_view name)
     return matchIdent(table, name);
 }
 
-static bool isValidCalcFunction(std::string_view name)
+enum class CalcFunction { Invalid, Calc, Clamp, Min, Max };
+
+static CalcFunction getCalcFunction(std::string_view name)
 {
-    return identMatches("calc", 4, name) || identMatches("clamp", 5, name)
-        || identMatches("min", 3, name) || identMatches("max", 3, name);
+    char buffer[8];
+    if (name.length() <= sizeof(buffer)) {
+        static constexpr auto table =
+            makeIdentTable<CalcFunction>({{"calc", CalcFunction::Calc},
+                                          {"clamp", CalcFunction::Clamp},
+                                          {"min", CalcFunction::Min},
+                                          {"max", CalcFunction::Max}});
+        const auto it = table.find(toLower(name, buffer));
+        if (it != table.end()) {
+            return it->second;
+        }
+    }
+    return CalcFunction::Invalid;
 }
 
 static CssCalcOperator convertCalcDelim(const CssToken& token)
@@ -2097,7 +2076,7 @@ static bool consumeCalcBlock(CssTokenStream& input, CssTokenList& stack, CssCalc
             stack.push_back(token);
             block.consumeIncludingWhitespace();
         } else if(token.type() == CssToken::Type::Function) {
-            if(!isValidCalcFunction(token.data()))
+            if(getCalcFunction(token.data()) == CalcFunction::Invalid)
                 return false;
             if(!consumeCalcBlock(block, stack, values))
                 return false;
@@ -2143,27 +2122,32 @@ static bool consumeCalcBlock(CssTokenStream& input, CssTokenList& stack, CssCalc
     if(left.type() == CssToken::Type::LeftParenthesis)
         return commaCount == 0;
     assert(left.type() == CssToken::Type::Function);
-    if(identMatches("calc", 4, left.data())) {
+    CssCalcOperator op;
+    switch (getCalcFunction(left.data())) {
+    case CalcFunction::Invalid:
+        return false;
+    case CalcFunction::Calc:
         return commaCount == 0;
-    }
-
-    if(identMatches("clamp", 5, left.data())) {
-        if(commaCount != 2)
+    case CalcFunction::Clamp:
+        if (commaCount != 2)
             return false;
         values.emplace_back(CssCalcOperator::Min);
         values.emplace_back(CssCalcOperator::Max);
         return true;
+    case CalcFunction::Min:
+        op = CssCalcOperator::Min;
+        break;
+    case CalcFunction::Max:
+        op = CssCalcOperator::Max;
+        break;
     }
-
-    auto op = identMatches("min", 3, left.data()) ? CssCalcOperator::Min : CssCalcOperator::Max;
-    for(size_t i = 0; i < commaCount; ++i)
-        values.emplace_back(op);
+    values.insert(values.end(), commaCount, CssCalc(op));
     return true;
 }
 
 RefPtr<CssValue> CssParser::consumeCalc(CssTokenStream& input, bool negative, bool unitless)
 {
-    if(input->type() != CssToken::Type::Function || !isValidCalcFunction(input->data()))
+    if(input->type() != CssToken::Type::Function || getCalcFunction(input->data()) == CalcFunction::Invalid)
         return nullptr;
     CssTokenList stack;
     CssCalcList values;
@@ -2289,7 +2273,7 @@ RefPtr<CssValue> CssParser::consumeString(CssTokenStream& input)
 RefPtr<CssValue> CssParser::consumeCustomIdent(CssTokenStream& input)
 {
     if(input->type() == CssToken::Type::Ident) {
-        auto value = GlobalString(input->data());
+        auto value = GlobalString::get(input->data());
         input.consumeIncludingWhitespace();
         return CssCustomIdentValue::create(value);
     }
@@ -2306,21 +2290,21 @@ RefPtr<CssValue> CssParser::consumeStringOrCustomIdent(CssTokenStream& input)
 
 RefPtr<CssValue> CssParser::consumeAttr(CssTokenStream& input)
 {
-    if(input->type() != CssToken::Type::Function || !identMatches("attr", 4, input->data()))
+    if(input->type() != CssToken::Type::Function || !matchLower(input->data(), "attr"))
         return nullptr;
     CssTokenStreamGuard guard(input);
     auto block = input.consumeBlock();
     block.consumeWhitespace();
     if(block->type() != CssToken::Type::Ident)
         return nullptr;
-    GlobalString name(block->data());
+    auto name = GlobalString::get(block->data());
     if(m_context.inHtmlDocument()) {
         name = name.foldCase();
     }
 
     block.consumeIncludingWhitespace();
     if(block->type() == CssToken::Type::Ident) {
-        if(!identMatches("url", 3, block->data()) && !identMatches("string", 6, block->data()))
+        if(!matchLower(block->data(), "url") && !matchLower(block->data(), "string"))
             return nullptr;
         block.consumeIncludingWhitespace();
     }
@@ -2423,24 +2407,31 @@ RefPtr<CssValue> CssParser::consumeColor(CssTokenStream& input)
     }
 
     if(input->type() == CssToken::Type::Function) {
-        auto name = input->data();
-        if(identMatches("rgb", 3, name) || identMatches("rgba", 4, name))
-            return consumeRgb(input);
-        if(identMatches("hsl", 3, name) || identMatches("hsla", 4, name))
-            return consumeHsl(input);
-        if(identMatches("hwb", 3, name))
-            return consumeHwb(input);
+        const auto name = input->data();
+        char buffer[8];
+        if (name.length() <= sizeof(buffer)) {
+            static constexpr auto table = makeIdentTable<int>(
+                {{"rgb", 0}, {"rgba", 0}, {"hsl", 1}, {"hsla", 1}, {"hwb", 2}});
+            const auto it = table.find(toLower(name, buffer));
+            if (it != table.end()) {
+                switch (it->second) {
+                case 0: return consumeRgb(input);
+                case 1: return consumeHsl(input);
+                case 2: return consumeHwb(input);
+                }
+            }
+        }
         return nullptr;
     }
 
     if(input->type() == CssToken::Type::Ident) {
         auto name = input->data();
-        if(identMatches("currentcolor", 12, name)) {
+        if(matchLower(name, "currentcolor")) {
             input.consumeIncludingWhitespace();
             return CssIdentValue::create(CssValueID::CurrentColor);
         }
 
-        if(identMatches("transparent", 11, name)) {
+        if(matchLower(name, "transparent")) {
             input.consumeIncludingWhitespace();
             return CssColorValue::create(Color::Transparent);
         }
@@ -2771,23 +2762,36 @@ RefPtr<CssValue> CssParser::consumeContent(CssTokenStream& input)
         }
 
         if(value == nullptr && input->type() == CssToken::Type::Function) {
-            auto name = input->data();
+            const auto name = input->data();
             auto block = input.consumeBlock();
             block.consumeWhitespace();
-            if(identMatches("leader", 6, name))
-                value = consumeContentLeader(block);
-            else if(identMatches("element", 7, name))
-                value = consumeContentElement(block);
-            else if(identMatches("counter", 7, name))
-                value = consumeContentCounter(block, false);
-            else if(identMatches("counters", 8, name))
-                value = consumeContentCounter(block, true);
-            else if(identMatches("target-counter", 14, name))
-                value = consumeContentTargetCounter(block, false);
-            else if(identMatches("target-counters", 15, name))
-                value = consumeContentTargetCounter(block, false);
-            else if(identMatches("-pluto-qrcode", 13, name))
-                value = consumeContentQrCode(block);
+            char buffer[16];
+            if (name.length() <= sizeof(buffer)) {
+                static constexpr auto table =
+                    makeIdentTable<int>({{"leader", 0},
+                                         {"element", 1},
+                                         {"counter", 2},
+                                         {"counters", 3},
+                                         {"target-counter", 4},
+                                         {"target-counters", 5},
+                                         {"-pluto-qrcode", 6}});
+                const auto it = table.find(toLower(name, buffer));
+                if (it != table.end()) {
+                    switch (it->second) {
+                    case 0: value = consumeContentLeader(block); break;
+                    case 1: value = consumeContentElement(block); break;
+                    case 2: value = consumeContentCounter(block, false); break;
+                    case 3: value = consumeContentCounter(block, true); break;
+                    case 4:
+                        value = consumeContentTargetCounter(block, false);
+                        break;
+                    case 5:
+                        value = consumeContentTargetCounter(block, true);
+                        break;
+                    case 6: value = consumeContentQrCode(block); break;
+                    }
+                }
+            }
             input.consumeWhitespace();
         }
 
@@ -2826,7 +2830,7 @@ RefPtr<CssValue> CssParser::consumeContentCounter(CssTokenStream& input, bool co
 {
     if(input->type() != CssToken::Type::Ident)
         return nullptr;
-    auto identifier = GlobalString(input->data());
+    auto identifier = GlobalString::get(input->data());
     input.consumeIncludingWhitespace();
     HeapString separator;
     if(counters) {
@@ -2838,11 +2842,11 @@ RefPtr<CssValue> CssParser::consumeContentCounter(CssTokenStream& input, bool co
         input.consumeIncludingWhitespace();
     }
 
-    GlobalString listStyle("decimal");
+    auto listStyle = GlobalString::get("decimal");
     if(input.consumeCommaIncludingWhitespace()) {
-        if(input->type() != CssToken::Type::Ident || identMatches("none", 4, input->data()))
+        if(input->type() != CssToken::Type::Ident || matchLower(input->data(), "none"))
             return nullptr;
-        listStyle = GlobalString(input->data());
+        listStyle = GlobalString::get(input->data());
         input.consumeIncludingWhitespace();
     }
 
@@ -3045,7 +3049,7 @@ RefPtr<CssValue> CssParser::consumeFontStretch(CssTokenStream& input)
 RefPtr<CssValue> CssParser::consumeFontFamilyName(CssTokenStream& input)
 {
     if(input->type() == CssToken::Type::String) {
-        auto value = GlobalString(input->data());
+        auto value = GlobalString::get(input->data());
         input.consumeIncludingWhitespace();
         return CssCustomIdentValue::create(value);
     }
@@ -3060,7 +3064,7 @@ RefPtr<CssValue> CssParser::consumeFontFamilyName(CssTokenStream& input)
 
     if(value.empty())
         return nullptr;
-    return CssCustomIdentValue::create(GlobalString(value));
+    return CssCustomIdentValue::create(GlobalString::get(value));
 }
 
 RefPtr<CssValue> CssParser::consumeFontFamily(CssTokenStream& input)
@@ -3088,7 +3092,7 @@ RefPtr<CssValue> CssParser::consumeFontFeature(CssTokenStream& input)
         }
     }
 
-    GlobalString tag(input->data());
+    auto tag = GlobalString::get(input->data());
     input.consumeIncludingWhitespace();
 
     int value = 1;
@@ -3146,7 +3150,7 @@ RefPtr<CssValue> CssParser::consumeFontVariation(CssTokenStream& input)
         }
     }
 
-    GlobalString tag(input->data());
+    auto tag = GlobalString::get(input->data());
     input.consumeIncludingWhitespace();
     if(input->type() != CssToken::Type::Number)
         return nullptr;
@@ -3369,7 +3373,7 @@ RefPtr<CssValue> CssParser::consumeClip(CssTokenStream& input)
 {
     if(auto value = consumeAuto(input))
         return value;
-    if(input->type() != CssToken::Type::Function || !identMatches("rect", 4, input->data())) {
+    if(input->type() != CssToken::Type::Function || !matchLower(input->data(), "rect")) {
         return nullptr;
     }
 
@@ -3421,7 +3425,7 @@ RefPtr<CssValue> CssParser::consumePosition(CssTokenStream& input)
 
     if(auto value = consumeIdent(input, table))
         return value;
-    if(input->type() != CssToken::Type::Function || !identMatches("running", 7, input->data()))
+    if(input->type() != CssToken::Type::Function || !matchLower(input->data(), "running"))
         return nullptr;
     CssTokenStreamGuard guard(input);
     auto block = input.consumeBlock();
@@ -4946,7 +4950,7 @@ bool CssParser::consumeShorthand(CssTokenStream& input, CssPropertyList& propert
 RefPtr<CssValue> CssParser::consumeFontFaceSource(CssTokenStream& input)
 {
     CssValueList values;
-    if(input->type() == CssToken::Type::Function && identMatches("local", 5, input->data())) {
+    if(input->type() == CssToken::Type::Function && matchLower(input->data(), "local")) {
         auto block = input.consumeBlock();
         block.consumeWhitespace();
         auto value = consumeFontFamilyName(block);
@@ -4960,7 +4964,7 @@ RefPtr<CssValue> CssParser::consumeFontFaceSource(CssTokenStream& input)
         if(url == nullptr)
             return nullptr;
         values.push_back(std::move(url));
-        if(input->type() == CssToken::Type::Function && identMatches("format", 6, input->data())) {
+        if(input->type() == CssToken::Type::Function && matchLower(input->data(), "format")) {
             auto block = input.consumeBlock();
             block.consumeWhitespace();
             auto value = consumeStringOrCustomIdent(block);
@@ -5054,9 +5058,9 @@ RefPtr<CssValue> CssParser::consumeFontFaceUnicodeRange(CssTokenStream& input)
 
 RefPtr<CssValue> CssParser::consumeCounterStyleName(CssTokenStream& input)
 {
-    if(input->type() != CssToken::Type::Ident || identMatches("none", 4, input->data()))
+    if(input->type() != CssToken::Type::Ident || matchLower(input->data(), "none"))
         return nullptr;
-    GlobalString name(input->data());
+    const auto name = GlobalString::get(input->data());
     input.consumeIncludingWhitespace();
     return CssCustomIdentValue::create(name);
 }

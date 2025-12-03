@@ -10,6 +10,7 @@
 #include "text-resource.h"
 #include "image-resource.h"
 #include "string-utils.h"
+#include "ident-table.h"
 
 #include "plutobook.hpp"
 
@@ -70,7 +71,7 @@ void HtmlElement::buildFirstLetterPseudoBox(Box* parent)
 {
     if(!parent->isBlockFlowBox())
         return;
-    auto style = document()->pseudoStyleForElement(this, PseudoType::FirstLetter, parent->style());
+    auto style = document()->styleSheet().pseudoStyleForElement(this, PseudoType::FirstLetter, parent->style());
     if(style == nullptr || style->display() == Display::None)
         return;
     auto child = parent->firstChild();
@@ -120,7 +121,7 @@ void HtmlElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
 {
     if(pseudoType == PseudoType::Marker && !parent->isListItemBox())
         return;
-    auto style = document()->pseudoStyleForElement(this, pseudoType, parent->style());
+    auto style = document()->styleSheet().pseudoStyleForElement(this, pseudoType, parent->style());
     if(style == nullptr || style->display() == Display::None)
         return;
     auto box = Box::create(nullptr, style);
@@ -147,7 +148,7 @@ void HtmlElement::buildElementBox(Counters& counters, Box* box)
 
 void HtmlElement::buildBox(Counters& counters, Box* parent)
 {
-    auto style = document()->styleForElement(this, parent->style());
+    auto style = document()->styleSheet().styleForElement(this, parent->style());
     if(style == nullptr || style->display() == Display::None)
         return;
     if(style->position() == Position::Running) {
@@ -158,12 +159,10 @@ void HtmlElement::buildBox(Counters& counters, Box* parent)
         document()->addRunningStyle(name.value(), std::move(style));
         return;
     }
-
-    auto box = createBox(style);
-    if(box == nullptr)
-        return;
-    parent->addChild(box);
-    buildElementBox(counters, box);
+    if (auto box = createBox(style)) {
+        parent->addChild(box);
+        buildElementBox(counters, box);
+    }
 }
 
 void HtmlElement::collectAttributeStyle(AttributeStyle& style) const
@@ -374,10 +373,10 @@ RefPtr<Image> HtmlImageElement::srcImage() const
 Box* HtmlImageElement::createBox(const RefPtr<BoxStyle>& style)
 {
     auto image = srcImage();
-    auto text = altText();
-    if(image == nullptr && text.empty())
-        return new ImageBox(this, style);
     if(image == nullptr) {
+        const auto& text = altText();
+        if (text.empty())
+            return new ImageBox(this, style);
         auto container = Box::create(this, style);
         auto box = new TextBox(nullptr, style);
         box->setText(text);
@@ -410,10 +409,10 @@ void HtmlHrElement::collectAttributeStyle(AttributeStyle& style) const
         }
     }
     if (auto attr = findAttribute(alignAttr)) {
-        if (equalsIgnoringCase(attr->value(), "left")) {
+        if (attr->value() == "left") {
             style.addProperty(CssPropertyID::MarginLeft, CssLengthValue::create(0));
             style.addProperty(CssPropertyID::MarginRight, CssValueID::Auto);
-        } else if (equalsIgnoringCase(attr->value(), "right")) {
+        } else if (attr->value() == "right") {
             style.addProperty(CssPropertyID::MarginLeft, CssValueID::Auto);
             style.addProperty(CssPropertyID::MarginRight, CssLengthValue::create(0));
         } else {
@@ -464,7 +463,7 @@ Optional<int> HtmlLiElement::value() const
     return parseIntegerAttribute<int>(valueAttr);
 }
 
-std::string_view listTypeAttributeToStyleName(const std::string_view& value)
+static std::string_view listTypeAttributeToStyleName(const std::string_view& value)
 {
     if(value == "a")
         return "lower-alpha";
@@ -686,40 +685,31 @@ void HtmlTableElement::collectAttributeStyle(AttributeStyle& style) const
 
 HtmlTableElement::Rules HtmlTableElement::parseRulesAttribute(std::string_view value)
 {
-    if(equalsIgnoringCase(value, "none"))
-        return Rules::None;
-    if(equalsIgnoringCase(value, "groups"))
-        return Rules::Groups;
-    if(equalsIgnoringCase(value, "rows"))
-        return Rules::Rows;
-    if(equalsIgnoringCase(value, "cols"))
-        return Rules::Cols;
-    if(equalsIgnoringCase(value, "all"))
-        return Rules::All;
-    return Rules::Unset;
+    static constexpr auto table =
+        makeIdentTable<Rules>({{"none", Rules::None},
+                               {"groups", Rules::Groups},
+                               {"rows", Rules::Rows},
+                               {"cols", Rules::Cols},
+                               {"all", Rules::All}});
+    const auto it = table.find(value);
+    return it == table.end() ? Rules::Unset : it->second;
 }
 
 HtmlTableElement::Frame HtmlTableElement::parseFrameAttribute(std::string_view value)
 {
-    if(equalsIgnoringCase(value, "void"))
-        return Frame::Void;
-    if(equalsIgnoringCase(value, "above"))
-        return Frame::Above;
-    if(equalsIgnoringCase(value, "below"))
-        return Frame::Below;
-    if(equalsIgnoringCase(value, "hsides"))
-        return Frame::Hsides;
-    if(equalsIgnoringCase(value, "lhs"))
-        return Frame::Lhs;
-    if(equalsIgnoringCase(value, "rhs"))
-        return Frame::Rhs;
-    if(equalsIgnoringCase(value, "vsides"))
-        return Frame::Vsides;
-    if(equalsIgnoringCase(value, "box"))
-        return Frame::Box;
-    if(equalsIgnoringCase(value, "border"))
-        return Frame::Border;
-    return Frame::Unset;
+    static constexpr auto table = makeIdentTable<Frame>({
+        {"void", Frame::Void},
+        {"above", Frame::Above},
+        {"below", Frame::Below},
+        {"hsides", Frame::Hsides},
+        {"lhs", Frame::Lhs},
+        {"rhs", Frame::Rhs},
+        {"vsides", Frame::Vsides},
+        {"box", Frame::Box},
+        {"border", Frame::Border},
+    });
+    const auto it = table.find(value);
+    return it == table.end() ? Frame::Unset : it->second;
 }
 
 HtmlTablePartElement::HtmlTablePartElement(Document* document, GlobalString tagName)
@@ -845,13 +835,13 @@ unsigned HtmlInputElement::size() const
 Box* HtmlInputElement::createBox(const RefPtr<BoxStyle>& style)
 {
     const auto& type = getAttribute(typeAttr);
-    if(!type.empty() && !equals(type, "text", false)
-        && !equals(type, "search", false)
-        && !equals(type, "url", false)
-        && !equals(type, "tel", false)
-        && !equals(type, "email", false)
-        && !equals(type, "password", false)) {
-        return HtmlElement::createBox(style);
+    if(!type.empty()) {
+        char buffer[16];
+        if (type.length() > sizeof(buffer) ||
+            !makeIdentSet({"text", "search", "url", "tel", "email", "password"})
+                 .contains(toLower(type, buffer))) {
+            return HtmlElement::createBox(style);
+        }
     }
 
     auto box = new TextInputBox(this, style);
@@ -943,7 +933,7 @@ const HeapString& HtmlLinkElement::media() const
 
 void HtmlLinkElement::finishParsingDocument()
 {
-    if(equals(rel(), "stylesheet", false) && document()->supportsMedia(type(), media())) {
+    if(iequals(rel(), "stylesheet") && document()->supportsMedia(type(), media())) {
         auto url = getUrlAttribute(hrefAttr);
         if(auto resource = document()->fetchTextResource(url)) {
             document()->addAuthorStyleSheet(resource->text(), std::move(url));

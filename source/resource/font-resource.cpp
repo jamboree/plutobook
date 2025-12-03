@@ -1,6 +1,7 @@
 #include "font-resource.h"
 #include "document.h"
 #include "string-utils.h"
+#include "ident-table.h"
 
 #include "plutobook.hpp"
 
@@ -79,16 +80,21 @@ RefPtr<FontResource> FontResource::create(Document* document, const Url& url)
 
 bool FontResource::supportsFormat(const std::string_view& format)
 {
-    return equals(format, "opentype", false)
-        || equals(format, "opentype-variations", false)
-        || equals(format, "truetype", false)
-        || equals(format, "truetype-variations", false)
+    char buffer[32];
+    return format.length() <= sizeof(buffer) &&
+           makeIdentSet({
+                            "opentype",
+                            "opentype-variations",
+                            "truetype",
+                            "truetype-variations",
+                            "woff",
+                            "woff-variations",
 #ifdef FT_CONFIG_OPTION_USE_BROTLI
-        || equals(format, "woff2", false)
-        || equals(format, "woff2-variations", false)
+                            "woff2",
+                            "woff2-variations",
 #endif
-        || equals(format, "woff", false)
-        || equals(format, "woff-variations", false);
+                        })
+               .contains(toLower(format, buffer));
 }
 
 FontResource::~FontResource()
@@ -583,15 +589,13 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
     return SimpleFontData::create(font, charSet, std::move(featureSettings));
 }
 
-constexpr bool isGenericFamilyName(const std::string_view& familyName)
+static bool isGenericFamilyName(const std::string_view& familyName)
 {
-    return equals(familyName, "sans", false)
-        || equals(familyName, "sans-serif", false)
-        || equals(familyName, "serif", false)
-        || equals(familyName, "monospace", false)
-        || equals(familyName, "fantasy", false)
-        || equals(familyName, "cursive", false)
-        || equals(familyName, "emoji", false);
+    char buffer[16];
+    return familyName.length() <= sizeof(buffer) &&
+           makeIdentSet({"sans", "sans-serif", "serif", "monospace", "fantasy",
+                         "cursive", "emoji"})
+               .contains(toLower(familyName, buffer));
 }
 
 static RefPtr<SimpleFontData> createFontData(FcConfig* config, GlobalString family, const FontDataDescription& description)
@@ -605,7 +609,7 @@ static RefPtr<SimpleFontData> createFontData(FcConfig* config, GlobalString fami
     std::string familyName(family);
     FcPatternAddString(pattern, FC_FAMILY, (FcChar8*)(familyName.data()));
     FcPatternAddBool(pattern, FC_SCALABLE, FcTrue);
-    if(equalsIgnoringCase(familyName, "emoji")) {
+    if(familyName == "emoji") {
         FcPatternAddBool(pattern, FC_COLOR, FcTrue);
     }
 
@@ -623,8 +627,8 @@ static RefPtr<SimpleFontData> createFontData(FcConfig* config, GlobalString fami
         FcValueBinding matchBinding;
         int matchFamilyIndex = 0;
         while(FcPatternGetWithBinding(matchPattern, FC_FAMILY, matchFamilyIndex, &matchValue, &matchBinding) == FcResultMatch) {
-            auto matchFamilyName = (const char*)(matchValue.u.s);
-            if(matchBinding == FcValueBindingStrong || equalsIgnoringCase(configFamilyName, matchFamilyName) || equalsIgnoringCase(familyName, matchFamilyName)) {
+            std::string_view matchFamilyName = (const char*)(matchValue.u.s);
+            if (matchBinding == FcValueBindingStrong || matchFamilyName == configFamilyName || matchFamilyName == familyName) {
                matchResult = FcResultMatch;
                break;
             }
@@ -705,7 +709,7 @@ bool FontDataCache::isFamilyAvailable(GlobalString family)
             int matchFamilyIndex = 0;
             char* matchFamilyName = nullptr;
             while(FcPatternGetString(matchPattern, FC_FAMILY, matchFamilyIndex, (FcChar8**)(&matchFamilyName)) == FcResultMatch) {
-                if(equalsIgnoringCase(family, matchFamilyName))
+                if(family.value() == matchFamilyName)
                     return true;
                 ++matchFamilyIndex;
             }
@@ -746,7 +750,7 @@ const SimpleFontData* Font::getFontData(uint32_t codepoint, bool preferColor)
 
     if(preferColor) {
         if(m_emojiFont == nullptr) {
-            static const GlobalString emoji("emoji");
+            static const auto emoji = GlobalString::get("emoji");
             if(auto fontData = fontDataCache()->getFontData(emoji, m_description.data)) {
                 m_emojiFont = fontData.get();
                 m_fonts.push_back(std::move(fontData));
@@ -769,7 +773,7 @@ Font::Font(Document* document, const FontDescription& description)
     , m_description(description)
 {
     for(const auto& family : description.families) {
-        if(auto font = document->getFontData(family, description.data)) {
+        if(auto font = document->styleSheet().getFontData(family, description.data)) {
             if(m_primaryFont == nullptr)
                 m_primaryFont = font->getFontData(' ', false);
             m_fonts.push_back(std::move(font));
@@ -777,7 +781,7 @@ Font::Font(Document* document, const FontDescription& description)
     }
 
     if(m_primaryFont == nullptr) {
-        static const GlobalString serif("serif");
+        static const auto serif = GlobalString::get("serif");
         if(auto fontData = fontDataCache()->getFontData(serif, description.data)) {
             m_primaryFont = fontData.get();
             m_fonts.push_back(std::move(fontData));

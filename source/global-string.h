@@ -20,8 +20,9 @@ namespace plutobook {
     class GlobalString {
     public:
         GlobalString() = default;
-        explicit GlobalString(const std::string_view& value);
         constexpr GlobalString(GlobalStringId id) : m_index(unsigned(id)) {}
+
+        static GlobalString get(const std::string_view& value);
 
         const HeapString& value() const;
 
@@ -44,6 +45,8 @@ namespace plutobook {
         }
 
     private:
+        constexpr explicit GlobalString(unsigned index) : m_index(index) {}
+
         unsigned m_index = 0;
     };
 
@@ -52,7 +55,7 @@ namespace plutobook {
     }
 
     inline GlobalString operator""_glo(const char* data, size_t length) {
-        return GlobalString({data, length});
+        return GlobalString::get({data, length});
     }
 
     using enum GlobalStringId;
