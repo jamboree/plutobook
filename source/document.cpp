@@ -435,8 +435,8 @@ void Element::parseAttribute(GlobalString name, const HeapString& value)
             size_t end = begin + 1;
             while(end < value.size() && !isSpace(value[end]))
                 ++end;
-            const auto it = std::ranges::lower_bound(m_classNames, name);
             auto substr = value.substring(begin, end - begin);
+            const auto it = std::ranges::lower_bound(m_classNames, substr);
             if (it == m_classNames.end() || *it != substr) {
                 m_classNames.insert(it, std::move(substr));
             }

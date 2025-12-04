@@ -1,5 +1,6 @@
 #include "color.h"
 #include "string-utils.h"
+#include "ident-table.h"
 
 #include <cmath>
 
@@ -53,10 +54,7 @@ Color Color::darken() const
 
 Optional<Color> Color::named(const std::string_view& name)
 {
-    static const struct {
-        std::string_view name;
-        uint32_t value;
-    } table[] = {
+    static constexpr auto table = makeIdentTable<uint32_t>({
         {"aliceblue", 0xF0F8FF},
         {"antiquewhite", 0xFAEBD7},
         {"aqua", 0x00FFFF},
@@ -205,16 +203,15 @@ Optional<Color> Color::named(const std::string_view& name)
         {"whitesmoke", 0xF5F5F5},
         {"yellow", 0xFFFF00},
         {"yellowgreen", 0x9ACD32}
-    };
+    });
 
     char buffer[32];
     if(name.length() > sizeof(buffer))
         return std::nullopt;
-    const auto lowerName = toLower(name, buffer);
-    auto it = std::lower_bound(table, std::end(table), lowerName, [](const auto& item, const auto& name) { return item.name < name; });
-    if(it == std::end(table) || it->name != lowerName)
+    const auto it = table.find(toLower(name, buffer));
+    if(it == table.end())
         return std::nullopt;
-    return Color(it->value | 0xFF000000);
+    return Color(it->second | 0xFF000000);
 }
 
 } // namespace plutobook
