@@ -62,7 +62,7 @@ private:
 inline bool CssPropertyData::isLessThan(const CssPropertyData& data) const
 {
     if(m_important != data.m_important)
-        return m_important < data.m_important;
+        return data.m_important;
     if(m_origin != data.m_origin)
         return m_origin < data.m_origin;
     if(m_specificity != data.m_specificity)
@@ -403,7 +403,7 @@ void StyleBuilder::merge(uint32_t specificity, uint32_t position, const CssPrope
                 continue;
             }
         }
-        if (it->isLessThan(data)) {
+        if (!data.isLessThan(*it)) {
             *it = std::move(data);
         }
     }

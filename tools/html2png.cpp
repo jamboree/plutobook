@@ -42,16 +42,12 @@ int main(int argc, char* argv[])
         std::cerr << "ERROR: " << plutobook_get_error_message() << std::endl;
         return 2;
     }
-    book.test();
 
-#if 0
-    if (!book.writeToPng(output, width / units::px, height / units::px)) {
+    if(!book.writeToPng(output, width / units::px, height / units::px)) {
         std::cerr << "ERROR: " << plutobook_get_error_message() << std::endl;
         return 3;
     }
 
     std::cout << "Generated PNG file: " << output << std::endl;
-#endif // 0
-
     return 0;
 }
