@@ -3,7 +3,7 @@
 namespace plutobook {
 
 ListItemBox::ListItemBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BlockFlowBox(node, style)
+    : BlockFlowBox(classKind, node, style)
 {
 }
 
@@ -13,7 +13,7 @@ InsideListMarkerBox::InsideListMarkerBox(const RefPtr<BoxStyle>& style)
 }
 
 OutsideListMarkerBox::OutsideListMarkerBox(const RefPtr<BoxStyle>& style)
-    : BlockFlowBox(nullptr, style)
+    : BlockFlowBox(classKind, nullptr, style)
 {
 }
 

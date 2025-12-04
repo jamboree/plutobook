@@ -5,7 +5,7 @@
 namespace plutobook {
 
 TextInputBox::TextInputBox(HtmlElement* element, const RefPtr<BoxStyle>& style)
-    : BlockFlowBox(element, style)
+    : BlockFlowBox(classKind, element, style)
 {
     setIsOverflowHidden(true);
 }
