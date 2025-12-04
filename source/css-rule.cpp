@@ -213,40 +213,40 @@ float CssCalcValue::resolve(const CssLengthResolver& resolver) const
     return 0;
 }
 
+template<typename T>
+struct Storage {
+    alignas(T) char data[sizeof(T)];
+    T* get() { return reinterpret_cast<T*>(data); }
+};
+
 class CssValuePool {
 public:
     CssValuePool();
 
-    CssInitialValue* initialValue() const { return m_initialValue; }
-    CssInheritValue* inheritValue() const { return m_inheritValue; }
-    CssUnsetValue* unsetValue() const { return m_unsetValue; }
+    CssInitialValue* initialValue() { return &m_initialValue; }
+    CssInheritValue* inheritValue() { return &m_inheritValue; }
+    CssUnsetValue* unsetValue() { return &m_unsetValue; }
 
-    CssIdentValue* identValue(CssValueID id) const;
+    CssIdentValue* identValue(CssValueID id);
 
 private:
-    using CssIdentValueList = std::vector<CssIdentValue*>;
-    CssInitialValue* m_initialValue;
-    CssInheritValue* m_inheritValue;
-    CssUnsetValue* m_unsetValue;
-    CssIdentValueList m_identValues;
+    CssInitialValue m_initialValue;
+    CssInheritValue m_inheritValue;
+    CssUnsetValue m_unsetValue;
+    Storage<CssIdentValue> m_identValues[kNumCssValueIDs];
 };
 
 CssValuePool::CssValuePool()
-    : m_initialValue(new CssInitialValue)
-    , m_inheritValue(new CssInheritValue)
-    , m_unsetValue(new CssUnsetValue)
-    , m_identValues(kNumCssValueIDs)
 {
-    assert(CssValueID::Unknown == static_cast<CssValueID>(0));
-    for(int i = 1; i < kNumCssValueIDs; ++i) {
+    for(int i = 0; i != kNumCssValueIDs; ++i) {
         const auto id = static_cast<CssValueID>(i);
-        m_identValues[i] = new CssIdentValue(id);
+        new(m_identValues[i].data) CssIdentValue(id);
     }
 }
 
-CssIdentValue* CssValuePool::identValue(CssValueID id) const
+CssIdentValue* CssValuePool::identValue(CssValueID id)
 {
-    return m_identValues[static_cast<int>(id)];
+    return m_identValues[std::to_underlying(id)].get();
 }
 
 static CssValuePool* cssValuePool()

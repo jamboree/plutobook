@@ -15,7 +15,6 @@
 
 namespace plutobook {
     enum class CssValueID : uint16_t {
-        Unknown,
         A3,
         A4,
         A5,
@@ -303,7 +302,7 @@ namespace plutobook {
 
         virtual ~CssValue() = default;
         ClassKind type() const noexcept { return m_type; }
-        CssValueID id() const;
+        bool hasID(CssValueID id) const;
 
     protected:
         explicit CssValue(ClassKind type) noexcept : m_type(type) {}
@@ -388,10 +387,10 @@ namespace plutobook {
         CssValueID m_value;
     };
 
-    inline CssValueID CssValue::id() const {
-        if (auto ident = to<CssIdentValue>(this))
-            return ident->value();
-        return CssValueID::Unknown;
+    inline bool CssValue::hasID(CssValueID id) const {
+        if (is<CssIdentValue>(*this))
+            return to<CssIdentValue>(*this).value() == id;
+        return false;
     }
 
     class CssCustomIdentValue final : public CssValue {

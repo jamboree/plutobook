@@ -70,7 +70,7 @@ void Counters::update(const Box* box)
     auto hasPageCounter = false;
     for(auto id : { CssPropertyID::CounterReset, CssPropertyID::CounterIncrement, CssPropertyID::CounterSet }) {
         auto counters = box->style()->get(id);
-        if(counters == nullptr || counters->id() == CssValueID::None)
+        if(counters == nullptr || counters->hasID(CssValueID::None))
             continue;
         for(const auto& counter : to<CssListValue>(*counters)) {
             const auto& pair = to<CssPairValue>(*counter);

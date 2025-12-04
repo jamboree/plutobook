@@ -606,7 +606,7 @@ constexpr TextDecorationLine& operator|=(TextDecorationLine& a, TextDecorationLi
 TextDecorationLine BoxStyle::textDecorationLine() const
 {
     auto value = get(CssPropertyID::TextDecorationLine);
-    if(value == nullptr || value->id() == CssValueID::None)
+    if(value == nullptr || value->hasID(CssValueID::None))
         return TextDecorationLine::None;
     TextDecorationLine decorations = TextDecorationLine::None;
     for(const auto& decoration : to<CssListValue>(*value)) {
@@ -730,7 +730,7 @@ float BoxStyle::wordSpacing() const
 float BoxStyle::lineHeight() const
 {
     auto value = get(CssPropertyID::LineHeight);
-    if(value == nullptr || value->id() == CssValueID::Normal)
+    if(value == nullptr || value->hasID(CssValueID::Normal))
         return fontLineSpacing();
     if(auto percent = to<CssPercentValue>(value))
         return percent->value() * fontSize() / 100.f;
@@ -796,7 +796,7 @@ VerticalAlign BoxStyle::verticalAlign() const
 LengthBox BoxStyle::clip() const
 {
     auto value = get(CssPropertyID::Clip);
-    if(value == nullptr || value->id() == CssValueID::Auto)
+    if(value == nullptr || value->hasID(CssValueID::Auto))
         return LengthBox(Length::Auto);
     const auto& rect = to<CssRectValue>(*value);
     auto left = convertLengthOrPercentOrAuto(*rect.position(LeftEdge));
@@ -1060,7 +1060,7 @@ Optional<int> BoxStyle::columnCount() const
 Optional<float> BoxStyle::pageScale() const
 {
     auto value = get(CssPropertyID::PageScale);
-    if(value == nullptr || value->id() == CssValueID::Auto)
+    if(value == nullptr || value->hasID(CssValueID::Auto))
         return std::nullopt;
     return convertNumberOrPercent(*value);
 }
@@ -1068,7 +1068,7 @@ Optional<float> BoxStyle::pageScale() const
 GlobalString BoxStyle::page() const
 {
     auto value = get(CssPropertyID::Page);
-    if(value == nullptr || value->id() == CssValueID::Auto)
+    if(value == nullptr || value->hasID(CssValueID::Auto))
         return emptyGlo;
     return convertCustomIdent(*value);
 }
@@ -1193,7 +1193,7 @@ Length BoxStyle::strokeDashoffset() const
 LengthList BoxStyle::strokeDasharray() const
 {
     auto value = get(CssPropertyID::StrokeDasharray);
-    if(value == nullptr || value->id() == CssValueID::None)
+    if(value == nullptr || value->hasID(CssValueID::None))
         return LengthList();
 
     LengthList dashes;
@@ -1409,7 +1409,7 @@ Point BoxStyle::getTransformOrigin(float width, float height) const
 Transform BoxStyle::getTransform(float width, float height) const
 {
     auto value = get(CssPropertyID::Transform);
-    if(value == nullptr || value->id() == CssValueID::None)
+    if(value == nullptr || value->hasID(CssValueID::None))
         return Transform();
     auto origin = getTransformOrigin(width, height);
     auto transform = Transform::makeTranslate(origin.x, origin.y);
@@ -1484,25 +1484,25 @@ Transform BoxStyle::getTransform(float width, float height) const
 bool BoxStyle::hasTransform() const
 {
     auto value = get(CssPropertyID::Transform);
-    return value && value->id() != CssValueID::None;
+    return value && !value->hasID(CssValueID::None);
 }
 
 bool BoxStyle::hasContent() const
 {
     auto value = get(CssPropertyID::Content);
-    return value && value->id() != CssValueID::None;
+    return value && !value->hasID(CssValueID::None);
 }
 
 bool BoxStyle::hasLineHeight() const
 {
     auto value = get(CssPropertyID::LineHeight);
-    return value && value->id() != CssValueID::Normal;
+    return value && !value->hasID(CssValueID::Normal);
 }
 
 bool BoxStyle::hasStroke() const
 {
     auto value = get(CssPropertyID::Stroke);
-    return value && value->id() != CssValueID::None;
+    return value && !value->hasID(CssValueID::None);
 }
 
 bool BoxStyle::hasBackground() const
@@ -1902,7 +1902,7 @@ void FontFeaturesBuilder::buildKerning(FontFeatureList& features) const
         return;
     constexpr FontTag kernTag("kern");
     const auto& ident = to<CssIdentValue>(*m_kerning);
-    switch(ident.id()) {
+    switch(ident.value()) {
     case CssValueID::Auto:
         break;
     case CssValueID::Normal:
@@ -1939,7 +1939,7 @@ void FontFeaturesBuilder::buildVariantLigatures(FontFeatureList& features) const
 
     for(const auto& value : to<CssListValue>(*m_variantLigatures)) {
         const auto& ident = to<CssIdentValue>(*value);
-        switch(ident.id()) {
+        switch(ident.value()) {
         case CssValueID::CommonLigatures:
             features.emplace_front(ligaTag, 1);
             features.emplace_front(cligTag, 1);
@@ -1979,7 +1979,7 @@ void FontFeaturesBuilder::buildVariantPosition(FontFeatureList& features) const
     constexpr FontTag subsTag("subs");
     constexpr FontTag supsTag("sups");
     const auto& ident = to<CssIdentValue>(*m_variantPosition);
-    switch(ident.id()) {
+    switch(ident.value()) {
     case CssValueID::Normal:
         break;
     case CssValueID::Sub:
@@ -2004,7 +2004,7 @@ void FontFeaturesBuilder::buildVariantCaps(FontFeatureList& features) const
     constexpr FontTag unicTag("unic");
     constexpr FontTag titlTag("titl");
     const auto& ident = to<CssIdentValue>(*m_variantCaps);
-    switch(ident.id()) {
+    switch(ident.value()) {
     case CssValueID::Normal:
         break;
     case CssValueID::SmallCaps:
@@ -2051,7 +2051,7 @@ void FontFeaturesBuilder::buildVariantNumeric(FontFeatureList& features) const
     constexpr FontTag zeroTag("zero");
     for(const auto& value : to<CssListValue>(*m_variantNumeric)) {
         const auto& ident = to<CssIdentValue>(*value);
-        switch(ident.id()) {
+        switch(ident.value()) {
         case CssValueID::LiningNums:
             features.emplace_front(lnumTag, 1);
             break;
@@ -2102,7 +2102,7 @@ void FontFeaturesBuilder::buildVariantEastAsian(FontFeatureList& features) const
     constexpr FontTag rubyTag("ruby");
     for(const auto& value : to<CssListValue>(*m_variantEastAsian)) {
         const auto& ident = to<CssIdentValue>(*value);
-        switch(ident.id()) {
+        switch(ident.value()) {
         case CssValueID::Jis78:
             features.emplace_front(jp78Tag, 1);
             break;
@@ -2377,7 +2377,7 @@ Color BoxStyle::convertColor(const CssValue& value) const
 
 Paint BoxStyle::convertPaint(const CssValue& value) const
 {
-    if(value.id() == CssValueID::None)
+    if(value.hasID(CssValueID::None))
         return Paint();
     if(is<CssLocalUrlValue>(value)) {
         const auto& url = to<CssLocalUrlValue>(value);

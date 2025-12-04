@@ -9,8 +9,6 @@ namespace plutobook {
     template<typename T>
     class RefCounted {
     public:
-        RefCounted() = default;
-
         void ref() { m_refCount.fetch_add(1u, std::memory_order::relaxed); }
         void deref() {
             if (m_refCount.fetch_sub(1u, std::memory_order::acq_rel) == 1u) {
@@ -21,9 +19,12 @@ namespace plutobook {
         uint32_t refCount() const { return m_refCount; }
         bool hasOneRefCount() const { return m_refCount == 1; }
 
-    private:
+    protected:
+        RefCounted() = default;
         RefCounted(const RefCounted&) = delete;
         RefCounted& operator=(const RefCounted&) = delete;
+
+    private:
         std::atomic_uint32_t m_refCount{1};
     };
 
@@ -169,13 +170,17 @@ namespace plutobook {
         friend RefPtr adoptPtr<T>(T*);
 
     private:
-        RefPtr(T* ptr, std::nullptr_t) : m_ptr(ptr) {}
+        struct Init {
+            T* ptr;
+        };
+
+        RefPtr(Init init) : m_ptr(init.ptr) {}
         T* m_ptr{nullptr};
     };
 
     template<typename T>
     inline RefPtr<T> adoptPtr(T* ptr) {
-        return RefPtr<T>(ptr, nullptr);
+        return typename RefPtr<T>::Init{ptr};
     }
 
     template<class T>

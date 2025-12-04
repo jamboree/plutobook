@@ -704,7 +704,7 @@ void PageLayout::buildPageMargin(const Counters& counters, PageBox* pageBox, Pag
     }
 
     auto content = marginStyle->get(CssPropertyID::Content);
-    if(content == nullptr || content->id() == CssValueID::None || content->id() == CssValueID::Normal) {
+    if(content == nullptr || content->hasID(CssValueID::None) || content->hasID(CssValueID::Normal)) {
         return;
     }
 

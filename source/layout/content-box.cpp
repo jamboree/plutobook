@@ -230,9 +230,9 @@ const HeapString& ContentBoxBuilder::resolveAttr(const CssAttrValue& attr) const
 void ContentBoxBuilder::build()
 {
     auto content = m_style->get(CssPropertyID::Content);
-    if(content && content->id() == CssValueID::None)
+    if(content && content->hasID(CssValueID::None))
         return;
-    if(content == nullptr || content->id() == CssValueID::Normal) {
+    if(content == nullptr || content->hasID(CssValueID::Normal)) {
         if(m_style->pseudoType() != PseudoType::Marker)
             return;
         if(auto image = m_style->listStyleImage()) {

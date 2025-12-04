@@ -1747,18 +1747,6 @@ void CssParser::addExpandedProperty(CssPropertyList& properties, CssPropertyID i
 }
 
 template<unsigned int N>
-static CssValueID matchIdent(const CssTokenStream& input, const IdentTable<CssValueID, N>& table)
-{
-    if(input->type() == CssToken::Type::Ident) {
-        if(auto id = matchIdent(table, input->data())) {
-            return id.value();
-        }
-    }
-
-    return CssValueID::Unknown;
-}
-
-template<unsigned int N>
 static RefPtr<CssIdentValue> consumeIdent(CssTokenStream& input, const IdentTable<CssValueID, N>& table)
 {
     if (input->type() == CssToken::Type::Ident) {
@@ -3101,22 +3089,13 @@ RefPtr<CssValue> CssParser::consumeFontFeature(CssTokenStream& input)
         value = input->integer();
         input.consumeIncludingWhitespace();
     } else if(input->type() == CssToken::Type::Ident) {
-        static constexpr auto table = makeIdentTable<CssValueID>({
-            {"on", CssValueID::On},
-            {"off", CssValueID::Off}
-        });
-
-        switch(matchIdent(input, table)) {
-        case CssValueID::On:
+        if (input->data() == "on") {
             value = 1;
-            break;
-        case CssValueID::Off:
+        } else if (input->data() == "off") {
             value = 0;
-            break;
-        default:
+        } else {
             return nullptr;
-        };
-
+        }
         input.consumeIncludingWhitespace();
     }
 

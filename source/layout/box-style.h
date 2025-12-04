@@ -491,7 +491,16 @@ namespace plutobook {
         boost::unordered_flat_map<GlobalString, RefPtr<CssVariableData>,
                                   StrHash, StrEqual>;
 
-    struct CssPropertyMap {
+    struct CssPropertyIDSet {
+        CssPropertyIDSet() = default;
+
+        void clear() { std::memset(m_bitset, 0, sizeof(m_bitset)); }
+
+    protected:
+        uint32_t m_bitset[(unsigned(CssPropertyID::Custom) + 31u) >> 5] = {};
+    };
+
+    struct CssPropertyMap : private CssPropertyIDSet {
         CssPropertyMap() = default;
         CssPropertyMap(const CssPropertyMap&) = delete;
         CssPropertyMap& operator=(const CssPropertyMap&) = delete;
@@ -502,11 +511,12 @@ namespace plutobook {
 
         CssValue* get(CssPropertyID id) const;
 
+        const CssPropertyIDSet& idSet() const { return *this; }
+
         template<class Fn>
         void foreach (Fn fn) const;
 
     private:
-        uint32_t m_bitset[(unsigned(CssPropertyID::Custom) + 31u) >> 5] = {};
         std::vector<RefPtr<CssValue>> m_values;
     };
 
