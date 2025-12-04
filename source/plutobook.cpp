@@ -597,6 +597,12 @@ bool Book::writeToPng(plutobook_stream_write_callback_t callback, void* closure,
     return canvas.writeToPng(callback, closure);
 }
 
+void Book::test()
+{
+    std::ofstream os("test.xml", std::ios::binary);
+    layoutIfNeeded()->serialize(os);
+}
+
 Document* Book::buildIfNeeded() const
 {
     auto document = m_document.get();

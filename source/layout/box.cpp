@@ -441,7 +441,7 @@ void Box::serializeStart(std::ostream& o, int indent, bool selfClosing, const Bo
 {
     auto name = line ? line->name() : box->name();
     writeIndent(o, indent);
-    o << '<' << name;
+    o << '<' << name << " node='";
     auto element = to<Element>(box->node());
     if(element == nullptr) {
         switch(box->style()->pseudoType()) {
@@ -467,6 +467,7 @@ void Box::serializeStart(std::ostream& o, int indent, bool selfClosing, const Bo
             o << '#' << id;
         }
     }
+    o << '\'';
 
     if(box->isAnonymous())
         o << " anonymous";

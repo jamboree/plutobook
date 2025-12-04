@@ -1490,6 +1490,8 @@ namespace plutobook {
          */
         Document* document() const { return m_document.get(); }
 
+        void test();
+
     private:
         Document* buildIfNeeded() const;
         Document* layoutIfNeeded() const;
