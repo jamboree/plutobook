@@ -312,29 +312,33 @@ namespace plutobook {
     using CssValueList = std::vector<RefPtr<CssValue>>;
 
     enum class CssStyleOrigin : uint8_t {
-        UserAgent,
-        PresentationAttribute,
-        Author,
-        Inline,
-        User
+        UserAgent = 0 << 1,
+        User = 1 << 1,
+        PresentationAttribute = 2 << 1,
+        Author = 3 << 1,
+        Inline = Author | 1,
     };
 
     class CssProperty {
     public:
         CssProperty(CssPropertyID id, CssStyleOrigin origin, bool important,
                     RefPtr<CssValue> value)
-            : m_id(id), m_origin(origin), m_important(important),
+            : m_id(id), m_precedence(calcPrecedence(origin, important)),
               m_value(std::move(value)) {}
 
         CssPropertyID id() const { return m_id; }
-        CssStyleOrigin origin() const { return m_origin; }
-        bool important() const { return m_important; }
         const RefPtr<CssValue>& value() const { return m_value; }
 
     protected:
+        static uint8_t calcPrecedence(CssStyleOrigin origin, bool important) {
+            auto precedence = std::to_underlying(origin);
+            if (important)
+                precedence ^= 0b1110; // Don't flip the `inline` bit.
+            return precedence;
+        }
+
         CssPropertyID m_id;
-        CssStyleOrigin m_origin;
-        bool m_important;
+        uint8_t m_precedence;
         RefPtr<CssValue> m_value;
     };
 

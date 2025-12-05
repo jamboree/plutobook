@@ -61,10 +61,8 @@ private:
 
 inline bool CssPropertyData::isLessThan(const CssPropertyData& data) const
 {
-    if(m_important != data.m_important)
-        return data.m_important;
-    if(m_origin != data.m_origin)
-        return m_origin < data.m_origin;
+    if(m_precedence != data.m_precedence)
+        return m_precedence < data.m_precedence;
     if(m_specificity != data.m_specificity)
         return m_specificity < data.m_specificity;
     return m_position < data.m_position;
