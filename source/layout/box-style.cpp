@@ -32,7 +32,7 @@ void CssPropertyMap::erase(CssPropertyID id) {
     }
 }
 
-void CssPropertyMap::set(CssPropertyID id, RefPtr<CssValue> value) {
+void CssPropertyMap::set(CssPropertyID id, CssValuePtr value) {
     auto idx = unsigned(id);
     const auto block = idx >> 5;
     const auto bit = 1u << (idx & 31u);
@@ -48,7 +48,7 @@ void CssPropertyMap::set(CssPropertyID id, RefPtr<CssValue> value) {
     }
 }
 
-CssValue* CssPropertyMap::get(CssPropertyID id) const {
+CssValuePtr CssPropertyMap::get(CssPropertyID id) const {
     auto idx = unsigned(id);
     const auto block = idx >> 5;
     const auto bit = 1u << (idx & 31u);
@@ -57,7 +57,7 @@ CssValue* CssPropertyMap::get(CssPropertyID id) const {
         for (unsigned i = 0; i != block; ++i) {
             idx += std::popcount(m_bitset[i]);
         }
-        return m_values[idx].get();
+        return m_values[idx];
     }
     return nullptr;
 }
@@ -1551,7 +1551,9 @@ void BoxStyle::setCustom(GlobalString name, RefPtr<CssVariableData> value)
     m_customProperties.insert_or_assign(name, std::move(value));
 }
 
-void BoxStyle::set(CssPropertyID id, RefPtr<CssValue> value)
+CssValuePtr BoxStyle::get(CssPropertyID id) const { return m_properties.get(id); }
+
+void BoxStyle::set(CssPropertyID id, CssValuePtr value)
 {
     switch(id) {
     case CssPropertyID::Display:
@@ -1757,7 +1759,7 @@ void BoxStyle::inheritFrom(const BoxStyle* parentStyle)
     m_borderCollapse = parentStyle->m_borderCollapse;
     m_color = parentStyle->m_color;
     m_customProperties = parentStyle->m_customProperties;
-    parentStyle->properties().foreach([this](CssPropertyID id, const RefPtr<CssValue>& value) {
+    parentStyle->properties().foreach([this](CssPropertyID id, const CssValuePtr& value) {
         switch (id) {
         case CssPropertyID::BorderCollapse:
         case CssPropertyID::CaptionSide:
@@ -1863,13 +1865,13 @@ private:
     void buildVariantEastAsian(FontFeatureList& features) const;
     void buildFeatureSettings(FontFeatureList& features) const;
 
-    RefPtr<CssValue> m_kerning;
-    RefPtr<CssValue> m_variantLigatures;
-    RefPtr<CssValue> m_variantPosition;
-    RefPtr<CssValue> m_variantCaps;
-    RefPtr<CssValue> m_variantNumeric;
-    RefPtr<CssValue> m_variantEastAsian;
-    RefPtr<CssValue> m_featureSettings;
+    CssValuePtr m_kerning;
+    CssValuePtr m_variantLigatures;
+    CssValuePtr m_variantPosition;
+    CssValuePtr m_variantCaps;
+    CssValuePtr m_variantNumeric;
+    CssValuePtr m_variantEastAsian;
+    CssValuePtr m_featureSettings;
 };
 
 FontFeaturesBuilder::FontFeaturesBuilder(const CssPropertyMap& properties)
@@ -2176,7 +2178,7 @@ float BoxStyle::viewportMax() const
     return std::max(document()->viewportWidth(), document()->viewportHeight());
 }
 
-RefPtr<CssValue> BoxStyle::resolveLength(const RefPtr<CssValue>& value) const
+CssValuePtr BoxStyle::resolveLength(const CssValuePtr& value) const
 {
     if(is<CssLengthValue>(value)) {
         const auto& length = to<CssLengthValue>(*value);

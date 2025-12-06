@@ -9,8 +9,11 @@ namespace plutobook {
     template<typename T>
     class RefCounted {
     public:
-        void ref() { m_refCount.fetch_add(1u, std::memory_order::relaxed); }
-        void deref() {
+        void ref() noexcept {
+            m_refCount.fetch_add(1u, std::memory_order::relaxed);
+        }
+
+        void deref() noexcept {
             if (m_refCount.fetch_sub(1u, std::memory_order::acq_rel) == 1u) {
                 delete static_cast<T*>(this);
             }
@@ -41,6 +44,27 @@ namespace plutobook {
             ptr->deref();
         }
     }
+
+    template<unsigned Size>
+    struct Uint;
+
+    template<>
+    struct Uint<1> {
+        using type = uint8_t;
+    };
+
+    template<>
+    struct Uint<2> {
+        using type = uint16_t;
+    };
+
+    template<>
+    struct Uint<4> {
+        using type = uint32_t;
+    };
+
+    template<class T>
+    using UintOf = Uint<sizeof(T)>::type;
 
     template<typename T>
     class RefPtr;
@@ -241,8 +265,8 @@ namespace plutobook {
         }
     }
 
-    template<typename T, typename U>
-    inline bool is(U* value) {
+    template<typename T>
+    inline bool is(const typename T::ClassRoot* value) {
         return value && is<T>(*value);
     }
 
@@ -251,37 +275,30 @@ namespace plutobook {
         return value && is<T>(*value);
     }
 
-    template<typename T, typename U>
-    inline T& to(U& value) {
+    template<typename T>
+    inline T& to(typename T::ClassRoot& value) {
         assert(is<T>(value));
         return static_cast<T&>(value);
     }
 
-    template<typename T, typename U>
-    inline const T& to(const U& value) {
+    template<typename T>
+    inline const T& to(const typename T::ClassRoot& value) {
         assert(is<T>(value));
         return static_cast<const T&>(value);
     }
 
-    template<typename T, typename U>
-    inline T* to(U* value) {
+    template<typename T>
+    inline T* to(typename T::ClassRoot* value) {
         if (!is<T>(value))
             return nullptr;
         return static_cast<T*>(value);
     }
 
-    template<typename T, typename U>
-    inline const T* to(const U* value) {
+    template<typename T>
+    inline const T* to(const typename T::ClassRoot* value) {
         if (!is<T>(value))
             return nullptr;
         return static_cast<const T*>(value);
-    }
-
-    template<typename T, typename U>
-    inline RefPtr<T> to(RefPtr<U>& value) {
-        if (!is<T>(value))
-            return nullptr;
-        return static_cast<T&>(*value);
     }
 
     template<typename T, typename U>

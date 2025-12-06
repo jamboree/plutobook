@@ -152,7 +152,7 @@ void HtmlElement::buildBox(Counters& counters, Box* parent)
     if(style == nullptr || style->display() == Display::None)
         return;
     if(style->position() == Position::Running) {
-        const auto* value = style->get(CssPropertyID::Position);
+        const auto value = style->get(CssPropertyID::Position);
         const auto& position = to<CssUnaryFunctionValue>(*value);
         assert(position.id() == CssFunctionID::Running);
         const auto& name = to<CssCustomIdentValue>(*position.value());

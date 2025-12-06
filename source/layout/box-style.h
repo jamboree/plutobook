@@ -485,6 +485,7 @@ namespace plutobook {
     using FontFamilyList = std::forward_list<GlobalString>;
 
     class CssValue;
+    class CssValuePtr;
     class CssVariableData;
 
     using CssCustomPropertyMap =
@@ -507,9 +508,9 @@ namespace plutobook {
 
         void erase(CssPropertyID id);
 
-        void set(CssPropertyID id, RefPtr<CssValue> value);
+        void set(CssPropertyID id, CssValuePtr value);
 
-        CssValue* get(CssPropertyID id) const;
+        CssValuePtr get(CssPropertyID id) const;
 
         const CssPropertyIDSet& idSet() const { return *this; }
 
@@ -517,7 +518,7 @@ namespace plutobook {
         void foreach (Fn fn) const;
 
     private:
-        std::vector<RefPtr<CssValue>> m_values;
+        std::vector<CssValuePtr> m_values;
     };
 
     enum class PseudoType : uint8_t {
@@ -843,8 +844,8 @@ namespace plutobook {
         CssVariableData* getCustom(const std::string_view& name) const;
         void setCustom(GlobalString name, RefPtr<CssVariableData> value);
 
-        CssValue* get(CssPropertyID id) const { return m_properties.get(id); }
-        void set(CssPropertyID id, RefPtr<CssValue> value);
+        CssValuePtr get(CssPropertyID id) const;
+        void set(CssPropertyID id, CssValuePtr value);
         void reset(CssPropertyID id);
 
         void inheritFrom(const BoxStyle* parentStyle);
@@ -860,7 +861,7 @@ namespace plutobook {
         float viewportMin() const;
         float viewportMax() const;
 
-        RefPtr<CssValue> resolveLength(const RefPtr<CssValue>& value) const;
+        CssValuePtr resolveLength(const CssValuePtr& value) const;
 
         float convertLengthValue(const CssValue& value) const;
         float convertLineWidth(const CssValue& value) const;

@@ -92,131 +92,125 @@ namespace plutobook {
                                      CssRuleType ruleType);
 
         void addProperty(CssPropertyList& properties, CssPropertyID id,
-                         bool important, RefPtr<CssValue> value);
+                         bool important, CssValuePtr value);
         void addExpandedProperty(CssPropertyList& properties, CssPropertyID id,
-                                 bool important, RefPtr<CssValue> value);
+                                 bool important, CssValuePtr value);
 
-        RefPtr<CssIdentValue> consumeFontStyleIdent(CssTokenStream& input);
-        RefPtr<CssIdentValue> consumeFontStretchIdent(CssTokenStream& input);
-        RefPtr<CssIdentValue>
+        ValPtr<CssIdentValue> consumeFontStyleIdent(CssTokenStream& input);
+        ValPtr<CssIdentValue> consumeFontStretchIdent(CssTokenStream& input);
+        ValPtr<CssIdentValue>
         consumeFontVariantCapsIdent(CssTokenStream& input);
-        RefPtr<CssIdentValue>
+        ValPtr<CssIdentValue>
         consumeFontVariantEmojiIdent(CssTokenStream& input);
-        RefPtr<CssIdentValue>
+        ValPtr<CssIdentValue>
         consumeFontVariantPositionIdent(CssTokenStream& input);
-        RefPtr<CssIdentValue>
+        ValPtr<CssIdentValue>
         consumeFontVariantEastAsianIdent(CssTokenStream& input);
-        RefPtr<CssIdentValue>
+        ValPtr<CssIdentValue>
         consumeFontVariantLigaturesIdent(CssTokenStream& input);
-        RefPtr<CssIdentValue>
+        ValPtr<CssIdentValue>
         consumeFontVariantNumericIdent(CssTokenStream& input);
 
-        RefPtr<CssValue> consumeNone(CssTokenStream& input);
-        RefPtr<CssValue> consumeAuto(CssTokenStream& input);
-        RefPtr<CssValue> consumeNormal(CssTokenStream& input);
-        RefPtr<CssValue> consumeNoneOrAuto(CssTokenStream& input);
-        RefPtr<CssValue> consumeNoneOrNormal(CssTokenStream& input);
+        CssValuePtr consumeNone(CssTokenStream& input);
+        CssValuePtr consumeAuto(CssTokenStream& input);
+        CssValuePtr consumeNormal(CssTokenStream& input);
+        CssValuePtr consumeNoneOrAuto(CssTokenStream& input);
+        CssValuePtr consumeNoneOrNormal(CssTokenStream& input);
 
-        RefPtr<CssValue> consumeInteger(CssTokenStream& input, bool negative);
-        RefPtr<CssValue> consumeIntegerOrAuto(CssTokenStream& input,
-                                              bool negative);
-        RefPtr<CssValue> consumePositiveInteger(CssTokenStream& input);
-        RefPtr<CssValue> consumePositiveIntegerOrAuto(CssTokenStream& input);
-        RefPtr<CssValue> consumePercent(CssTokenStream& input, bool negative);
-        RefPtr<CssValue> consumeNumber(CssTokenStream& input, bool negative);
-        RefPtr<CssValue> consumeNumberOrPercent(CssTokenStream& input,
-                                                bool negative);
-        RefPtr<CssValue> consumeNumberOrPercentOrAuto(CssTokenStream& input,
-                                                      bool negative);
-        RefPtr<CssValue> consumeCalc(CssTokenStream& input, bool negative,
-                                     bool unitless);
-        RefPtr<CssValue> consumeLength(CssTokenStream& input, bool negative,
-                                       bool unitless);
-        RefPtr<CssValue> consumeLengthOrPercent(CssTokenStream& input,
-                                                bool negative, bool unitless);
-        RefPtr<CssValue> consumeLengthOrAuto(CssTokenStream& input,
-                                             bool negative, bool unitless);
-        RefPtr<CssValue> consumeLengthOrNormal(CssTokenStream& input,
-                                               bool negative, bool unitless);
-        RefPtr<CssValue> consumeLengthOrPercentOrAuto(CssTokenStream& input,
-                                                      bool negative,
-                                                      bool unitless);
-        RefPtr<CssValue> consumeLengthOrPercentOrNone(CssTokenStream& input,
-                                                      bool negative,
-                                                      bool unitless);
-        RefPtr<CssValue> consumeLengthOrPercentOrNormal(CssTokenStream& input,
-                                                        bool negative,
-                                                        bool unitless);
-        RefPtr<CssValue> consumeWidthOrHeight(CssTokenStream& input,
-                                              bool unitless);
-        RefPtr<CssValue> consumeWidthOrHeightOrAuto(CssTokenStream& input,
-                                                    bool unitless);
-        RefPtr<CssValue> consumeWidthOrHeightOrNone(CssTokenStream& input,
-                                                    bool unitless);
+        CssValuePtr consumeInteger(CssTokenStream& input, bool negative);
+        CssValuePtr consumeIntegerOrAuto(CssTokenStream& input, bool negative);
+        CssValuePtr consumePositiveInteger(CssTokenStream& input);
+        CssValuePtr consumePositiveIntegerOrAuto(CssTokenStream& input);
+        CssValuePtr consumePercent(CssTokenStream& input, bool negative);
+        CssValuePtr consumeNumber(CssTokenStream& input, bool negative);
+        CssValuePtr consumeNumberOrPercent(CssTokenStream& input,
+                                           bool negative);
+        CssValuePtr consumeNumberOrPercentOrAuto(CssTokenStream& input,
+                                                 bool negative);
+        CssValuePtr consumeCalc(CssTokenStream& input, bool negative,
+                                bool unitless);
+        CssValuePtr consumeLength(CssTokenStream& input, bool negative,
+                                  bool unitless);
+        CssValuePtr consumeLengthOrPercent(CssTokenStream& input, bool negative,
+                                           bool unitless);
+        CssValuePtr consumeLengthOrAuto(CssTokenStream& input, bool negative,
+                                        bool unitless);
+        CssValuePtr consumeLengthOrNormal(CssTokenStream& input, bool negative,
+                                          bool unitless);
+        CssValuePtr consumeLengthOrPercentOrAuto(CssTokenStream& input,
+                                                 bool negative, bool unitless);
+        CssValuePtr consumeLengthOrPercentOrNone(CssTokenStream& input,
+                                                 bool negative, bool unitless);
+        CssValuePtr consumeLengthOrPercentOrNormal(CssTokenStream& input,
+                                                   bool negative,
+                                                   bool unitless);
+        CssValuePtr consumeWidthOrHeight(CssTokenStream& input, bool unitless);
+        CssValuePtr consumeWidthOrHeightOrAuto(CssTokenStream& input,
+                                               bool unitless);
+        CssValuePtr consumeWidthOrHeightOrNone(CssTokenStream& input,
+                                               bool unitless);
 
-        RefPtr<CssValue> consumeString(CssTokenStream& input);
-        RefPtr<CssValue> consumeCustomIdent(CssTokenStream& input);
-        RefPtr<CssValue> consumeStringOrCustomIdent(CssTokenStream& input);
-        RefPtr<CssValue> consumeAttr(CssTokenStream& input);
-        RefPtr<CssValue> consumeLocalUrl(CssTokenStream& input);
-        RefPtr<CssValue> consumeLocalUrlOrAttr(CssTokenStream& input);
-        RefPtr<CssValue> consumeLocalUrlOrNone(CssTokenStream& input);
-        RefPtr<CssValue> consumeUrl(CssTokenStream& input);
-        RefPtr<CssValue> consumeUrlOrNone(CssTokenStream& input);
-        RefPtr<CssValue> consumeImage(CssTokenStream& input);
-        RefPtr<CssValue> consumeImageOrNone(CssTokenStream& input);
-        RefPtr<CssValue> consumeColor(CssTokenStream& input);
-        RefPtr<CssValue> consumeRgb(CssTokenStream& input);
-        RefPtr<CssValue> consumeHsl(CssTokenStream& input);
-        RefPtr<CssValue> consumeHwb(CssTokenStream& input);
+        CssValuePtr consumeString(CssTokenStream& input);
+        CssValuePtr consumeCustomIdent(CssTokenStream& input);
+        CssValuePtr consumeStringOrCustomIdent(CssTokenStream& input);
+        CssValuePtr consumeAttr(CssTokenStream& input);
+        CssValuePtr consumeLocalUrl(CssTokenStream& input);
+        CssValuePtr consumeLocalUrlOrAttr(CssTokenStream& input);
+        CssValuePtr consumeLocalUrlOrNone(CssTokenStream& input);
+        CssValuePtr consumeUrl(CssTokenStream& input);
+        CssValuePtr consumeUrlOrNone(CssTokenStream& input);
+        CssValuePtr consumeImage(CssTokenStream& input);
+        CssValuePtr consumeImageOrNone(CssTokenStream& input);
+        CssValuePtr consumeColor(CssTokenStream& input);
+        CssValuePtr consumeRgb(CssTokenStream& input);
+        CssValuePtr consumeHsl(CssTokenStream& input);
+        CssValuePtr consumeHwb(CssTokenStream& input);
 
-        RefPtr<CssValue> consumePaint(CssTokenStream& input);
-        RefPtr<CssValue> consumeListStyleType(CssTokenStream& input);
-        RefPtr<CssValue> consumeQuotes(CssTokenStream& input);
-        RefPtr<CssValue> consumeContent(CssTokenStream& input);
-        RefPtr<CssValue> consumeContentLeader(CssTokenStream& input);
-        RefPtr<CssValue> consumeContentElement(CssTokenStream& input);
-        RefPtr<CssValue> consumeContentCounter(CssTokenStream& input,
-                                               bool counters);
-        RefPtr<CssValue> consumeContentTargetCounter(CssTokenStream& input,
-                                                     bool counters);
-        RefPtr<CssValue> consumeContentQrCode(CssTokenStream& input);
-        RefPtr<CssValue> consumeCounter(CssTokenStream& input, bool increment);
-        RefPtr<CssValue> consumePage(CssTokenStream& input);
-        RefPtr<CssValue> consumeOrientation(CssTokenStream& input);
-        RefPtr<CssValue> consumeSize(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontSize(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontWeight(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontStyle(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontStretch(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontFamilyName(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontFamily(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontFeature(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontFeatureSettings(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontVariation(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontVariationSettings(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontVariantCaps(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontVariantEmoji(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontVariantPosition(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontVariantEastAsian(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontVariantLigatures(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontVariantNumeric(CssTokenStream& input);
-        RefPtr<CssValue> consumeLineWidth(CssTokenStream& input);
-        RefPtr<CssValue> consumeBorderRadiusValue(CssTokenStream& input);
-        RefPtr<CssValue> consumeClip(CssTokenStream& input);
-        RefPtr<CssValue> consumeDashList(CssTokenStream& input);
-        RefPtr<CssValue> consumePosition(CssTokenStream& input);
-        RefPtr<CssValue> consumeVerticalAlign(CssTokenStream& input);
-        RefPtr<CssValue> consumeBaselineShift(CssTokenStream& input);
-        RefPtr<CssValue> consumeTextDecorationLine(CssTokenStream& input);
-        RefPtr<CssValue> consumePositionCoordinate(CssTokenStream& input);
-        RefPtr<CssValue> consumeBackgroundSize(CssTokenStream& input);
-        RefPtr<CssValue> consumeAngle(CssTokenStream& input);
-        RefPtr<CssValue> consumeTransformValue(CssTokenStream& input);
-        RefPtr<CssValue> consumeTransform(CssTokenStream& input);
-        RefPtr<CssValue> consumePaintOrder(CssTokenStream& input);
-        RefPtr<CssValue> consumeLonghand(CssTokenStream& input,
-                                         CssPropertyID id);
+        CssValuePtr consumePaint(CssTokenStream& input);
+        CssValuePtr consumeListStyleType(CssTokenStream& input);
+        CssValuePtr consumeQuotes(CssTokenStream& input);
+        CssValuePtr consumeContent(CssTokenStream& input);
+        CssValuePtr consumeContentLeader(CssTokenStream& input);
+        CssValuePtr consumeContentElement(CssTokenStream& input);
+        CssValuePtr consumeContentCounter(CssTokenStream& input, bool counters);
+        CssValuePtr consumeContentTargetCounter(CssTokenStream& input,
+                                                bool counters);
+        CssValuePtr consumeContentQrCode(CssTokenStream& input);
+        CssValuePtr consumeCounter(CssTokenStream& input, bool increment);
+        CssValuePtr consumePage(CssTokenStream& input);
+        CssValuePtr consumeOrientation(CssTokenStream& input);
+        CssValuePtr consumeSize(CssTokenStream& input);
+        CssValuePtr consumeFontSize(CssTokenStream& input);
+        CssValuePtr consumeFontWeight(CssTokenStream& input);
+        CssValuePtr consumeFontStyle(CssTokenStream& input);
+        CssValuePtr consumeFontStretch(CssTokenStream& input);
+        CssValuePtr consumeFontFamilyName(CssTokenStream& input);
+        CssValuePtr consumeFontFamily(CssTokenStream& input);
+        CssValuePtr consumeFontFeature(CssTokenStream& input);
+        CssValuePtr consumeFontFeatureSettings(CssTokenStream& input);
+        CssValuePtr consumeFontVariation(CssTokenStream& input);
+        CssValuePtr consumeFontVariationSettings(CssTokenStream& input);
+        CssValuePtr consumeFontVariantCaps(CssTokenStream& input);
+        CssValuePtr consumeFontVariantEmoji(CssTokenStream& input);
+        CssValuePtr consumeFontVariantPosition(CssTokenStream& input);
+        CssValuePtr consumeFontVariantEastAsian(CssTokenStream& input);
+        CssValuePtr consumeFontVariantLigatures(CssTokenStream& input);
+        CssValuePtr consumeFontVariantNumeric(CssTokenStream& input);
+        CssValuePtr consumeLineWidth(CssTokenStream& input);
+        CssValuePtr consumeBorderRadiusValue(CssTokenStream& input);
+        CssValuePtr consumeClip(CssTokenStream& input);
+        CssValuePtr consumeDashList(CssTokenStream& input);
+        CssValuePtr consumePosition(CssTokenStream& input);
+        CssValuePtr consumeVerticalAlign(CssTokenStream& input);
+        CssValuePtr consumeBaselineShift(CssTokenStream& input);
+        CssValuePtr consumeTextDecorationLine(CssTokenStream& input);
+        CssValuePtr consumePositionCoordinate(CssTokenStream& input);
+        CssValuePtr consumeBackgroundSize(CssTokenStream& input);
+        CssValuePtr consumeAngle(CssTokenStream& input);
+        CssValuePtr consumeTransformValue(CssTokenStream& input);
+        CssValuePtr consumeTransform(CssTokenStream& input);
+        CssValuePtr consumePaintOrder(CssTokenStream& input);
+        CssValuePtr consumeLonghand(CssTokenStream& input, CssPropertyID id);
 
         bool consumeFlex(CssTokenStream& input, CssPropertyList& properties,
                          bool important);
@@ -246,23 +240,22 @@ namespace plutobook {
                               CssPropertyList& properties, CssPropertyID id,
                               bool important);
 
-        RefPtr<CssValue> consumeFontFaceSource(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontFaceSrc(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontFaceWeight(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontFaceStyle(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontFaceStretch(CssTokenStream& input);
-        RefPtr<CssValue> consumeFontFaceUnicodeRange(CssTokenStream& input);
+        CssValuePtr consumeFontFaceSource(CssTokenStream& input);
+        CssValuePtr consumeFontFaceSrc(CssTokenStream& input);
+        CssValuePtr consumeFontFaceWeight(CssTokenStream& input);
+        CssValuePtr consumeFontFaceStyle(CssTokenStream& input);
+        CssValuePtr consumeFontFaceStretch(CssTokenStream& input);
+        CssValuePtr consumeFontFaceUnicodeRange(CssTokenStream& input);
 
-        RefPtr<CssValue> consumeCounterStyleName(CssTokenStream& input);
-        RefPtr<CssValue> consumeCounterStyleSystem(CssTokenStream& input);
-        RefPtr<CssValue> consumeCounterStyleNegative(CssTokenStream& input);
-        RefPtr<CssValue> consumeCounterStyleSymbol(CssTokenStream& input);
-        RefPtr<CssValue> consumeCounterStyleRangeBound(CssTokenStream& input);
-        RefPtr<CssValue> consumeCounterStyleRange(CssTokenStream& input);
-        RefPtr<CssValue> consumeCounterStylePad(CssTokenStream& input);
-        RefPtr<CssValue> consumeCounterStyleSymbols(CssTokenStream& input);
-        RefPtr<CssValue>
-        consumeCounterStyleAdditiveSymbols(CssTokenStream& input);
+        CssValuePtr consumeCounterStyleName(CssTokenStream& input);
+        CssValuePtr consumeCounterStyleSystem(CssTokenStream& input);
+        CssValuePtr consumeCounterStyleNegative(CssTokenStream& input);
+        CssValuePtr consumeCounterStyleSymbol(CssTokenStream& input);
+        CssValuePtr consumeCounterStyleRangeBound(CssTokenStream& input);
+        CssValuePtr consumeCounterStyleRange(CssTokenStream& input);
+        CssValuePtr consumeCounterStylePad(CssTokenStream& input);
+        CssValuePtr consumeCounterStyleSymbols(CssTokenStream& input);
+        CssValuePtr consumeCounterStyleAdditiveSymbols(CssTokenStream& input);
 
         GlobalString defaultNamespace() const { return m_defaultNamespace; }
         GlobalString determineNamespace(GlobalString prefix) const;

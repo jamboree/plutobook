@@ -295,21 +295,173 @@ namespace plutobook {
         UnaryFunction
     };
 
-    class CssValue : public RefCounted<CssValue> {
+    class CssValue {
     public:
         using ClassRoot = CssValue;
         using ClassKind = CssValueType;
 
-        virtual ~CssValue() = default;
-        ClassKind type() const noexcept { return m_type; }
+        ClassKind type() const noexcept {
+            return ClassKind((m_data >> 1) & 31u);
+        }
         bool hasID(CssValueID id) const;
 
     protected:
-        explicit CssValue(ClassKind type) noexcept : m_type(type) {}
-        ClassKind m_type;
+        explicit CssValue(ClassKind type) noexcept
+            : m_data((std::to_underlying(type) << 1) | 1u) {}
+
+        template<class T>
+        void initValue(T value) noexcept {
+            m_data |= uint64_t(std::bit_cast<UintOf<T>>(value)) << 32;
+        }
+
+        template<class T>
+        void initTag(T value) noexcept {
+            m_data |= uint32_t(std::bit_cast<UintOf<T>>(value)) << 6;
+        }
+
+        template<class T>
+        T valueAs() const noexcept {
+            return std::bit_cast<T>(UintOf<T>(m_data >> 32));
+        }
+
+        template<class T>
+        T tagAs() const noexcept {
+            return std::bit_cast<T>(UintOf<T>((m_data & 0xFFFFFFFFu) >> 6));
+        }
+
+    private:
+        uint64_t m_data;
     };
 
-    using CssValueList = std::vector<RefPtr<CssValue>>;
+    class CssHeapValue : public CssValue, public RefCounted<CssHeapValue> {
+    public:
+        using CssValue::CssValue;
+
+        virtual ~CssHeapValue() = default;
+    };
+
+    class CssSmallValue : public CssValue {
+    public:
+        using CssValue::CssValue;
+    };
+
+    class CssValuePtr {
+    public:
+        CssValuePtr() = default;
+        CssValuePtr(std::nullptr_t) noexcept {}
+
+        CssValuePtr(const CssValuePtr& other) noexcept : m_data(other.m_data) {
+            if (m_data && isHeap())
+                asHeap().ref();
+        }
+
+        CssValuePtr(CssValuePtr&& other) noexcept : m_data(other.m_data) {
+            other.m_data = 0;
+        }
+
+        explicit CssValuePtr(const CssSmallValue& value) noexcept {
+            std::memcpy(&m_data, &value, sizeof(CssSmallValue));
+            assert(isSmall());
+        }
+
+        explicit CssValuePtr(CssHeapValue* ptr) noexcept
+            : m_data(reinterpret_cast<uintptr_t>(ptr)) {
+            assert(isHeap());
+        }
+
+        ~CssValuePtr() {
+            if (m_data && isHeap())
+                asHeap().deref();
+        }
+
+        CssValuePtr& operator=(CssValuePtr other) noexcept {
+            this->~CssValuePtr();
+            return *new (this) CssValuePtr(std::move(other));
+        }
+
+        explicit operator bool() const noexcept { return m_data != 0; }
+
+        const CssValue& operator*() const noexcept {
+            if (isHeap())
+                return asHeap();
+            return asSmall();
+        }
+
+        const CssValue* operator->() const noexcept { return &operator*(); }
+
+        bool isSmall() const noexcept { return bool(m_data & 1u); }
+
+        bool isHeap() const noexcept { return !(m_data & 1u); }
+
+        const CssSmallValue& asSmall() const noexcept {
+            return *reinterpret_cast<const CssSmallValue*>(&m_data);
+        }
+
+        CssHeapValue& asHeap() const noexcept {
+            return *reinterpret_cast<CssHeapValue*>(m_data);
+        }
+
+        bool operator==(const CssValuePtr&) const = default;
+
+    private:
+        uint64_t m_data = 0;
+    };
+
+    template<class T>
+    class ValPtr : public CssValuePtr {
+    public:
+        ValPtr() = default;
+        ValPtr(std::nullptr_t) noexcept {}
+
+        explicit ValPtr(const T& value) noexcept
+            requires std::derived_from<T, CssSmallValue>
+            : CssValuePtr(value) {
+            static_assert(sizeof(T) == sizeof(CssSmallValue));
+        }
+
+        explicit ValPtr(T* ptr) noexcept
+            requires std::derived_from<T, CssHeapValue>
+            : CssValuePtr(ptr) {}
+
+        const T& operator*() const noexcept {
+            if constexpr (std::derived_from<T, CssHeapValue>) {
+                return static_cast<const T&>(asHeap());
+            } else {
+                static_assert(std::derived_from<T, CssSmallValue>);
+                return static_cast<const T&>(asSmall());
+            }
+        }
+
+        const T* operator->() const noexcept { return &operator*(); }
+    };
+
+    template<class T>
+    inline bool is(const CssValuePtr& value) {
+        if (!value)
+            return false;
+        if constexpr (std::derived_from<T, CssHeapValue>) {
+            return value.isHeap() && is<T>(value.asHeap());
+        } else {
+            static_assert(std::derived_from<T, CssSmallValue>);
+            return value.isSmall() && is<T>(value.asSmall());
+        }
+    }
+
+    template<class T>
+    inline ValPtr<T> to(const CssValuePtr& value) {
+        if (!is<T>(value))
+            return nullptr;
+        if constexpr (std::derived_from<T, CssHeapValue>) {
+            auto& heap = value.asHeap();
+            heap.ref();
+            return ValPtr<T>(static_cast<T*>(&heap));
+        } else {
+            static_assert(std::derived_from<T, CssSmallValue>);
+            return ValPtr<T>(static_cast<const T&>(value.asSmall()));
+        }
+    }
+
+    using CssValueList = std::vector<CssValuePtr>;
 
     enum class CssStyleOrigin : uint8_t {
         UserAgent = 0 << 1,
@@ -322,12 +474,12 @@ namespace plutobook {
     class CssProperty {
     public:
         CssProperty(CssPropertyID id, CssStyleOrigin origin, bool important,
-                    RefPtr<CssValue> value)
+                    CssValuePtr value)
             : m_id(id), m_precedence(calcPrecedence(origin, important)),
               m_value(std::move(value)) {}
 
         CssPropertyID id() const { return m_id; }
-        const RefPtr<CssValue>& value() const { return m_value; }
+        const CssValuePtr& value() const { return m_value; }
 
     protected:
         static uint8_t calcPrecedence(CssStyleOrigin origin, bool important) {
@@ -339,57 +491,70 @@ namespace plutobook {
 
         CssPropertyID m_id;
         uint8_t m_precedence;
-        RefPtr<CssValue> m_value;
+        CssValuePtr m_value;
     };
 
     using CssPropertyList = std::vector<CssProperty>;
 
-    class CssInitialValue final : public CssValue {
+    class CssInitialValue final : public CssSmallValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Initial;
 
-        static RefPtr<CssInitialValue> create();
+        static ValPtr<CssInitialValue> create();
 
     private:
-        CssInitialValue() noexcept : CssValue(classKind) {}
-        friend class CssValuePool;
+        CssInitialValue() noexcept : CssSmallValue(classKind) {}
     };
 
-    class CssInheritValue final : public CssValue {
+    inline ValPtr<CssInitialValue> CssInitialValue::create() {
+        return ValPtr(CssInitialValue());
+    }
+
+    class CssInheritValue final : public CssSmallValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Inherit;
 
-        static RefPtr<CssInheritValue> create();
+        static ValPtr<CssInheritValue> create();
 
     private:
-        CssInheritValue() noexcept : CssValue(classKind) {}
-        friend class CssValuePool;
+        CssInheritValue() noexcept : CssSmallValue(classKind) {}
     };
 
-    class CssUnsetValue final : public CssValue {
+    inline ValPtr<CssInheritValue> CssInheritValue::create() {
+        return ValPtr(CssInheritValue());
+    }
+
+    class CssUnsetValue final : public CssSmallValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Unset;
 
-        static RefPtr<CssUnsetValue> create();
+        static ValPtr<CssUnsetValue> create();
 
     private:
-        CssUnsetValue() noexcept : CssValue(classKind) {}
-        friend class CssValuePool;
+        CssUnsetValue() noexcept : CssSmallValue(classKind) {}
     };
 
-    class CssIdentValue final : public CssValue {
+    inline ValPtr<CssUnsetValue> CssUnsetValue::create() {
+        return ValPtr(CssUnsetValue());
+    }
+
+    class CssIdentValue final : public CssSmallValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Ident;
 
-        static RefPtr<CssIdentValue> create(CssValueID value);
+        static ValPtr<CssIdentValue> create(CssValueID value);
 
-        CssValueID value() const { return m_value; }
+        CssValueID value() const { return valueAs<CssValueID>(); }
 
     private:
-        CssIdentValue(CssValueID value) : CssValue(classKind), m_value(value) {}
-        friend class CssValuePool;
-        CssValueID m_value;
+        CssIdentValue(CssValueID value) : CssSmallValue(classKind) {
+            initValue(value);
+        }
     };
+
+    inline ValPtr<CssIdentValue> CssIdentValue::create(CssValueID value) {
+        return ValPtr(CssIdentValue(value));
+    }
 
     inline bool CssValue::hasID(CssValueID id) const {
         if (is<CssIdentValue>(*this))
@@ -397,23 +562,23 @@ namespace plutobook {
         return false;
     }
 
-    class CssCustomIdentValue final : public CssValue {
+    class CssCustomIdentValue final : public CssSmallValue {
     public:
         static constexpr ClassKind classKind = ClassKind::CustomIdent;
 
-        static RefPtr<CssCustomIdentValue> create(GlobalString value);
+        static ValPtr<CssCustomIdentValue> create(GlobalString value);
 
-        GlobalString value() const { return m_value; }
+        GlobalString value() const { return valueAs<GlobalString>(); }
 
     private:
-        CssCustomIdentValue(GlobalString value)
-            : CssValue(classKind), m_value(value) {}
-        GlobalString m_value;
+        CssCustomIdentValue(GlobalString value) : CssSmallValue(classKind) {
+            initValue(value);
+        }
     };
 
-    inline RefPtr<CssCustomIdentValue>
+    inline ValPtr<CssCustomIdentValue>
     CssCustomIdentValue::create(GlobalString value) {
-        return adoptPtr(new CssCustomIdentValue(value));
+        return ValPtr(CssCustomIdentValue(value));
     }
 
     class BoxStyle;
@@ -438,20 +603,19 @@ namespace plutobook {
         std::vector<CssToken> m_tokens;
     };
 
-    class CssCustomPropertyValue final : public CssValue {
+    class CssCustomPropertyValue final : public CssHeapValue {
     public:
         static constexpr ClassKind classKind = ClassKind::CustomProperty;
 
-        static RefPtr<CssCustomPropertyValue>
+        static ValPtr<CssCustomPropertyValue>
         create(GlobalString name, RefPtr<CssVariableData> value);
 
-        GlobalString name() const { return m_name; }
+        GlobalString name() const { return valueAs<GlobalString>(); }
         const RefPtr<CssVariableData>& value() const { return m_value; }
 
     private:
         CssCustomPropertyValue(GlobalString name,
                                RefPtr<CssVariableData> value);
-        GlobalString m_name;
         RefPtr<CssVariableData> m_value;
     };
 
@@ -478,17 +642,17 @@ namespace plutobook {
         Url m_baseUrl;
     };
 
-    class CssVariableReferenceValue final : public CssValue {
+    class CssVariableReferenceValue final : public CssHeapValue {
     public:
         static constexpr ClassKind classKind = ClassKind::VariableReference;
 
-        static RefPtr<CssVariableReferenceValue>
+        static ValPtr<CssVariableReferenceValue>
         create(const CssParserContext& context, CssPropertyID id,
                bool important, RefPtr<CssVariableData> value);
 
         const CssParserContext& context() const { return m_context; }
-        CssPropertyID id() const { return m_id; }
-        bool important() const { return m_important; }
+        CssPropertyID id() const { return valueAs<CssPropertyID>(); }
+        bool important() const { return tagAs<bool>(); }
         const RefPtr<CssVariableData>& value() const { return m_value; }
 
         CssPropertyList resolve(const BoxStyle* style) const;
@@ -498,85 +662,85 @@ namespace plutobook {
                                   CssPropertyID id, bool important,
                                   RefPtr<CssVariableData> value);
         CssParserContext m_context;
-        CssPropertyID m_id;
-        bool m_important;
         RefPtr<CssVariableData> m_value;
     };
 
-    class CssIntegerValue final : public CssValue {
+    class CssIntegerValue final : public CssSmallValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Integer;
 
-        static RefPtr<CssIntegerValue> create(int value);
+        static ValPtr<CssIntegerValue> create(int value);
 
-        int value() const { return m_value; }
+        int value() const { return valueAs<int>(); }
 
     private:
-        CssIntegerValue(int value) : CssValue(classKind), m_value(value) {}
-        int m_value;
+        CssIntegerValue(int value) : CssSmallValue(classKind) {
+            initValue(value);
+        }
     };
 
-    inline RefPtr<CssIntegerValue> CssIntegerValue::create(int value) {
-        return adoptPtr(new CssIntegerValue(value));
+    inline ValPtr<CssIntegerValue> CssIntegerValue::create(int value) {
+        return ValPtr(CssIntegerValue(value));
     }
 
-    class CssNumberValue final : public CssValue {
+    class CssNumberValue final : public CssSmallValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Number;
 
-        static RefPtr<CssNumberValue> create(float value);
+        static ValPtr<CssNumberValue> create(float value);
 
-        float value() const { return m_value; }
+        float value() const { return valueAs<float>(); }
 
     private:
-        CssNumberValue(float value) : CssValue(classKind), m_value(value) {}
-        float m_value;
+        CssNumberValue(float value) : CssSmallValue(classKind) {
+            initValue(value);
+        }
     };
 
-    inline RefPtr<CssNumberValue> CssNumberValue::create(float value) {
-        return adoptPtr(new CssNumberValue(value));
+    inline ValPtr<CssNumberValue> CssNumberValue::create(float value) {
+        return ValPtr(CssNumberValue(value));
     }
 
-    class CssPercentValue final : public CssValue {
+    class CssPercentValue final : public CssSmallValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Percent;
 
-        static RefPtr<CssPercentValue> create(float value);
+        static ValPtr<CssPercentValue> create(float value);
 
-        float value() const { return m_value; }
+        float value() const { return valueAs<float>(); }
 
     private:
-        CssPercentValue(float value) : CssValue(classKind), m_value(value) {}
-        float m_value;
+        CssPercentValue(float value) : CssSmallValue(classKind) {
+            initValue(value);
+        }
     };
 
-    inline RefPtr<CssPercentValue> CssPercentValue::create(float value) {
-        return adoptPtr(new CssPercentValue(value));
+    inline ValPtr<CssPercentValue> CssPercentValue::create(float value) {
+        return ValPtr(CssPercentValue(value));
     }
 
-    class CssAngleValue final : public CssValue {
+    class CssAngleValue final : public CssSmallValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Angle;
 
         enum class Unit { Degrees, Radians, Gradians, Turns };
 
-        static RefPtr<CssAngleValue> create(float value, Unit unit);
+        static ValPtr<CssAngleValue> create(float value, Unit unit);
 
-        float value() const { return m_value; }
-        Unit unit() const { return m_unit; }
+        float value() const { return valueAs<float>(); }
+        Unit unit() const { return tagAs<Unit>(); }
 
         float valueInDegrees() const;
 
     private:
-        CssAngleValue(float value, Unit unit)
-            : CssValue(classKind), m_value(value), m_unit(unit) {}
-
-        float m_value;
-        Unit m_unit;
+        CssAngleValue(float value, Unit unit) : CssSmallValue(classKind) {
+            initValue(value);
+            initTag(unit);
+        }
     };
 
-    inline RefPtr<CssAngleValue> CssAngleValue::create(float value, Unit unit) {
-        return adoptPtr(new CssAngleValue(value, unit));
+    inline ValPtr<CssAngleValue> CssAngleValue::create(float value, Unit unit) {
+        return ValPtr(CssAngleValue(value, unit));
     }
 
     enum class CssLengthUnits : uint8_t {
@@ -597,27 +761,27 @@ namespace plutobook {
         Rems
     };
 
-    class CssLengthValue final : public CssValue {
+    class CssLengthValue final : public CssSmallValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Length;
 
-        static RefPtr<CssLengthValue>
+        static ValPtr<CssLengthValue>
         create(float value, CssLengthUnits units = CssLengthUnits::Pixels);
 
-        float value() const { return m_value; }
-        CssLengthUnits units() const { return m_units; }
+        float value() const { return valueAs<float>(); }
+        CssLengthUnits units() const { return tagAs<CssLengthUnits>(); }
 
     private:
         CssLengthValue(float value, CssLengthUnits units)
-            : CssValue(classKind), m_value(value), m_units(units) {}
-
-        float m_value;
-        CssLengthUnits m_units;
+            : CssSmallValue(classKind) {
+            initValue(value);
+            initTag(units);
+        }
     };
 
-    inline RefPtr<CssLengthValue> CssLengthValue::create(float value,
+    inline ValPtr<CssLengthValue> CssLengthValue::create(float value,
                                                          CssLengthUnits units) {
-        return adoptPtr(new CssLengthValue(value, units));
+        return ValPtr(CssLengthValue(value, units));
     }
 
     class Font;
@@ -661,121 +825,127 @@ namespace plutobook {
 
     using CssCalcList = std::vector<CssCalc>;
 
-    class CssCalcValue final : public CssValue {
+    class CssCalcValue final : public CssHeapValue {
+        enum : uint8_t { NegativeBit = 1, UnitlessBit = 2 };
+
     public:
         static constexpr ClassKind classKind = ClassKind::Calc;
 
-        static RefPtr<CssCalcValue> create(bool negative, bool unitless,
+        static ValPtr<CssCalcValue> create(bool negative, bool unitless,
                                            CssCalcList values);
 
-        const bool negative() const { return m_negative; }
-        const bool unitless() const { return m_unitless; }
+        const bool negative() const { return valueAs<uint8_t>() & NegativeBit; }
+        const bool unitless() const { return valueAs<uint8_t>() & UnitlessBit; }
         const CssCalcList& values() const { return m_values; }
 
         float resolve(const CssLengthResolver& resolver) const;
 
     private:
         CssCalcValue(bool negative, bool unitless, CssCalcList values)
-            : CssValue(classKind), m_negative(negative), m_unitless(unitless),
-              m_values(std::move(values)) {}
+            : CssHeapValue(classKind), m_values(std::move(values)) {
+            uint8_t bits = 0;
+            if (negative)
+                bits |= NegativeBit;
+            if (unitless)
+                bits |= UnitlessBit;
+            initValue(bits);
+        }
 
-        const bool m_negative;
-        const bool m_unitless;
         CssCalcList m_values;
     };
 
-    inline RefPtr<CssCalcValue>
+    inline ValPtr<CssCalcValue>
     CssCalcValue::create(bool negative, bool unitless, CssCalcList values) {
-        return adoptPtr(
-            new CssCalcValue(negative, unitless, std::move(values)));
+        return ValPtr(new CssCalcValue(negative, unitless, std::move(values)));
     }
 
-    class CssAttrValue final : public CssValue {
+    class CssAttrValue final : public CssHeapValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Attr;
 
-        static RefPtr<CssAttrValue> create(GlobalString name,
+        static ValPtr<CssAttrValue> create(GlobalString name,
                                            const HeapString& fallback);
 
-        GlobalString name() const { return m_name; }
+        GlobalString name() const { return valueAs<GlobalString>(); }
         const HeapString& fallback() const { return m_fallback; }
 
     private:
         CssAttrValue(GlobalString name, const HeapString& fallback)
-            : CssValue(classKind), m_name(name), m_fallback(fallback) {}
+            : CssHeapValue(classKind), m_fallback(fallback) {
+            initValue(name);
+        }
 
-        GlobalString m_name;
         HeapString m_fallback;
     };
 
-    inline RefPtr<CssAttrValue>
+    inline ValPtr<CssAttrValue>
     CssAttrValue::create(GlobalString name, const HeapString& fallback) {
-        return adoptPtr(new CssAttrValue(name, fallback));
+        return ValPtr(new CssAttrValue(name, fallback));
     }
 
-    class CssStringValue final : public CssValue {
+    class CssStringValue final : public CssHeapValue {
     public:
         static constexpr ClassKind classKind = ClassKind::String;
 
-        static RefPtr<CssStringValue> create(const HeapString& value);
+        static ValPtr<CssStringValue> create(const HeapString& value);
 
         const HeapString& value() const { return m_value; }
 
     private:
         CssStringValue(const HeapString& value)
-            : CssValue(classKind), m_value(value) {}
+            : CssHeapValue(classKind), m_value(value) {}
         HeapString m_value;
     };
 
-    inline RefPtr<CssStringValue>
+    inline ValPtr<CssStringValue>
     CssStringValue::create(const HeapString& value) {
-        return adoptPtr(new CssStringValue(value));
+        return ValPtr(new CssStringValue(value));
     }
 
-    class CssLocalUrlValue final : public CssValue {
+    class CssLocalUrlValue final : public CssHeapValue {
     public:
         static constexpr ClassKind classKind = ClassKind::LocalUrl;
 
-        static RefPtr<CssLocalUrlValue> create(const HeapString& value);
+        static ValPtr<CssLocalUrlValue> create(const HeapString& value);
 
         const HeapString& value() const { return m_value; }
 
     private:
         CssLocalUrlValue(const HeapString& value)
-            : CssValue(classKind), m_value(value) {}
+            : CssHeapValue(classKind), m_value(value) {}
         HeapString m_value;
     };
 
-    inline RefPtr<CssLocalUrlValue>
+    inline ValPtr<CssLocalUrlValue>
     CssLocalUrlValue::create(const HeapString& value) {
-        return adoptPtr(new CssLocalUrlValue(value));
+        return ValPtr(new CssLocalUrlValue(value));
     }
 
-    class CssUrlValue final : public CssValue {
+    class CssUrlValue final : public CssHeapValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Url;
 
-        static RefPtr<CssUrlValue> create(Url value);
+        static ValPtr<CssUrlValue> create(Url value);
 
         const Url& value() const { return m_value; }
 
     private:
         CssUrlValue(Url value)
-            : CssValue(classKind), m_value(std::move(value)) {}
+            : CssHeapValue(classKind), m_value(std::move(value)) {}
         Url m_value;
     };
 
-    inline RefPtr<CssUrlValue> CssUrlValue::create(Url value) {
-        return adoptPtr(new CssUrlValue(std::move(value)));
+    inline ValPtr<CssUrlValue> CssUrlValue::create(Url value) {
+        return ValPtr(new CssUrlValue(std::move(value)));
     }
 
     class Image;
 
-    class CssImageValue final : public CssValue {
+    class CssImageValue final : public CssHeapValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Image;
 
-        static RefPtr<CssImageValue> create(Url value);
+        static ValPtr<CssImageValue> create(Url value);
 
         const Url& value() const { return m_value; }
         const RefPtr<Image>& image() const { return m_image; }
@@ -787,28 +957,29 @@ namespace plutobook {
         mutable RefPtr<Image> m_image;
     };
 
-    class CssColorValue final : public CssValue {
+    class CssColorValue final : public CssSmallValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Color;
 
-        static RefPtr<CssColorValue> create(const Color& value);
+        static ValPtr<CssColorValue> create(const Color& value);
 
-        const Color& value() const { return m_value; }
+        const Color& value() const { return valueAs<Color>(); }
 
     private:
-        CssColorValue(Color value) : CssValue(classKind), m_value(value) {}
-        Color m_value;
+        CssColorValue(Color value) : CssSmallValue(classKind) {
+            initValue(value);
+        }
     };
 
-    inline RefPtr<CssColorValue> CssColorValue::create(const Color& value) {
-        return adoptPtr(new CssColorValue(value));
+    inline ValPtr<CssColorValue> CssColorValue::create(const Color& value) {
+        return ValPtr(CssColorValue(value));
     }
 
-    class CssCounterValue final : public CssValue {
+    class CssCounterValue final : public CssHeapValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Counter;
 
-        static RefPtr<CssCounterValue> create(GlobalString identifier,
+        static ValPtr<CssCounterValue> create(GlobalString identifier,
                                               GlobalString listStyle,
                                               const HeapString& separator);
 
@@ -819,7 +990,7 @@ namespace plutobook {
     private:
         CssCounterValue(GlobalString identifier, GlobalString listStyle,
                         const HeapString& separator)
-            : CssValue(classKind), m_identifier(identifier),
+            : CssHeapValue(classKind), m_identifier(identifier),
               m_listStyle(listStyle), m_separator(separator) {}
 
         GlobalString m_identifier;
@@ -827,141 +998,140 @@ namespace plutobook {
         HeapString m_separator;
     };
 
-    inline RefPtr<CssCounterValue>
+    inline ValPtr<CssCounterValue>
     CssCounterValue::create(GlobalString identifier, GlobalString listStyle,
                             const HeapString& separator) {
-        return adoptPtr(new CssCounterValue(identifier, listStyle, separator));
+        return ValPtr(new CssCounterValue(identifier, listStyle, separator));
     }
 
-    class CssFontFeatureValue final : public CssValue {
+    class CssFontFeatureValue final : public CssSmallValue {
     public:
         static constexpr ClassKind classKind = ClassKind::FontFeature;
 
-        static RefPtr<CssFontFeatureValue> create(GlobalString tag, int value);
+        static ValPtr<CssFontFeatureValue> create(GlobalString tag, int value);
 
-        GlobalString tag() const { return m_tag; }
-        int value() const { return m_value; }
+        GlobalString tag() const { return tagAs<GlobalString>(); }
+        int value() const { return valueAs<int>(); }
 
     private:
         CssFontFeatureValue(GlobalString tag, int value)
-            : CssValue(classKind), m_tag(tag), m_value(value) {}
-
-        GlobalString m_tag;
-        int m_value;
+            : CssSmallValue(classKind) {
+            initValue(value);
+            initTag(tag);
+        }
     };
 
-    inline RefPtr<CssFontFeatureValue>
+    inline ValPtr<CssFontFeatureValue>
     CssFontFeatureValue::create(GlobalString tag, int value) {
-        return adoptPtr(new CssFontFeatureValue(tag, value));
+        return ValPtr(CssFontFeatureValue(tag, value));
     }
 
-    class CssFontVariationValue final : public CssValue {
+    class CssFontVariationValue final : public CssSmallValue {
     public:
         static constexpr ClassKind classKind = ClassKind::FontVariation;
 
-        static RefPtr<CssFontVariationValue> create(GlobalString tag,
+        static ValPtr<CssFontVariationValue> create(GlobalString tag,
                                                     float value);
 
-        GlobalString tag() const { return m_tag; }
-        float value() const { return m_value; }
+        GlobalString tag() const { return tagAs<GlobalString>(); }
+        float value() const { return valueAs<float>(); }
 
     private:
         CssFontVariationValue(GlobalString tag, float value)
-            : CssValue(classKind), m_tag(tag), m_value(value) {}
-
-        GlobalString m_tag;
-        float m_value;
+            : CssSmallValue(classKind) {
+            initValue(value);
+            initTag(tag);
+        }
     };
 
-    inline RefPtr<CssFontVariationValue>
+    inline ValPtr<CssFontVariationValue>
     CssFontVariationValue::create(GlobalString tag, float value) {
-        return adoptPtr(new CssFontVariationValue(tag, value));
+        return ValPtr(CssFontVariationValue(tag, value));
     }
 
-    class CssUnicodeRangeValue final : public CssValue {
+    class CssUnicodeRangeValue final : public CssHeapValue {
     public:
         static constexpr ClassKind classKind = ClassKind::UnicodeRange;
 
-        static RefPtr<CssUnicodeRangeValue> create(uint32_t from, uint32_t to);
+        static ValPtr<CssUnicodeRangeValue> create(uint32_t from, uint32_t to);
 
         uint32_t from() const { return m_from; }
         uint32_t to() const { return m_to; }
 
     private:
         CssUnicodeRangeValue(uint32_t from, uint32_t to)
-            : CssValue(classKind), m_from(from), m_to(to) {}
+            : CssHeapValue(classKind), m_from(from), m_to(to) {}
 
         uint32_t m_from;
         uint32_t m_to;
     };
 
-    inline RefPtr<CssUnicodeRangeValue>
+    inline ValPtr<CssUnicodeRangeValue>
     CssUnicodeRangeValue::create(uint32_t from, uint32_t to) {
-        return adoptPtr(new CssUnicodeRangeValue(from, to));
+        return ValPtr(new CssUnicodeRangeValue(from, to));
     }
 
-    class CssPairValue final : public CssValue {
+    class CssPairValue final : public CssHeapValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Pair;
 
-        static RefPtr<CssPairValue> create(RefPtr<CssValue> first,
-                                           RefPtr<CssValue> second);
+        static ValPtr<CssPairValue> create(CssValuePtr first,
+                                           CssValuePtr second);
 
-        const RefPtr<CssValue>& first() const { return m_first; }
-        const RefPtr<CssValue>& second() const { return m_second; }
+        const CssValuePtr& first() const { return m_first; }
+        const CssValuePtr& second() const { return m_second; }
 
     private:
-        CssPairValue(RefPtr<CssValue> first, RefPtr<CssValue> second)
-            : CssValue(classKind), m_first(std::move(first)),
+        CssPairValue(CssValuePtr first, CssValuePtr second)
+            : CssHeapValue(classKind), m_first(std::move(first)),
               m_second(std::move(second)) {}
 
-        RefPtr<CssValue> m_first;
-        RefPtr<CssValue> m_second;
+        CssValuePtr m_first;
+        CssValuePtr m_second;
     };
 
-    inline RefPtr<CssPairValue> CssPairValue::create(RefPtr<CssValue> first,
-                                                     RefPtr<CssValue> second) {
-        return adoptPtr(new CssPairValue(std::move(first), std::move(second)));
+    inline ValPtr<CssPairValue> CssPairValue::create(CssValuePtr first,
+                                                     CssValuePtr second) {
+        return ValPtr(new CssPairValue(std::move(first), std::move(second)));
     }
 
-    class CssRectValue final : public CssValue {
+    class CssRectValue final : public CssHeapValue {
     public:
         static constexpr ClassKind classKind = ClassKind::Rect;
 
-        static RefPtr<CssRectValue> create(RefPtr<CssValue> top,
-                                           RefPtr<CssValue> right,
-                                           RefPtr<CssValue> bottom,
-                                           RefPtr<CssValue> left);
+        static ValPtr<CssRectValue> create(CssValuePtr top, CssValuePtr right,
+                                           CssValuePtr bottom,
+                                           CssValuePtr left);
 
-        const RefPtr<CssValue>& position(Edge edge) const {
+        const CssValuePtr& position(Edge edge) const {
             return m_position[edge];
         }
 
     private:
-        CssRectValue(RefPtr<CssValue> top, RefPtr<CssValue> right,
-                     RefPtr<CssValue> bottom, RefPtr<CssValue> left)
-            : CssValue(classKind), m_position{top, right, bottom, left} {}
+        CssRectValue(CssValuePtr top, CssValuePtr right, CssValuePtr bottom,
+                     CssValuePtr left)
+            : CssHeapValue(classKind), m_position{top, right, bottom, left} {}
 
-        RefPtr<CssValue> m_position[4];
+        CssValuePtr m_position[4];
     };
 
-    inline RefPtr<CssRectValue> CssRectValue::create(RefPtr<CssValue> top,
-                                                     RefPtr<CssValue> right,
-                                                     RefPtr<CssValue> bottom,
-                                                     RefPtr<CssValue> left) {
-        return adoptPtr(new CssRectValue(std::move(top), std::move(right),
-                                         std::move(bottom), std::move(left)));
+    inline ValPtr<CssRectValue> CssRectValue::create(CssValuePtr top,
+                                                     CssValuePtr right,
+                                                     CssValuePtr bottom,
+                                                     CssValuePtr left) {
+        return ValPtr(new CssRectValue(std::move(top), std::move(right),
+                                       std::move(bottom), std::move(left)));
     }
 
-    class CssAbstractListValue : public CssValue {
+    class CssAbstractListValue : public CssHeapValue {
     public:
         using Iterator = CssValueList::const_iterator;
         Iterator begin() const { return m_values.begin(); }
         Iterator end() const { return m_values.end(); }
 
-        const RefPtr<CssValue>& front() const { return m_values.front(); }
-        const RefPtr<CssValue>& back() const { return m_values.back(); }
-        const RefPtr<CssValue>& operator[](size_t index) const {
+        const CssValuePtr& front() const { return m_values.front(); }
+        const CssValuePtr& back() const { return m_values.back(); }
+        const CssValuePtr& operator[](size_t index) const {
             return m_values[index];
         }
         const CssValueList& values() const { return m_values; }
@@ -970,7 +1140,7 @@ namespace plutobook {
 
     protected:
         CssAbstractListValue(ClassKind type, CssValueList&& values)
-            : CssValue(type), m_values(std::move(values)) {}
+            : CssHeapValue(type), m_values(std::move(values)) {}
         CssValueList m_values;
     };
 
@@ -978,7 +1148,7 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::List;
 
-        static RefPtr<CssListValue> create(CssValueList values);
+        static ValPtr<CssListValue> create(CssValueList values);
 
     protected:
         CssListValue(CssValueList values)
@@ -986,8 +1156,8 @@ namespace plutobook {
         CssValueList m_values;
     };
 
-    inline RefPtr<CssListValue> CssListValue::create(CssValueList values) {
-        return adoptPtr(new CssListValue(std::move(values)));
+    inline ValPtr<CssListValue> CssListValue::create(CssValueList values) {
+        return ValPtr(new CssListValue(std::move(values)));
     }
 
     enum class CssFunctionID {
@@ -1016,7 +1186,7 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::Function;
 
-        static RefPtr<CssFunctionValue> create(CssFunctionID id,
+        static ValPtr<CssFunctionValue> create(CssFunctionID id,
                                                CssValueList values);
 
         CssFunctionID id() const { return m_id; }
@@ -1028,32 +1198,33 @@ namespace plutobook {
         CssFunctionID m_id;
     };
 
-    inline RefPtr<CssFunctionValue>
+    inline ValPtr<CssFunctionValue>
     CssFunctionValue::create(CssFunctionID id, CssValueList values) {
-        return adoptPtr(new CssFunctionValue(id, std::move(values)));
+        return ValPtr(new CssFunctionValue(id, std::move(values)));
     }
 
-    class CssUnaryFunctionValue final : public CssValue {
+    class CssUnaryFunctionValue final : public CssHeapValue {
     public:
         static constexpr ClassKind classKind = ClassKind::UnaryFunction;
 
-        static RefPtr<CssUnaryFunctionValue> create(CssFunctionID id,
-                                                    RefPtr<CssValue> value);
+        static ValPtr<CssUnaryFunctionValue> create(CssFunctionID id,
+                                                    CssValuePtr value);
 
-        CssFunctionID id() const { return m_id; }
-        const RefPtr<CssValue>& value() const { return m_value; }
+        CssFunctionID id() const { return valueAs<CssFunctionID>(); }
+        const CssValuePtr& value() const { return m_value; }
 
     private:
-        CssUnaryFunctionValue(CssFunctionID id, RefPtr<CssValue> value)
-            : CssValue(classKind), m_id(id), m_value(std::move(value)) {}
+        CssUnaryFunctionValue(CssFunctionID id, CssValuePtr value)
+            : CssHeapValue(classKind), m_value(std::move(value)) {
+            initValue(id);
+        }
 
-        CssFunctionID m_id;
-        RefPtr<CssValue> m_value;
+        CssValuePtr m_value;
     };
 
-    inline RefPtr<CssUnaryFunctionValue>
-    CssUnaryFunctionValue::create(CssFunctionID id, RefPtr<CssValue> value) {
-        return adoptPtr(new CssUnaryFunctionValue(id, std::move(value)));
+    inline ValPtr<CssUnaryFunctionValue>
+    CssUnaryFunctionValue::create(CssFunctionID id, CssValuePtr value) {
+        return ValPtr(new CssUnaryFunctionValue(id, std::move(value)));
     }
 
     class CssSimpleSelector;
@@ -1254,15 +1425,15 @@ namespace plutobook {
 
     class CssMediaFeature {
     public:
-        CssMediaFeature(CssPropertyID id, RefPtr<CssValue> value)
+        CssMediaFeature(CssPropertyID id, CssValuePtr value)
             : m_id(id), m_value(std::move(value)) {}
 
         CssPropertyID id() const { return m_id; }
-        const RefPtr<CssValue>& value() const { return m_value; }
+        const CssValuePtr& value() const { return m_value; }
 
     private:
         CssPropertyID m_id;
-        RefPtr<CssValue> m_value;
+        CssValuePtr m_value;
     };
 
     using CssMediaFeatureList = std::forward_list<CssMediaFeature>;
@@ -1689,17 +1860,17 @@ namespace plutobook {
     private:
         explicit CssCounterStyle(RefPtr<CssCounterStyleRule> rule);
         RefPtr<CssCounterStyleRule> m_rule;
-        RefPtr<CssIdentValue> m_system;
-        RefPtr<CssCustomIdentValue> m_extends;
-        RefPtr<CssIntegerValue> m_fixed;
-        RefPtr<CssValue> m_negative;
-        RefPtr<CssValue> m_prefix;
-        RefPtr<CssValue> m_suffix;
-        RefPtr<CssListValue> m_range;
-        RefPtr<CssPairValue> m_pad;
-        RefPtr<CssCustomIdentValue> m_fallback;
-        RefPtr<CssListValue> m_symbols;
-        RefPtr<CssListValue> m_additiveSymbols;
+        ValPtr<CssIdentValue> m_system;
+        ValPtr<CssCustomIdentValue> m_extends;
+        ValPtr<CssIntegerValue> m_fixed;
+        CssValuePtr m_negative;
+        CssValuePtr m_prefix;
+        CssValuePtr m_suffix;
+        ValPtr<CssListValue> m_range;
+        ValPtr<CssPairValue> m_pad;
+        ValPtr<CssCustomIdentValue> m_fallback;
+        ValPtr<CssListValue> m_symbols;
+        ValPtr<CssListValue> m_additiveSymbols;
         mutable RefPtr<CssCounterStyle> m_fallbackStyle;
     };
 
@@ -1733,7 +1904,7 @@ namespace plutobook {
                                       CssIdentValue::create(value));
         }
 
-        void addProperty(CssPropertyID id, RefPtr<CssValue> value) {
+        void addProperty(CssPropertyID id, CssValuePtr value) {
             m_properties.emplace_back(id, m_context.origin(), false,
                                       std::move(value));
         }

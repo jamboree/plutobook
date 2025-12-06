@@ -85,12 +85,12 @@ public:
 
 private:
     const BoxStyle* m_parentStyle;
-    RefPtr<CssValue> m_family;
-    RefPtr<CssValue> m_size;
-    RefPtr<CssValue> m_weight;
-    RefPtr<CssValue> m_stretch;
-    RefPtr<CssValue> m_style;
-    RefPtr<CssValue> m_variationSettings;
+    CssValuePtr m_family;
+    CssValuePtr m_size;
+    CssValuePtr m_weight;
+    CssValuePtr m_stretch;
+    CssValuePtr m_style;
+    CssValuePtr m_variationSettings;
 };
 
 FontDescriptionBuilder::FontDescriptionBuilder(const BoxStyle* parentStyle, std::span<const CssPropertyData> properties)
@@ -930,14 +930,14 @@ public:
     RefPtr<FontFace> build(Document* document) const;
 
 private:
-    RefPtr<CssValue> m_src;
-    RefPtr<CssValue> m_family;
-    RefPtr<CssValue> m_weight;
-    RefPtr<CssValue> m_stretch;
-    RefPtr<CssValue> m_style;
-    RefPtr<CssValue> m_featureSettings;
-    RefPtr<CssValue> m_variationSettings;
-    RefPtr<CssValue> m_unicodeRange;
+    CssValuePtr m_src;
+    CssValuePtr m_family;
+    CssValuePtr m_weight;
+    CssValuePtr m_stretch;
+    CssValuePtr m_style;
+    CssValuePtr m_featureSettings;
+    CssValuePtr m_variationSettings;
+    CssValuePtr m_unicodeRange;
 };
 
 CssFontFaceBuilder::CssFontFaceBuilder(const CssPropertyList& properties)

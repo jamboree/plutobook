@@ -107,7 +107,7 @@ bool CssParser::consumeMediaFeature(CssTokenStream& input, CssMediaFeatureList& 
     block.consumeIncludingWhitespace();
     if(block->type() == CssToken::Type::Colon) {
         block.consumeIncludingWhitespace();
-        RefPtr<CssValue> value;
+        CssValuePtr value;
         switch(id.value()) {
         case CssPropertyID::Width:
         case CssPropertyID::MinWidth:
@@ -940,7 +940,7 @@ bool CssParser::consumeMatchPattern(CssTokenStream& input, CssSimpleSelector::Ma
 
 bool CssParser::consumeFontFaceDescriptor(CssTokenStream& input, CssPropertyList& properties, CssPropertyID id)
 {
-    RefPtr<CssValue> value;
+    CssValuePtr value;
     switch(id) {
     case CssPropertyID::Src:
         value = consumeFontFaceSrc(input);
@@ -981,7 +981,7 @@ bool CssParser::consumeFontFaceDescriptor(CssTokenStream& input, CssPropertyList
 
 bool CssParser::consumeCounterStyleDescriptor(CssTokenStream& input, CssPropertyList& properties, CssPropertyID id)
 {
-    RefPtr<CssValue> value;
+    CssValuePtr value;
     switch(id) {
     case CssPropertyID::System:
         value = consumeCounterStyleSystem(input);
@@ -1021,7 +1021,7 @@ bool CssParser::consumeCounterStyleDescriptor(CssTokenStream& input, CssProperty
     return false;
 }
 
-static RefPtr<CssValue> consumeWideKeyword(CssTokenStream& input)
+static CssValuePtr consumeWideKeyword(CssTokenStream& input)
 {
     if(input->type() != CssToken::Type::Ident) {
         return nullptr;
@@ -1426,7 +1426,7 @@ void CssParser::consumeDeclaractionList(CssTokenStream& input, CssPropertyList& 
     }
 }
 
-void CssParser::addProperty(CssPropertyList& properties, CssPropertyID id, bool important, RefPtr<CssValue> value)
+void CssParser::addProperty(CssPropertyList& properties, CssPropertyID id, bool important, CssValuePtr value)
 {
     if(value == nullptr) {
         switch(id) {
@@ -1733,7 +1733,7 @@ std::span<const CssPropertyID> expandShorthand(CssPropertyID id)
     }
 }
 
-void CssParser::addExpandedProperty(CssPropertyList& properties, CssPropertyID id, bool important, RefPtr<CssValue> value)
+void CssParser::addExpandedProperty(CssPropertyList& properties, CssPropertyID id, bool important, CssValuePtr value)
 {
     auto longhand = expandShorthand(id);
     if(longhand.empty()) {
@@ -1747,7 +1747,7 @@ void CssParser::addExpandedProperty(CssPropertyList& properties, CssPropertyID i
 }
 
 template<unsigned int N>
-static RefPtr<CssIdentValue> consumeIdent(CssTokenStream& input, const IdentTable<CssValueID, N>& table)
+static ValPtr<CssIdentValue> consumeIdent(CssTokenStream& input, const IdentTable<CssValueID, N>& table)
 {
     if (input->type() == CssToken::Type::Ident) {
         if (auto id = matchIdent(table, input->data())) {
@@ -1759,7 +1759,7 @@ static RefPtr<CssIdentValue> consumeIdent(CssTokenStream& input, const IdentTabl
     return nullptr;
 }
 
-RefPtr<CssIdentValue> CssParser::consumeFontStyleIdent(CssTokenStream& input)
+ValPtr<CssIdentValue> CssParser::consumeFontStyleIdent(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"normal", CssValueID::Normal},
@@ -1770,7 +1770,7 @@ RefPtr<CssIdentValue> CssParser::consumeFontStyleIdent(CssTokenStream& input)
     return consumeIdent(input, table);
 }
 
-RefPtr<CssIdentValue> CssParser::consumeFontStretchIdent(CssTokenStream& input)
+ValPtr<CssIdentValue> CssParser::consumeFontStretchIdent(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"normal", CssValueID::Normal},
@@ -1787,7 +1787,7 @@ RefPtr<CssIdentValue> CssParser::consumeFontStretchIdent(CssTokenStream& input)
     return consumeIdent(input, table);
 }
 
-RefPtr<CssIdentValue> CssParser::consumeFontVariantCapsIdent(CssTokenStream& input)
+ValPtr<CssIdentValue> CssParser::consumeFontVariantCapsIdent(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"small-caps", CssValueID::SmallCaps},
@@ -1801,7 +1801,7 @@ RefPtr<CssIdentValue> CssParser::consumeFontVariantCapsIdent(CssTokenStream& inp
     return consumeIdent(input, table);
 }
 
-RefPtr<CssIdentValue> CssParser::consumeFontVariantEmojiIdent(CssTokenStream& input)
+ValPtr<CssIdentValue> CssParser::consumeFontVariantEmojiIdent(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"text", CssValueID::Text},
@@ -1812,7 +1812,7 @@ RefPtr<CssIdentValue> CssParser::consumeFontVariantEmojiIdent(CssTokenStream& in
     return consumeIdent(input, table);
 }
 
-RefPtr<CssIdentValue> CssParser::consumeFontVariantPositionIdent(CssTokenStream& input)
+ValPtr<CssIdentValue> CssParser::consumeFontVariantPositionIdent(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"sub", CssValueID::Sub},
@@ -1822,7 +1822,7 @@ RefPtr<CssIdentValue> CssParser::consumeFontVariantPositionIdent(CssTokenStream&
     return consumeIdent(input, table);
 }
 
-RefPtr<CssIdentValue> CssParser::consumeFontVariantEastAsianIdent(CssTokenStream& input)
+ValPtr<CssIdentValue> CssParser::consumeFontVariantEastAsianIdent(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"jis78", CssValueID::Jis78},
@@ -1839,7 +1839,7 @@ RefPtr<CssIdentValue> CssParser::consumeFontVariantEastAsianIdent(CssTokenStream
     return consumeIdent(input, table);
 }
 
-RefPtr<CssIdentValue> CssParser::consumeFontVariantLigaturesIdent(CssTokenStream& input)
+ValPtr<CssIdentValue> CssParser::consumeFontVariantLigaturesIdent(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"common-ligatures", CssValueID::CommonLigatures},
@@ -1855,7 +1855,7 @@ RefPtr<CssIdentValue> CssParser::consumeFontVariantLigaturesIdent(CssTokenStream
     return consumeIdent(input, table);
 }
 
-RefPtr<CssIdentValue> CssParser::consumeFontVariantNumericIdent(CssTokenStream& input)
+ValPtr<CssIdentValue> CssParser::consumeFontVariantNumericIdent(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"lining-nums", CssValueID::LiningNums},
@@ -1871,42 +1871,42 @@ RefPtr<CssIdentValue> CssParser::consumeFontVariantNumericIdent(CssTokenStream& 
     return consumeIdent(input, table);
 }
 
-RefPtr<CssValue> CssParser::consumeNone(CssTokenStream& input)
+CssValuePtr CssParser::consumeNone(CssTokenStream& input)
 {
     if(consumeIdentIncludingWhitespace(input, "none", 4))
         return CssIdentValue::create(CssValueID::None);
     return nullptr;
 }
 
-RefPtr<CssValue> CssParser::consumeAuto(CssTokenStream& input)
+CssValuePtr CssParser::consumeAuto(CssTokenStream& input)
 {
     if(consumeIdentIncludingWhitespace(input, "auto", 4))
         return CssIdentValue::create(CssValueID::Auto);
     return nullptr;
 }
 
-RefPtr<CssValue> CssParser::consumeNormal(CssTokenStream& input)
+CssValuePtr CssParser::consumeNormal(CssTokenStream& input)
 {
     if(consumeIdentIncludingWhitespace(input, "normal", 6))
         return CssIdentValue::create(CssValueID::Normal);
     return nullptr;
 }
 
-RefPtr<CssValue> CssParser::consumeNoneOrAuto(CssTokenStream& input)
+CssValuePtr CssParser::consumeNoneOrAuto(CssTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
     return consumeAuto(input);
 }
 
-RefPtr<CssValue> CssParser::consumeNoneOrNormal(CssTokenStream& input)
+CssValuePtr CssParser::consumeNoneOrNormal(CssTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
     return consumeNormal(input);
 }
 
-RefPtr<CssValue> CssParser::consumeInteger(CssTokenStream& input, bool negative)
+CssValuePtr CssParser::consumeInteger(CssTokenStream& input, bool negative)
 {
     if(input->type() != CssToken::Type::Number || input->numberType() != CssToken::NumberType::Integer || (input->integer() < 0 && !negative))
         return nullptr;
@@ -1915,14 +1915,14 @@ RefPtr<CssValue> CssParser::consumeInteger(CssTokenStream& input, bool negative)
     return CssIntegerValue::create(value);
 }
 
-RefPtr<CssValue> CssParser::consumeIntegerOrAuto(CssTokenStream& input, bool negative)
+CssValuePtr CssParser::consumeIntegerOrAuto(CssTokenStream& input, bool negative)
 {
     if(auto value = consumeAuto(input))
         return value;
     return consumeInteger(input, negative);
 }
 
-RefPtr<CssValue> CssParser::consumePositiveInteger(CssTokenStream& input)
+CssValuePtr CssParser::consumePositiveInteger(CssTokenStream& input)
 {
     if(input->type() != CssToken::Type::Number || input->numberType() != CssToken::NumberType::Integer || input->integer() < 1)
         return nullptr;
@@ -1931,14 +1931,14 @@ RefPtr<CssValue> CssParser::consumePositiveInteger(CssTokenStream& input)
     return CssIntegerValue::create(value);
 }
 
-RefPtr<CssValue> CssParser::consumePositiveIntegerOrAuto(CssTokenStream& input)
+CssValuePtr CssParser::consumePositiveIntegerOrAuto(CssTokenStream& input)
 {
     if(auto value = consumeAuto(input))
         return value;
     return consumePositiveInteger(input);
 }
 
-RefPtr<CssValue> CssParser::consumeNumber(CssTokenStream& input, bool negative)
+CssValuePtr CssParser::consumeNumber(CssTokenStream& input, bool negative)
 {
     if(input->type() != CssToken::Type::Number || (input->number() < 0 && !negative))
         return nullptr;
@@ -1947,7 +1947,7 @@ RefPtr<CssValue> CssParser::consumeNumber(CssTokenStream& input, bool negative)
     return CssNumberValue::create(value);
 }
 
-RefPtr<CssValue> CssParser::consumePercent(CssTokenStream& input, bool negative)
+CssValuePtr CssParser::consumePercent(CssTokenStream& input, bool negative)
 {
     if(input->type() != CssToken::Type::Percentage || (input->number() < 0 && !negative))
         return nullptr;
@@ -1956,14 +1956,14 @@ RefPtr<CssValue> CssParser::consumePercent(CssTokenStream& input, bool negative)
     return CssPercentValue::create(value);
 }
 
-RefPtr<CssValue> CssParser::consumeNumberOrPercent(CssTokenStream& input, bool negative)
+CssValuePtr CssParser::consumeNumberOrPercent(CssTokenStream& input, bool negative)
 {
     if(auto value = consumeNumber(input, negative))
         return value;
     return consumePercent(input, negative);
 }
 
-RefPtr<CssValue> CssParser::consumeNumberOrPercentOrAuto(CssTokenStream& input, bool negative)
+CssValuePtr CssParser::consumeNumberOrPercentOrAuto(CssTokenStream& input, bool negative)
 {
     if(auto value = consumeAuto(input))
         return value;
@@ -2133,7 +2133,7 @@ static bool consumeCalcBlock(CssTokenStream& input, CssTokenList& stack, CssCalc
     return true;
 }
 
-RefPtr<CssValue> CssParser::consumeCalc(CssTokenStream& input, bool negative, bool unitless)
+CssValuePtr CssParser::consumeCalc(CssTokenStream& input, bool negative, bool unitless)
 {
     if(input->type() != CssToken::Type::Function || getCalcFunction(input->data()) == CalcFunction::Invalid)
         return nullptr;
@@ -2155,7 +2155,7 @@ RefPtr<CssValue> CssParser::consumeCalc(CssTokenStream& input, bool negative, bo
     return CssCalcValue::create(negative, unitless, std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeLength(CssTokenStream& input, bool negative, bool unitless)
+CssValuePtr CssParser::consumeLength(CssTokenStream& input, bool negative, bool unitless)
 {
     if(auto value = consumeCalc(input, negative, unitless))
         return value;
@@ -2178,49 +2178,49 @@ RefPtr<CssValue> CssParser::consumeLength(CssTokenStream& input, bool negative, 
     return CssLengthValue::create(value, unitType.value());
 }
 
-RefPtr<CssValue> CssParser::consumeLengthOrPercent(CssTokenStream& input, bool negative, bool unitless)
+CssValuePtr CssParser::consumeLengthOrPercent(CssTokenStream& input, bool negative, bool unitless)
 {
     if(auto value = consumePercent(input, negative))
         return value;
     return consumeLength(input, negative, unitless);
 }
 
-RefPtr<CssValue> CssParser::consumeLengthOrAuto(CssTokenStream& input, bool negative, bool unitless)
+CssValuePtr CssParser::consumeLengthOrAuto(CssTokenStream& input, bool negative, bool unitless)
 {
     if(auto value = consumeAuto(input))
         return value;
     return consumeLength(input, negative, unitless);
 }
 
-RefPtr<CssValue> CssParser::consumeLengthOrNormal(CssTokenStream& input, bool negative, bool unitless)
+CssValuePtr CssParser::consumeLengthOrNormal(CssTokenStream& input, bool negative, bool unitless)
 {
     if(auto value = consumeNormal(input))
         return value;
     return consumeLength(input, negative, unitless);
 }
 
-RefPtr<CssValue> CssParser::consumeLengthOrPercentOrAuto(CssTokenStream& input, bool negative, bool unitless)
+CssValuePtr CssParser::consumeLengthOrPercentOrAuto(CssTokenStream& input, bool negative, bool unitless)
 {
     if(auto value = consumeAuto(input))
         return value;
     return consumeLengthOrPercent(input, negative, unitless);
 }
 
-RefPtr<CssValue> CssParser::consumeLengthOrPercentOrNone(CssTokenStream& input, bool negative, bool unitless)
+CssValuePtr CssParser::consumeLengthOrPercentOrNone(CssTokenStream& input, bool negative, bool unitless)
 {
     if(auto value = consumeNone(input))
         return value;
     return consumeLengthOrPercent(input, negative, unitless);
 }
 
-RefPtr<CssValue> CssParser::consumeLengthOrPercentOrNormal(CssTokenStream& input, bool negative, bool unitless)
+CssValuePtr CssParser::consumeLengthOrPercentOrNormal(CssTokenStream& input, bool negative, bool unitless)
 {
     if(auto value = consumeNormal(input))
         return value;
     return consumeLengthOrPercent(input, negative, unitless);
 }
 
-RefPtr<CssValue> CssParser::consumeWidthOrHeight(CssTokenStream& input, bool unitless)
+CssValuePtr CssParser::consumeWidthOrHeight(CssTokenStream& input, bool unitless)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"min-content", CssValueID::MinContent},
@@ -2233,21 +2233,21 @@ RefPtr<CssValue> CssParser::consumeWidthOrHeight(CssTokenStream& input, bool uni
     return consumeLengthOrPercent(input, false, unitless);
 }
 
-RefPtr<CssValue> CssParser::consumeWidthOrHeightOrAuto(CssTokenStream& input, bool unitless)
+CssValuePtr CssParser::consumeWidthOrHeightOrAuto(CssTokenStream& input, bool unitless)
 {
     if(auto value = consumeAuto(input))
         return value;
     return consumeWidthOrHeight(input, unitless);
 }
 
-RefPtr<CssValue> CssParser::consumeWidthOrHeightOrNone(CssTokenStream& input, bool unitless)
+CssValuePtr CssParser::consumeWidthOrHeightOrNone(CssTokenStream& input, bool unitless)
 {
     if(auto value = consumeNone(input))
         return value;
     return consumeWidthOrHeight(input, unitless);
 }
 
-RefPtr<CssValue> CssParser::consumeString(CssTokenStream& input)
+CssValuePtr CssParser::consumeString(CssTokenStream& input)
 {
     if(input->type() == CssToken::Type::String) {
         auto value = createString(input->data());
@@ -2258,7 +2258,7 @@ RefPtr<CssValue> CssParser::consumeString(CssTokenStream& input)
     return nullptr;
 }
 
-RefPtr<CssValue> CssParser::consumeCustomIdent(CssTokenStream& input)
+CssValuePtr CssParser::consumeCustomIdent(CssTokenStream& input)
 {
     if(input->type() == CssToken::Type::Ident) {
         auto value = GlobalString::get(input->data());
@@ -2269,14 +2269,14 @@ RefPtr<CssValue> CssParser::consumeCustomIdent(CssTokenStream& input)
     return nullptr;
 }
 
-RefPtr<CssValue> CssParser::consumeStringOrCustomIdent(CssTokenStream& input)
+CssValuePtr CssParser::consumeStringOrCustomIdent(CssTokenStream& input)
 {
     if(auto value = consumeString(input))
         return value;
     return consumeCustomIdent(input);
 }
 
-RefPtr<CssValue> CssParser::consumeAttr(CssTokenStream& input)
+CssValuePtr CssParser::consumeAttr(CssTokenStream& input)
 {
     if(input->type() != CssToken::Type::Function || !matchLower(input->data(), "attr"))
         return nullptr;
@@ -2312,56 +2312,56 @@ RefPtr<CssValue> CssParser::consumeAttr(CssTokenStream& input)
     return CssAttrValue::create(name, fallback);
 }
 
-RefPtr<CssValue> CssParser::consumeLocalUrl(CssTokenStream& input)
+CssValuePtr CssParser::consumeLocalUrl(CssTokenStream& input)
 {
     if(auto token = consumeUrlToken(input))
         return CssLocalUrlValue::create(createString(token->data()));
     return nullptr;
 }
 
-RefPtr<CssValue> CssParser::consumeLocalUrlOrAttr(CssTokenStream &input)
+CssValuePtr CssParser::consumeLocalUrlOrAttr(CssTokenStream &input)
 {
     if(auto value = consumeAttr(input))
         return value;
     return consumeLocalUrl(input);
 }
 
-RefPtr<CssValue> CssParser::consumeLocalUrlOrNone(CssTokenStream& input)
+CssValuePtr CssParser::consumeLocalUrlOrNone(CssTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
     return consumeLocalUrl(input);
 }
 
-RefPtr<CssValue> CssParser::consumeUrl(CssTokenStream& input)
+CssValuePtr CssParser::consumeUrl(CssTokenStream& input)
 {
     if(auto token = consumeUrlToken(input))
         return CssUrlValue::create(m_context.completeUrl(token->data()));
     return nullptr;
 }
 
-RefPtr<CssValue> CssParser::consumeUrlOrNone(CssTokenStream& input)
+CssValuePtr CssParser::consumeUrlOrNone(CssTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
     return consumeUrl(input);
 }
 
-RefPtr<CssValue> CssParser::consumeImage(CssTokenStream& input)
+CssValuePtr CssParser::consumeImage(CssTokenStream& input)
 {
     if(auto token = consumeUrlToken(input))
         return CssImageValue::create(m_context.completeUrl(token->data()));
     return nullptr;
 }
 
-RefPtr<CssValue> CssParser::consumeImageOrNone(CssTokenStream& input)
+CssValuePtr CssParser::consumeImageOrNone(CssTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
     return consumeImage(input);
 }
 
-RefPtr<CssValue> CssParser::consumeColor(CssTokenStream& input)
+CssValuePtr CssParser::consumeColor(CssTokenStream& input)
 {
     if(input->type() == CssToken::Type::Hash) {
         auto data = input->data();
@@ -2478,7 +2478,7 @@ static bool consumeAlphaDelimiter(CssTokenStream& input, bool requiresComma)
     return false;
 }
 
-RefPtr<CssValue> CssParser::consumeRgb(CssTokenStream& input)
+CssValuePtr CssParser::consumeRgb(CssTokenStream& input)
 {
     assert(input->type() == CssToken::Type::Function);
     CssTokenStreamGuard guard(input);
@@ -2581,7 +2581,7 @@ static int computeHslComponent(float h, float s, float l, float n)
     return std::lroundf(v * 255.f);
 }
 
-RefPtr<CssValue> CssParser::consumeHsl(CssTokenStream& input)
+CssValuePtr CssParser::consumeHsl(CssTokenStream& input)
 {
     assert(input->type() == CssToken::Type::Function);
     CssTokenStreamGuard guard(input);
@@ -2625,7 +2625,7 @@ RefPtr<CssValue> CssParser::consumeHsl(CssTokenStream& input)
     return CssColorValue::create(Color(r, g, b, alpha));
 }
 
-RefPtr<CssValue> CssParser::consumeHwb(CssTokenStream& input)
+CssValuePtr CssParser::consumeHwb(CssTokenStream& input)
 {
     assert(input->type() == CssToken::Type::Function);
     CssTokenStreamGuard guard(input);
@@ -2681,7 +2681,7 @@ RefPtr<CssValue> CssParser::consumeHwb(CssTokenStream& input)
     return CssColorValue::create(Color(r, g, b, alpha));
 }
 
-RefPtr<CssValue> CssParser::consumePaint(CssTokenStream& input)
+CssValuePtr CssParser::consumePaint(CssTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
@@ -2696,7 +2696,7 @@ RefPtr<CssValue> CssParser::consumePaint(CssTokenStream& input)
     return CssPairValue::create(first, second);
 }
 
-RefPtr<CssValue> CssParser::consumeListStyleType(CssTokenStream& input)
+CssValuePtr CssParser::consumeListStyleType(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"none", CssValueID::None},
@@ -2710,7 +2710,7 @@ RefPtr<CssValue> CssParser::consumeListStyleType(CssTokenStream& input)
     return consumeStringOrCustomIdent(input);
 }
 
-RefPtr<CssValue> CssParser::consumeQuotes(CssTokenStream& input)
+CssValuePtr CssParser::consumeQuotes(CssTokenStream& input)
 {
     if(auto value = consumeNoneOrAuto(input))
         return value;
@@ -2727,7 +2727,7 @@ RefPtr<CssValue> CssParser::consumeQuotes(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeContent(CssTokenStream& input)
+CssValuePtr CssParser::consumeContent(CssTokenStream& input)
 {
     if(auto value = consumeNoneOrNormal(input))
         return value;
@@ -2790,7 +2790,7 @@ RefPtr<CssValue> CssParser::consumeContent(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeContentLeader(CssTokenStream& input)
+CssValuePtr CssParser::consumeContentLeader(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"dotted", CssValueID::Dotted},
@@ -2806,7 +2806,7 @@ RefPtr<CssValue> CssParser::consumeContentLeader(CssTokenStream& input)
     return CssUnaryFunctionValue::create(CssFunctionID::Leader, std::move(value));
 }
 
-RefPtr<CssValue> CssParser::consumeContentElement(CssTokenStream& input)
+CssValuePtr CssParser::consumeContentElement(CssTokenStream& input)
 {
     auto value = consumeCustomIdent(input);
     if(value == nullptr || !input.empty())
@@ -2814,7 +2814,7 @@ RefPtr<CssValue> CssParser::consumeContentElement(CssTokenStream& input)
     return CssUnaryFunctionValue::create(CssFunctionID::Element, std::move(value));
 }
 
-RefPtr<CssValue> CssParser::consumeContentCounter(CssTokenStream& input, bool counters)
+CssValuePtr CssParser::consumeContentCounter(CssTokenStream& input, bool counters)
 {
     if(input->type() != CssToken::Type::Ident)
         return nullptr;
@@ -2843,7 +2843,7 @@ RefPtr<CssValue> CssParser::consumeContentCounter(CssTokenStream& input, bool co
     return CssCounterValue::create(identifier, listStyle, separator);
 }
 
-RefPtr<CssValue> CssParser::consumeContentTargetCounter(CssTokenStream& input, bool counters)
+CssValuePtr CssParser::consumeContentTargetCounter(CssTokenStream& input, bool counters)
 {
     auto fragment = consumeLocalUrlOrAttr(input);
     if(fragment == nullptr || !input.consumeCommaIncludingWhitespace())
@@ -2880,7 +2880,7 @@ RefPtr<CssValue> CssParser::consumeContentTargetCounter(CssTokenStream& input, b
     return CssFunctionValue::create(id, std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeContentQrCode(CssTokenStream& input)
+CssValuePtr CssParser::consumeContentQrCode(CssTokenStream& input)
 {
     auto text = consumeString(input);
     if(text == nullptr)
@@ -2900,7 +2900,7 @@ RefPtr<CssValue> CssParser::consumeContentQrCode(CssTokenStream& input)
     return CssFunctionValue::create(CssFunctionID::Qrcode, std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeCounter(CssTokenStream& input, bool increment)
+CssValuePtr CssParser::consumeCounter(CssTokenStream& input, bool increment)
 {
     if(auto value = consumeNone(input))
         return value;
@@ -2917,14 +2917,14 @@ RefPtr<CssValue> CssParser::consumeCounter(CssTokenStream& input, bool increment
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumePage(CssTokenStream& input)
+CssValuePtr CssParser::consumePage(CssTokenStream& input)
 {
     if(auto value = consumeAuto(input))
         return value;
     return consumeCustomIdent(input);
 }
 
-RefPtr<CssValue> CssParser::consumeSize(CssTokenStream& input)
+CssValuePtr CssParser::consumeSize(CssTokenStream& input)
 {
     if(auto value = consumeAuto(input))
         return value;
@@ -2935,8 +2935,8 @@ RefPtr<CssValue> CssParser::consumeSize(CssTokenStream& input)
         return CssPairValue::create(width, height);
     }
 
-    RefPtr<CssValue> size;
-    RefPtr<CssValue> orientation;
+    CssValuePtr size;
+    CssValuePtr orientation;
     for(int index = 0; index < 2; ++index) {
         static constexpr auto table = makeIdentTable<CssValueID>({
             {"a3", CssValueID::A3},
@@ -2967,7 +2967,7 @@ RefPtr<CssValue> CssParser::consumeSize(CssTokenStream& input)
     return CssPairValue::create(size, orientation);
 }
 
-RefPtr<CssValue> CssParser::consumeOrientation(CssTokenStream& input)
+CssValuePtr CssParser::consumeOrientation(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"portrait", CssValueID::Portrait},
@@ -2977,7 +2977,7 @@ RefPtr<CssValue> CssParser::consumeOrientation(CssTokenStream& input)
     return consumeIdent(input, table);
 }
 
-RefPtr<CssValue> CssParser::consumeFontSize(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontSize(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"xx-small", CssValueID::XxSmall},
@@ -2997,7 +2997,7 @@ RefPtr<CssValue> CssParser::consumeFontSize(CssTokenStream& input)
     return consumeLengthOrPercent(input, false, false);
 }
 
-RefPtr<CssValue> CssParser::consumeFontWeight(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontWeight(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"normal", CssValueID::Normal},
@@ -3013,7 +3013,7 @@ RefPtr<CssValue> CssParser::consumeFontWeight(CssTokenStream& input)
     return consumeNumber(input, false);
 }
 
-RefPtr<CssValue> CssParser::consumeFontStyle(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontStyle(CssTokenStream& input)
 {
     auto ident = consumeFontStyleIdent(input);
     if(ident == nullptr)
@@ -3027,14 +3027,14 @@ RefPtr<CssValue> CssParser::consumeFontStyle(CssTokenStream& input)
     return ident;
 }
 
-RefPtr<CssValue> CssParser::consumeFontStretch(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontStretch(CssTokenStream& input)
 {
     if(auto value = consumeFontStretchIdent(input))
         return value;
     return consumePercent(input, false);
 }
 
-RefPtr<CssValue> CssParser::consumeFontFamilyName(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontFamilyName(CssTokenStream& input)
 {
     if(input->type() == CssToken::Type::String) {
         auto value = GlobalString::get(input->data());
@@ -3055,7 +3055,7 @@ RefPtr<CssValue> CssParser::consumeFontFamilyName(CssTokenStream& input)
     return CssCustomIdentValue::create(GlobalString::get(value));
 }
 
-RefPtr<CssValue> CssParser::consumeFontFamily(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontFamily(CssTokenStream& input)
 {
     CssValueList values;
     do {
@@ -3067,7 +3067,7 @@ RefPtr<CssValue> CssParser::consumeFontFamily(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeFontFeature(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontFeature(CssTokenStream& input)
 {
     constexpr auto kTagLength = 4;
     if(input->type() != CssToken::Type::String)
@@ -3102,7 +3102,7 @@ RefPtr<CssValue> CssParser::consumeFontFeature(CssTokenStream& input)
     return CssFontFeatureValue::create(tag, value);
 }
 
-RefPtr<CssValue> CssParser::consumeFontFeatureSettings(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontFeatureSettings(CssTokenStream& input)
 {
     if(auto value = consumeNormal(input))
         return value;
@@ -3116,7 +3116,7 @@ RefPtr<CssValue> CssParser::consumeFontFeatureSettings(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeFontVariation(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontVariation(CssTokenStream& input)
 {
     constexpr auto kTagLength = 4;
     if(input->type() != CssToken::Type::String)
@@ -3138,7 +3138,7 @@ RefPtr<CssValue> CssParser::consumeFontVariation(CssTokenStream& input)
     return CssFontVariationValue::create(tag, value);
 }
 
-RefPtr<CssValue> CssParser::consumeFontVariationSettings(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontVariationSettings(CssTokenStream& input)
 {
     if(auto value = consumeNormal(input))
         return value;
@@ -3152,28 +3152,28 @@ RefPtr<CssValue> CssParser::consumeFontVariationSettings(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeFontVariantCaps(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontVariantCaps(CssTokenStream& input)
 {
     if(auto value = consumeNormal(input))
         return value;
     return consumeFontVariantCapsIdent(input);
 }
 
-RefPtr<CssValue> CssParser::consumeFontVariantEmoji(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontVariantEmoji(CssTokenStream& input)
 {
     if(auto value = consumeNormal(input))
         return value;
     return consumeFontVariantEmojiIdent(input);
 }
 
-RefPtr<CssValue> CssParser::consumeFontVariantPosition(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontVariantPosition(CssTokenStream& input)
 {
     if(auto value = consumeNormal(input))
         return value;
     return consumeFontVariantPositionIdent(input);
 }
 
-RefPtr<CssValue> CssParser::consumeFontVariantEastAsian(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontVariantEastAsian(CssTokenStream& input)
 {
     if(auto value = consumeNormal(input)) {
         return value;
@@ -3219,7 +3219,7 @@ RefPtr<CssValue> CssParser::consumeFontVariantEastAsian(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeFontVariantLigatures(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontVariantLigatures(CssTokenStream& input)
 {
     if(auto value = consumeNoneOrNormal(input)) {
         return value;
@@ -3269,7 +3269,7 @@ RefPtr<CssValue> CssParser::consumeFontVariantLigatures(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeFontVariantNumeric(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontVariantNumeric(CssTokenStream& input)
 {
     if(auto value = consumeNormal(input)) {
         return value;
@@ -3324,7 +3324,7 @@ RefPtr<CssValue> CssParser::consumeFontVariantNumeric(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeLineWidth(CssTokenStream& input)
+CssValuePtr CssParser::consumeLineWidth(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"thin", CssValueID::Thin},
@@ -3337,7 +3337,7 @@ RefPtr<CssValue> CssParser::consumeLineWidth(CssTokenStream& input)
     return consumeLength(input, false, false);
 }
 
-RefPtr<CssValue> CssParser::consumeBorderRadiusValue(CssTokenStream& input)
+CssValuePtr CssParser::consumeBorderRadiusValue(CssTokenStream& input)
 {
     auto first = consumeLengthOrPercent(input, false, false);
     if(first == nullptr)
@@ -3348,7 +3348,7 @@ RefPtr<CssValue> CssParser::consumeBorderRadiusValue(CssTokenStream& input)
     return CssPairValue::create(first, second);
 }
 
-RefPtr<CssValue> CssParser::consumeClip(CssTokenStream& input)
+CssValuePtr CssParser::consumeClip(CssTokenStream& input)
 {
     if(auto value = consumeAuto(input))
         return value;
@@ -3379,7 +3379,7 @@ RefPtr<CssValue> CssParser::consumeClip(CssTokenStream& input)
     return CssRectValue::create(top, right, bottom, left);
 }
 
-RefPtr<CssValue> CssParser::consumeDashList(CssTokenStream& input)
+CssValuePtr CssParser::consumeDashList(CssTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
@@ -3393,7 +3393,7 @@ RefPtr<CssValue> CssParser::consumeDashList(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumePosition(CssTokenStream& input)
+CssValuePtr CssParser::consumePosition(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"static", CssValueID::Static},
@@ -3417,7 +3417,7 @@ RefPtr<CssValue> CssParser::consumePosition(CssTokenStream& input)
     return CssUnaryFunctionValue::create(CssFunctionID::Running, std::move(value));
 }
 
-RefPtr<CssValue> CssParser::consumeVerticalAlign(CssTokenStream& input)
+CssValuePtr CssParser::consumeVerticalAlign(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"baseline", CssValueID::Baseline},
@@ -3435,7 +3435,7 @@ RefPtr<CssValue> CssParser::consumeVerticalAlign(CssTokenStream& input)
     return consumeLengthOrPercent(input, true, false);
 }
 
-RefPtr<CssValue> CssParser::consumeBaselineShift(CssTokenStream& input)
+CssValuePtr CssParser::consumeBaselineShift(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"baseline", CssValueID::Baseline},
@@ -3448,7 +3448,7 @@ RefPtr<CssValue> CssParser::consumeBaselineShift(CssTokenStream& input)
     return consumeLengthOrPercent(input, true, false);
 }
 
-RefPtr<CssValue> CssParser::consumeTextDecorationLine(CssTokenStream& input)
+CssValuePtr CssParser::consumeTextDecorationLine(CssTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
@@ -3494,10 +3494,10 @@ RefPtr<CssValue> CssParser::consumeTextDecorationLine(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumePositionCoordinate(CssTokenStream& input)
+CssValuePtr CssParser::consumePositionCoordinate(CssTokenStream& input)
 {
-    RefPtr<CssValue> first;
-    RefPtr<CssValue> second;
+    CssValuePtr first;
+    CssValuePtr second;
     for(int index = 0; index < 2; ++index) {
         if(first == nullptr && (first = consumeLengthOrPercent(input, true, false)))
             continue;
@@ -3536,7 +3536,7 @@ RefPtr<CssValue> CssParser::consumePositionCoordinate(CssTokenStream& input)
     return CssPairValue::create(first, second);
 }
 
-RefPtr<CssValue> CssParser::consumeBackgroundSize(CssTokenStream& input)
+CssValuePtr CssParser::consumeBackgroundSize(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"contain", CssValueID::Contain},
@@ -3554,7 +3554,7 @@ RefPtr<CssValue> CssParser::consumeBackgroundSize(CssTokenStream& input)
     return CssPairValue::create(first, second);
 }
 
-RefPtr<CssValue> CssParser::consumeAngle(CssTokenStream& input)
+CssValuePtr CssParser::consumeAngle(CssTokenStream& input)
 {
     if(input->type() != CssToken::Type::Dimension)
         return nullptr;
@@ -3573,7 +3573,7 @@ RefPtr<CssValue> CssParser::consumeAngle(CssTokenStream& input)
     return CssAngleValue::create(value, unitType.value());
 }
 
-RefPtr<CssValue> CssParser::consumeTransformValue(CssTokenStream& input)
+CssValuePtr CssParser::consumeTransformValue(CssTokenStream& input)
 {
     if(input->type() != CssToken::Type::Function)
         return nullptr;
@@ -3678,7 +3678,7 @@ RefPtr<CssValue> CssParser::consumeTransformValue(CssTokenStream& input)
     return CssFunctionValue::create(*id, std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeTransform(CssTokenStream& input)
+CssValuePtr CssParser::consumeTransform(CssTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
@@ -3692,7 +3692,7 @@ RefPtr<CssValue> CssParser::consumeTransform(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumePaintOrder(CssTokenStream& input)
+CssValuePtr CssParser::consumePaintOrder(CssTokenStream& input)
 {
     if(auto value = consumeNormal(input))
         return value;
@@ -3712,7 +3712,7 @@ RefPtr<CssValue> CssParser::consumePaintOrder(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID id)
+CssValuePtr CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID id)
 {
     switch(id) {
     case CssPropertyID::FlexGrow:
@@ -4507,9 +4507,9 @@ bool CssParser::consumeFlex(CssTokenStream& input, CssPropertyList& properties, 
         return true;
     }
 
-    RefPtr<CssValue> grow;
-    RefPtr<CssValue> shrink;
-    RefPtr<CssValue> basis;
+    CssValuePtr grow;
+    CssValuePtr shrink;
+    CssValuePtr basis;
     for(int index = 0; index < 3; ++index) {
         if(input->type() == CssToken::Type::Number) {
             if(input->number() < 0.0)
@@ -4545,14 +4545,14 @@ bool CssParser::consumeFlex(CssTokenStream& input, CssPropertyList& properties, 
 
 bool CssParser::consumeBackground(CssTokenStream& input, CssPropertyList& properties, bool important)
 {
-    RefPtr<CssValue> color;
-    RefPtr<CssValue> image;
-    RefPtr<CssValue> repeat;
-    RefPtr<CssValue> attachment;
-    RefPtr<CssValue> origin;
-    RefPtr<CssValue> clip;
-    RefPtr<CssValue> position;
-    RefPtr<CssValue> size;
+    CssValuePtr color;
+    CssValuePtr image;
+    CssValuePtr repeat;
+    CssValuePtr attachment;
+    CssValuePtr origin;
+    CssValuePtr clip;
+    CssValuePtr position;
+    CssValuePtr size;
     while(!input.empty()) {
         if(position == nullptr && (position = consumePositionCoordinate(input))) {
             if(input->type() == CssToken::Type::Delim && input->delim() == '/') {
@@ -4595,8 +4595,8 @@ bool CssParser::consumeBackground(CssTokenStream& input, CssPropertyList& proper
 
 bool CssParser::consumeColumns(CssTokenStream& input, CssPropertyList& properties, bool important)
 {
-    RefPtr<CssValue> width;
-    RefPtr<CssValue> count;
+    CssValuePtr width;
+    CssValuePtr count;
     for(int index = 0; index < 2; ++index) {
         if(consumeIdentIncludingWhitespace(input, "auto", 4))
             continue;
@@ -4616,10 +4616,10 @@ bool CssParser::consumeColumns(CssTokenStream& input, CssPropertyList& propertie
 
 bool CssParser::consumeListStyle(CssTokenStream& input, CssPropertyList& properties, bool important)
 {
-    RefPtr<CssValue> none;
-    RefPtr<CssValue> position;
-    RefPtr<CssValue> image;
-    RefPtr<CssValue> type;
+    CssValuePtr none;
+    CssValuePtr position;
+    CssValuePtr image;
+    CssValuePtr type;
     while(!input.empty()) {
         if(none == nullptr && (none = consumeNone(input)))
             continue;
@@ -4650,10 +4650,10 @@ bool CssParser::consumeListStyle(CssTokenStream& input, CssPropertyList& propert
 
 bool CssParser::consumeFont(CssTokenStream& input, CssPropertyList& properties, bool important)
 {
-    RefPtr<CssValue> style;
-    RefPtr<CssValue> weight;
-    RefPtr<CssValue> variant;
-    RefPtr<CssValue> stretch;
+    CssValuePtr style;
+    CssValuePtr weight;
+    CssValuePtr variant;
+    CssValuePtr stretch;
     for(int index = 0; index < 4; ++index) {
         if(consumeIdentIncludingWhitespace(input, "normal", 6))
             continue;
@@ -4710,9 +4710,9 @@ bool CssParser::consumeFontVariant(CssTokenStream& input, CssPropertyList& prope
         return true;
     }
 
-    RefPtr<CssValue> caps;
-    RefPtr<CssValue> emoji;
-    RefPtr<CssValue> position;
+    CssValuePtr caps;
+    CssValuePtr emoji;
+    CssValuePtr position;
 
     CssValueList eastAsian;
     CssValueList ligatures;
@@ -4761,9 +4761,9 @@ bool CssParser::consumeFontVariant(CssTokenStream& input, CssPropertyList& prope
 
 bool CssParser::consumeBorder(CssTokenStream& input, CssPropertyList& properties, bool important)
 {
-    RefPtr<CssValue> width;
-    RefPtr<CssValue> style;
-    RefPtr<CssValue> color;
+    CssValuePtr width;
+    CssValuePtr style;
+    CssValuePtr color;
     while(!input.empty()) {
         if(width == nullptr && (width = consumeLineWidth(input)))
             continue;
@@ -4788,7 +4788,7 @@ bool CssParser::consumeBorderRadius(CssTokenStream& input, CssPropertyList& prop
         if(sides[3] == nullptr) sides[3] = sides[1];
     };
 
-    RefPtr<CssValue> horizontal[4];
+    CssValuePtr horizontal[4];
     for(auto& side : horizontal) {
         if(input.empty() || input->type() == CssToken::Type::Delim)
             break;
@@ -4802,7 +4802,7 @@ bool CssParser::consumeBorderRadius(CssTokenStream& input, CssPropertyList& prop
         return false;
     completesides(horizontal);
 
-    RefPtr<CssValue> vertical[4];
+    CssValuePtr vertical[4];
     if(input->type() == CssToken::Type::Delim && input->delim() == '/') {
         input.consumeIncludingWhitespace();
         for(auto& side : vertical) {
@@ -4904,7 +4904,7 @@ bool CssParser::consume4Shorthand(CssTokenStream& input, CssPropertyList& proper
 
 bool CssParser::consumeShorthand(CssTokenStream& input, CssPropertyList& properties, CssPropertyID id, bool important)
 {
-    RefPtr<CssValue> values[6];
+    CssValuePtr values[6];
     auto longhand = expandShorthand(id);
     const auto n = longhand.size();
     assert(n <= std::size(values));
@@ -4926,7 +4926,7 @@ bool CssParser::consumeShorthand(CssTokenStream& input, CssPropertyList& propert
     return true;
 }
 
-RefPtr<CssValue> CssParser::consumeFontFaceSource(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontFaceSource(CssTokenStream& input)
 {
     CssValueList values;
     if(input->type() == CssToken::Type::Function && matchLower(input->data(), "local")) {
@@ -4958,7 +4958,7 @@ RefPtr<CssValue> CssParser::consumeFontFaceSource(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeFontFaceSrc(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontFaceSrc(CssTokenStream& input)
 {
     CssValueList values;
     do {
@@ -4970,7 +4970,7 @@ RefPtr<CssValue> CssParser::consumeFontFaceSrc(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeFontFaceWeight(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontFaceWeight(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"normal", CssValueID::Normal},
@@ -4988,7 +4988,7 @@ RefPtr<CssValue> CssParser::consumeFontFaceWeight(CssTokenStream& input)
     return CssPairValue::create(startWeight, endWeight);
 }
 
-RefPtr<CssValue> CssParser::consumeFontFaceStyle(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontFaceStyle(CssTokenStream& input)
 {
     auto ident = consumeFontStyleIdent(input);
     if(ident == nullptr)
@@ -5008,7 +5008,7 @@ RefPtr<CssValue> CssParser::consumeFontFaceStyle(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeFontFaceStretch(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontFaceStretch(CssTokenStream& input)
 {
     if(auto value = consumeFontStretchIdent(input))
         return value;
@@ -5021,7 +5021,7 @@ RefPtr<CssValue> CssParser::consumeFontFaceStretch(CssTokenStream& input)
     return CssPairValue::create(startPercent, endPercent);
 }
 
-RefPtr<CssValue> CssParser::consumeFontFaceUnicodeRange(CssTokenStream& input)
+CssValuePtr CssParser::consumeFontFaceUnicodeRange(CssTokenStream& input)
 {
     CssValueList values;
     do {
@@ -5035,7 +5035,7 @@ RefPtr<CssValue> CssParser::consumeFontFaceUnicodeRange(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeCounterStyleName(CssTokenStream& input)
+CssValuePtr CssParser::consumeCounterStyleName(CssTokenStream& input)
 {
     if(input->type() != CssToken::Type::Ident || matchLower(input->data(), "none"))
         return nullptr;
@@ -5044,7 +5044,7 @@ RefPtr<CssValue> CssParser::consumeCounterStyleName(CssTokenStream& input)
     return CssCustomIdentValue::create(name);
 }
 
-RefPtr<CssValue> CssParser::consumeCounterStyleSystem(CssTokenStream& input)
+CssValuePtr CssParser::consumeCounterStyleSystem(CssTokenStream& input)
 {
     static constexpr auto table = makeIdentTable<CssValueID>({
         {"cyclic", CssValueID::Cyclic},
@@ -5076,7 +5076,7 @@ RefPtr<CssValue> CssParser::consumeCounterStyleSystem(CssTokenStream& input)
     return ident;
 }
 
-RefPtr<CssValue> CssParser::consumeCounterStyleNegative(CssTokenStream& input)
+CssValuePtr CssParser::consumeCounterStyleNegative(CssTokenStream& input)
 {
     auto prepend = consumeCounterStyleSymbol(input);
     if(prepend == nullptr)
@@ -5086,21 +5086,21 @@ RefPtr<CssValue> CssParser::consumeCounterStyleNegative(CssTokenStream& input)
     return prepend;
 }
 
-RefPtr<CssValue> CssParser::consumeCounterStyleSymbol(CssTokenStream& input)
+CssValuePtr CssParser::consumeCounterStyleSymbol(CssTokenStream& input)
 {
     if(auto value = consumeStringOrCustomIdent(input))
         return value;
     return consumeImage(input);
 }
 
-RefPtr<CssValue> CssParser::consumeCounterStyleRangeBound(CssTokenStream& input)
+CssValuePtr CssParser::consumeCounterStyleRangeBound(CssTokenStream& input)
 {
     if(consumeIdentIncludingWhitespace(input, "infinite", 8))
         return CssIdentValue::create(CssValueID::Infinite);
     return consumeInteger(input, true);
 }
 
-RefPtr<CssValue> CssParser::consumeCounterStyleRange(CssTokenStream& input)
+CssValuePtr CssParser::consumeCounterStyleRange(CssTokenStream& input)
 {
     if(auto value = consumeAuto(input))
         return value;
@@ -5117,10 +5117,10 @@ RefPtr<CssValue> CssParser::consumeCounterStyleRange(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeCounterStylePad(CssTokenStream& input)
+CssValuePtr CssParser::consumeCounterStylePad(CssTokenStream& input)
 {
-    RefPtr<CssValue> integer;
-    RefPtr<CssValue> symbol;
+    CssValuePtr integer;
+    CssValuePtr symbol;
     while(!integer || !symbol) {
         if(integer == nullptr && (integer = consumeInteger(input, false)))
             continue;
@@ -5132,7 +5132,7 @@ RefPtr<CssValue> CssParser::consumeCounterStylePad(CssTokenStream& input)
     return CssPairValue::create(integer, symbol);
 }
 
-RefPtr<CssValue> CssParser::consumeCounterStyleSymbols(CssTokenStream& input)
+CssValuePtr CssParser::consumeCounterStyleSymbols(CssTokenStream& input)
 {
     CssValueList values;
     do {
@@ -5144,7 +5144,7 @@ RefPtr<CssValue> CssParser::consumeCounterStyleSymbols(CssTokenStream& input)
     return CssListValue::create(std::move(values));
 }
 
-RefPtr<CssValue> CssParser::consumeCounterStyleAdditiveSymbols(CssTokenStream& input)
+CssValuePtr CssParser::consumeCounterStyleAdditiveSymbols(CssTokenStream& input)
 {
     CssValueList values;
     do {

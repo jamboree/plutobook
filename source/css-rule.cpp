@@ -133,12 +133,12 @@ float CssLengthResolver::viewportMax() const
 
 float CssAngleValue::valueInDegrees() const
 {
-    switch (m_unit) {
-    case CssAngleValue::Unit::Degrees: return m_value;
+    switch (unit()) {
+    case CssAngleValue::Unit::Degrees: return value();
     case CssAngleValue::Unit::Radians:
-        return m_value * 180.0 / std::numbers::pi;
-    case CssAngleValue::Unit::Gradians: return m_value * 360.0 / 400.0;
-    case CssAngleValue::Unit::Turns: return m_value * 360.0;
+        return value() * 180.0 / std::numbers::pi;
+    case CssAngleValue::Unit::Gradians: return value() * 360.0 / 400.0;
+    case CssAngleValue::Unit::Turns: return value() * 360.0;
     default: assert(false);
     }
 
@@ -203,76 +203,14 @@ float CssCalcValue::resolve(const CssLengthResolver& resolver) const
 
     if(stack.size() == 1) {
         const auto& result = stack.back();
-        if(result.value < 0 && !m_negative)
+        if(result.value < 0 && !negative())
             return 0;
-        if(result.units == CssLengthUnits::None && !m_unitless)
+        if(result.units == CssLengthUnits::None && !unitless())
             return 0;
         return result.value;
     }
 
     return 0;
-}
-
-template<typename T>
-struct Storage {
-    alignas(T) char data[sizeof(T)];
-    T* get() { return reinterpret_cast<T*>(data); }
-};
-
-class CssValuePool {
-public:
-    CssValuePool();
-
-    CssInitialValue* initialValue() { return &m_initialValue; }
-    CssInheritValue* inheritValue() { return &m_inheritValue; }
-    CssUnsetValue* unsetValue() { return &m_unsetValue; }
-
-    CssIdentValue* identValue(CssValueID id);
-
-private:
-    CssInitialValue m_initialValue;
-    CssInheritValue m_inheritValue;
-    CssUnsetValue m_unsetValue;
-    Storage<CssIdentValue> m_identValues[kNumCssValueIDs];
-};
-
-CssValuePool::CssValuePool()
-{
-    for(int i = 0; i != kNumCssValueIDs; ++i) {
-        const auto id = static_cast<CssValueID>(i);
-        new(m_identValues[i].data) CssIdentValue(id);
-    }
-}
-
-CssIdentValue* CssValuePool::identValue(CssValueID id)
-{
-    return m_identValues[std::to_underlying(id)].get();
-}
-
-static CssValuePool* cssValuePool()
-{
-    static CssValuePool valuePool;
-    return &valuePool;
-}
-
-RefPtr<CssInitialValue> CssInitialValue::create()
-{
-    return cssValuePool()->initialValue();
-}
-
-RefPtr<CssInheritValue> CssInheritValue::create()
-{
-    return cssValuePool()->inheritValue();
-}
-
-RefPtr<CssUnsetValue> CssUnsetValue::create()
-{
-    return cssValuePool()->unsetValue();
-}
-
-RefPtr<CssIdentValue> CssIdentValue::create(CssValueID value)
-{
-    return cssValuePool()->identValue(value);
 }
 
 RefPtr<CssVariableData> CssVariableData::create(const CssTokenStream& value)
@@ -331,14 +269,15 @@ bool CssVariableData::resolveVar(CssTokenStream input, const BoxStyle* style, Cs
     return references.insert(data).second && data->resolve(style, tokens, references);
 }
 
-RefPtr<CssCustomPropertyValue> CssCustomPropertyValue::create(GlobalString name, RefPtr<CssVariableData> value)
+ValPtr<CssCustomPropertyValue> CssCustomPropertyValue::create(GlobalString name, RefPtr<CssVariableData> value)
 {
-    return adoptPtr(new CssCustomPropertyValue(name, std::move(value)));
+    return ValPtr(new CssCustomPropertyValue(name, std::move(value)));
 }
 
 CssCustomPropertyValue::CssCustomPropertyValue(GlobalString name, RefPtr<CssVariableData> value)
-    : CssValue(classKind), m_name(name), m_value(std::move(value))
+    : CssHeapValue(classKind), m_value(std::move(value))
 {
+    initValue(name);
 }
 
 CssParserContext::CssParserContext(const Node* node, CssStyleOrigin origin, Url baseUrl)
@@ -349,9 +288,9 @@ CssParserContext::CssParserContext(const Node* node, CssStyleOrigin origin, Url 
 {
 }
 
-RefPtr<CssVariableReferenceValue> CssVariableReferenceValue::create(const CssParserContext& context, CssPropertyID id, bool important, RefPtr<CssVariableData> value)
+ValPtr<CssVariableReferenceValue> CssVariableReferenceValue::create(const CssParserContext& context, CssPropertyID id, bool important, RefPtr<CssVariableData> value)
 {
-    return adoptPtr(new CssVariableReferenceValue(context, id, important, std::move(value)));
+    return ValPtr(new CssVariableReferenceValue(context, id, important, std::move(value)));
 }
 
 CssPropertyList CssVariableReferenceValue::resolve(const BoxStyle* style) const
@@ -363,18 +302,20 @@ CssPropertyList CssVariableReferenceValue::resolve(const BoxStyle* style) const
     CssTokenStream input(tokens.data(), tokens.size());
     CssParser parser(m_context);
     CssPropertyList properties;
-    parser.parsePropertyValue(input, properties, m_id, m_important);
+    parser.parsePropertyValue(input, properties, id(), important());
     return properties;
 }
 
 CssVariableReferenceValue::CssVariableReferenceValue(const CssParserContext& context, CssPropertyID id, bool important, RefPtr<CssVariableData> value)
-    : CssValue(classKind), m_context(context), m_id(id), m_important(important), m_value(std::move(value))
+    : CssHeapValue(classKind), m_context(context), m_value(std::move(value))
 {
+    initValue(id);
+    initTag(important);
 }
 
-RefPtr<CssImageValue> CssImageValue::create(Url value)
+ValPtr<CssImageValue> CssImageValue::create(Url value)
 {
-    return adoptPtr(new CssImageValue(std::move(value)));
+    return ValPtr(new CssImageValue(std::move(value)));
 }
 
 const RefPtr<Image>& CssImageValue::fetch(Document* document) const
@@ -389,7 +330,7 @@ const RefPtr<Image>& CssImageValue::fetch(Document* document) const
 }
 
 CssImageValue::CssImageValue(Url value)
-    : CssValue(classKind), m_value(std::move(value))
+    : CssHeapValue(classKind), m_value(std::move(value))
 {
 }
 
@@ -1311,11 +1252,11 @@ CssCounterStyle::CssCounterStyle(RefPtr<CssCounterStyleRule> rule)
             m_system = to<CssIdentValue>(property.value());
             if(m_system == nullptr) {
                 const auto& pair = to<CssPairValue>(*property.value());
-                m_system = to<CssIdentValue>(*pair.first());
+                m_system = to<CssIdentValue>(pair.first());
                 if(m_system->value() == CssValueID::Fixed) {
-                    m_fixed = to<CssIntegerValue>(*pair.second());
+                    m_fixed = to<CssIntegerValue>(pair.second());
                 } else {
-                    m_extends = to<CssCustomIdentValue>(*pair.second());
+                    m_extends = to<CssCustomIdentValue>(pair.second());
                 }
             }
 
@@ -1323,16 +1264,16 @@ CssCounterStyle::CssCounterStyle(RefPtr<CssCounterStyleRule> rule)
         }
 
         case CssPropertyID::Symbols:
-            m_symbols = to<CssListValue>(*property.value());
+            m_symbols = to<CssListValue>(property.value());
             break;
         case CssPropertyID::AdditiveSymbols:
-            m_additiveSymbols = to<CssListValue>(*property.value());
+            m_additiveSymbols = to<CssListValue>(property.value());
             break;
         case CssPropertyID::Fallback:
-            m_fallback = to<CssCustomIdentValue>(*property.value());
+            m_fallback = to<CssCustomIdentValue>(property.value());
             break;
         case CssPropertyID::Pad:
-            m_pad = to<CssPairValue>(*property.value());
+            m_pad = to<CssPairValue>(property.value());
             break;
         case CssPropertyID::Range:
             m_range = to<CssListValue>(property.value());
