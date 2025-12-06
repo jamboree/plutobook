@@ -219,11 +219,18 @@ RefPtr<CssVariableData> CssVariableData::create(const CssTokenStream& value)
 }
 
 CssVariableData::CssVariableData(const CssTokenStream& value)
+    : m_tokens(value.begin(), value.end())
 {
-    m_tokens.assign(value.begin(), value.end());
     for(auto& token : m_tokens) {
         if(!token.m_data.empty()) {
-            token.m_data = createString(token.data());
+            m_chars.append(token.data());
+        }
+    }
+    auto s = m_chars.data();
+    for (auto& token : m_tokens) {
+        if (const auto len = token.m_data.size()) {
+            token.m_data = std::string_view(s, len);
+            s += len;
         }
     }
 }

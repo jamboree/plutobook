@@ -333,16 +333,16 @@ namespace plutobook {
         uint64_t m_data;
     };
 
+    class CssSmallValue : public CssValue {
+    public:
+        using CssValue::CssValue;
+    };
+
     class CssHeapValue : public CssValue, public RefCounted<CssHeapValue> {
     public:
         using CssValue::CssValue;
 
         virtual ~CssHeapValue() = default;
-    };
-
-    class CssSmallValue : public CssValue {
-    public:
-        using CssValue::CssValue;
     };
 
     class CssValuePtr {
@@ -601,6 +601,7 @@ namespace plutobook {
             CssTokenStream input, const BoxStyle* style, CssTokenList& tokens,
             boost::unordered_flat_set<CssVariableData*>& references) const;
         std::vector<CssToken> m_tokens;
+        std::string m_chars;
     };
 
     class CssCustomPropertyValue final : public CssHeapValue {
