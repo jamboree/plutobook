@@ -721,14 +721,14 @@ bool CssRuleData::matchPseudoClassHasSelector(const Element* element, const CssS
                 }
             }
 
-            return false;
+            break;
         case CssComplexSelector::Combinator::DirectAdjacent:
         case CssComplexSelector::Combinator::InDirectAdjacent:
             for(auto sibling = element->nextSiblingElement(); sibling; sibling = sibling->nextSiblingElement()) {
                 if(checkDescendants(sibling))
                     return true;
                 if(combinator == CssComplexSelector::Combinator::DirectAdjacent) {
-                    return false;
+                    break;
                 }
             }
 

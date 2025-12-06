@@ -232,7 +232,7 @@ namespace plutobook {
     public:
         CssTokenizer() = default;
 
-        explicit CssTokenizer(const std::string_view& input) : m_input(input) {}
+        explicit CssTokenizer(const std::string_view& input);
 
         CssTokenStream tokenize();
 

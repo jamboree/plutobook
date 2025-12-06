@@ -422,15 +422,17 @@ float TextShapeView::draw(GraphicsContext& context, const Point& origin, float e
             if((direction == Direction::Ltr && characterIndex >= m_startOffset)
                 || (direction == Direction::Rtl && characterIndex < m_endOffset)) {
                 auto character = text.charAt(characterIndex);
-                glyphBuffer[numGlyphs].index = glyph.glyphIndex;
-                glyphBuffer[numGlyphs].x = offset.x + glyph.xOffset;
-                glyphBuffer[numGlyphs].y = offset.y + glyph.yOffset;
+                if (!treatAsZeroWidthSpace(character)) {
+                    glyphBuffer[numGlyphs].index = glyph.glyphIndex;
+                    glyphBuffer[numGlyphs].x = offset.x + glyph.xOffset;
+                    glyphBuffer[numGlyphs].y = offset.y + glyph.yOffset;
+                    ++numGlyphs;
+                }
+
                 offset.x += glyph.advance;
                 if(expansion && treatAsSpace(character)) {
                     offset.x += expansion;
                 }
-
-                numGlyphs++;
             }
         }
 

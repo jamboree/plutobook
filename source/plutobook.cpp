@@ -7,9 +7,9 @@
 #include "replaced-box.h"
 #include "graphics-context.h"
 
-#include <fstream>
 #include <cmath>
 #include <utility>
+#include <cstdio>
 
 namespace plutobook {
 
@@ -17,24 +17,33 @@ class FileOutputStream final : public OutputStream {
 public:
     explicit FileOutputStream(const std::string& filename);
 
-    bool isOpen() const { return m_stream.is_open(); }
+    bool isOpen() const { return m_handle; }
     bool write(const char* data, size_t length) final;
 
+    ~FileOutputStream() final;
+
 private:
-    std::ofstream m_stream;
+    FILE* m_handle;
 };
 
 FileOutputStream::FileOutputStream(const std::string& filename)
-    : m_stream(filename, std::ios::binary)
+    : m_handle(fopen(filename.data(), "wb"))
 {
-    if(!m_stream.is_open()) {
+    if(m_handle == NULL) {
         plutobook_set_error_message("Unable to open file '%s': %s", filename.data(), std::strerror(errno));
     }
 }
 
 bool FileOutputStream::write(const char* data, size_t length)
 {
-    return m_stream.write(data, length).good();
+    return length == fwrite(data, 1, length, m_handle);
+}
+
+FileOutputStream::~FileOutputStream()
+{
+    if(m_handle) {
+        fclose(m_handle);
+    }
 }
 
 static plutobook_stream_status_t stream_write_func(void* closure, const char* data, unsigned int length)
@@ -595,12 +604,6 @@ bool Book::writeToPng(plutobook_stream_write_callback_t callback, void* closure,
     canvas.scale(xScale, yScale);
     renderDocument(canvas, 0, 0, docWidth, docHeight);
     return canvas.writeToPng(callback, closure);
-}
-
-void Book::test()
-{
-    std::ofstream os("test.xml", std::ios::binary);
-    layoutIfNeeded()->serialize(os);
 }
 
 Document* Book::buildIfNeeded() const
