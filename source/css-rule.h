@@ -601,7 +601,7 @@ namespace plutobook {
             CssTokenStream input, const BoxStyle* style, CssTokenList& tokens,
             boost::unordered_flat_set<CssVariableData*>& references) const;
         std::vector<CssToken> m_tokens;
-        std::string m_chars;
+        std::vector<char> m_chars;
     };
 
     class CssCustomPropertyValue final : public CssHeapValue {

@@ -837,7 +837,7 @@ Box* HtmlInputElement::createBox(const RefPtr<BoxStyle>& style)
     const auto& type = getAttribute(typeAttr);
     if(!type.empty()) {
         char buffer[16];
-        if (type.length() > sizeof(buffer) ||
+        if (type.size() > sizeof(buffer) ||
             !makeIdentSet({"text", "search", "url", "tel", "email", "password"})
                  .contains(toLower(type, buffer))) {
             return HtmlElement::createBox(style);

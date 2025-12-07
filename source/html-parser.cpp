@@ -180,7 +180,7 @@ inline bool isHtmlIntegrationPoint(const Element* element)
             return false;
         const auto& encoding = attribute->value();
         char buffer[32];
-        if (encoding.length() > sizeof(buffer))
+        if (encoding.size() > sizeof(buffer))
             return false;
         const auto lower = toLower(encoding, buffer);
         return lower == "text/html"

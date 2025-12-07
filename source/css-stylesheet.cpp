@@ -1115,7 +1115,7 @@ RefPtr<FontFace> CssFontFaceBuilder::build(Document* document) const
             const auto& function = to<CssUnaryFunctionValue>(*list[1]);
             assert(function.id() == CssFunctionID::Format);
             const auto& format = convertStringOrCustomIdent(*function.value());
-            if(!FontResource::supportsFormat(format.value())) {
+            if(!FontResource::supportsFormat(format)) {
                 continue;
             }
         }

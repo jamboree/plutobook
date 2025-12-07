@@ -426,19 +426,20 @@ void Element::parseAttribute(GlobalString name, const HeapString& value)
         m_classNames.clear();
         if(value.empty())
             return;
+        const std::string_view str = value;
         size_t begin = 0;
         while(true) {
-            while(begin < value.size() && isSpace(value[begin]))
+            while(begin < str.size() && isSpace(str[begin]))
                 ++begin;
-            if(begin >= value.size())
+            if(begin >= str.size())
                 break;
             size_t end = begin + 1;
-            while(end < value.size() && !isSpace(value[end]))
+            while(end < str.size() && !isSpace(str[end]))
                 ++end;
-            auto substr = value.substring(begin, end - begin);
+            const auto substr = str.substr(begin, end - begin);
             const auto it = std::ranges::lower_bound(m_classNames, substr);
             if (it == m_classNames.end() || *it != substr) {
-                m_classNames.insert(it, std::move(substr));
+                m_classNames.insert(it, value.substring(begin, end - begin));
             }
             begin = end + 1;
         }
@@ -796,17 +797,17 @@ void Document::addTargetCounters(const HeapString& id, const CounterMap& counter
     m_counterCache.emplace(id, counters);
 }
 
-HeapString Document::getTargetCounterText(const HeapString& fragment, GlobalString name, GlobalString listStyle, const HeapString& separator)
+HeapString Document::getTargetCounterText(const std::string_view& fragment, GlobalString name, GlobalString listStyle, const std::string_view& separator)
 {
     if(fragment.empty() || fragment.front() != '#')
         return emptyGlo;
-    auto it = m_counterCache.find(fragment.substring(1));
+    auto it = m_counterCache.find(fragment.substr(1));
     if(it == m_counterCache.end())
         return emptyGlo;
     return getCountersText(it->second, name, listStyle, separator);
 }
 
-HeapString Document::getCountersText(const CounterMap& counters, GlobalString name, GlobalString listStyle, const HeapString& separator)
+HeapString Document::getCountersText(const CounterMap& counters, GlobalString name, GlobalString listStyle, const std::string_view& separator)
 {
     auto it = counters.find(name);
     if(it == counters.end())
@@ -821,7 +822,7 @@ HeapString Document::getCountersText(const CounterMap& counters, GlobalString na
     std::string text;
     for(auto value : it->second) {
         if(!text.empty())
-            text += separator.value();
+            text += separator;
         text += m_styleSheet.getCounterText(value, listStyle);
     }
 

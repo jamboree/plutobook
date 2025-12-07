@@ -464,7 +464,7 @@ void Box::serializeStart(std::ostream& o, int indent, bool selfClosing, const Bo
         o << ':' << element->tagName();
         const auto& id = element->id();
         if(!id.empty()) {
-            o << '#' << id;
+            o << '#' << id.value();
         }
     }
     o << '\'';

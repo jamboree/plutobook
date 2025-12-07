@@ -34,7 +34,7 @@ namespace plutobook {
 
         GlobalString foldCase() const;
 
-        operator const std::string_view&() const { return value(); }
+        operator std::string_view() const { return value(); }
         operator const HeapString&() const { return value(); }
 
         bool operator==(const GlobalString&) const = default;

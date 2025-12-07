@@ -1,6 +1,7 @@
 #include "global-string.h"
 #include "string-utils.h"
 
+#include <deque>
 #include <boost/unordered/unordered_flat_set.hpp>
 
 namespace plutobook {
@@ -37,7 +38,6 @@ struct GlobalStringTable {
     template<unsigned N>
     GlobalStringTable(const std::string_view(&list)[N]) {
         // Reserve index 0 for empty string
-        m_strings.reserve(N + 1);
         m_foldSet.reserve(N + 1);
         m_strings.emplace_back();
         m_foldSet.emplace(0);
@@ -59,7 +59,7 @@ struct GlobalStringTable {
         return id;
     }
 
-    std::vector<HeapString> m_strings;
+    std::deque<HeapString> m_strings;
     boost::unordered_flat_set<unsigned, Hash, Equal> m_foldSet{0, *this,
                                                              *this};
 };

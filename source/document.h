@@ -303,7 +303,7 @@ namespace plutobook {
     using DocumentFontMap =
         boost::unordered_flat_map<FontDescription, RefPtr<Font>>;
     using DocumentCounterMap =
-        boost::unordered_flat_map<HeapString, CounterMap>;
+        boost::unordered_flat_map<HeapString, CounterMap, StrHash, StrEqual>;
     using DocumentRunningStyleMap =
         boost::unordered_flat_map<GlobalString, RefPtr<BoxStyle>>;
 
@@ -369,13 +369,13 @@ namespace plutobook {
         void addTargetCounters(const HeapString& id,
                                const CounterMap& counters);
 
-        HeapString getTargetCounterText(const HeapString& fragment,
+        HeapString getTargetCounterText(const std::string_view& fragment,
                                         GlobalString name,
                                         GlobalString listStyle,
-                                        const HeapString& separator);
+                                        const std::string_view& separator);
         HeapString getCountersText(const CounterMap& counters,
                                    GlobalString name, GlobalString listStyle,
-                                   const HeapString& separator);
+                                   const std::string_view& separator);
 
         void runJavaScript(const std::string_view& script);
 

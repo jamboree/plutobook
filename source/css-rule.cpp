@@ -223,7 +223,7 @@ CssVariableData::CssVariableData(const CssTokenStream& value)
 {
     for(auto& token : m_tokens) {
         if(!token.m_data.empty()) {
-            m_chars.append(token.data());
+            m_chars.append_range(token.data());
         }
     }
     auto s = m_chars.data();
