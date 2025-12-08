@@ -1729,7 +1729,7 @@ void LineLayout::paint(const PaintInfo& info, const Point& offset, PaintPhase ph
     }
 }
 
-void LineLayout::serialize(std::ostream& o, int indent) const
+void LineLayout::serialize(OutputStream& o, int indent) const
 {
     for(const auto& line : m_lines) {
         line->serialize(o, indent);

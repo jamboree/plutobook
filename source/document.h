@@ -404,7 +404,7 @@ namespace plutobook {
         void buildBox(Counters& counters, Box* parent) override;
         void finishParsingDocument() override;
 
-        void serialize(std::ostream& o) const;
+        void serialize(OutputStream& o) const;
 
         void build();
         void layout();

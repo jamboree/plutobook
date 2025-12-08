@@ -1,7 +1,7 @@
 #pragma once
 
+#include <bit>
 #include <atomic>
-#include <ostream>
 #include <string_view>
 #include <boost/container_hash/hash.hpp>
 

@@ -425,19 +425,19 @@ void Box::build()
     }
 }
 
-static void writeIndent(std::ostream& o, int indent)
+static void writeIndent(OutputStream& o, int indent)
 {
     for(int i = 0; i < indent; i++) {
         o << ' ';
     }
 }
 
-static void writeNewline(std::ostream& o)
+static void writeNewline(OutputStream& o)
 {
     o << '\n';
 }
 
-void Box::serializeStart(std::ostream& o, int indent, bool selfClosing, const Box* box, const LineBox* line)
+void Box::serializeStart(OutputStream& o, int indent, bool selfClosing, const Box* box, const LineBox* line)
 {
     auto name = line ? line->name() : box->name();
     writeIndent(o, indent);
@@ -500,7 +500,7 @@ void Box::serializeStart(std::ostream& o, int indent, bool selfClosing, const Bo
     }
 }
 
-void Box::serializeEnd(std::ostream& o, int indent, bool selfClosing, const Box* box, const LineBox* line)
+void Box::serializeEnd(OutputStream& o, int indent, bool selfClosing, const Box* box, const LineBox* line)
 {
     if(selfClosing) {
         writeNewline(o);
@@ -514,14 +514,14 @@ void Box::serializeEnd(std::ostream& o, int indent, bool selfClosing, const Box*
     }
 }
 
-void Box::serialize(std::ostream& o, int indent) const
+void Box::serialize(OutputStream& o, int indent) const
 {
     serializeStart(o, indent, !m_firstChild, this, nullptr);
     serializeChildren(o, indent + 2);
     serializeEnd(o, indent, !m_firstChild, this, nullptr);
 }
 
-void Box::serializeChildren(std::ostream& o, int indent) const
+void Box::serializeChildren(OutputStream& o, int indent) const
 {
     auto child = m_firstChild;
     while(child) {

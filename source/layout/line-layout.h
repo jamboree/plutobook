@@ -6,6 +6,8 @@
 #include <unicode/ubidi.h>
 
 namespace plutobook {
+    class OutputStream;
+
     class Box;
     class Document;
 
@@ -376,7 +378,7 @@ namespace plutobook {
 
         void paint(const PaintInfo& info, const Point& offset,
                    PaintPhase phase);
-        void serialize(std::ostream& o, int indent) const;
+        void serialize(OutputStream& o, int indent) const;
 
     private:
         LineLayout(BlockFlowBox* block);

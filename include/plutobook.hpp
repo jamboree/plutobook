@@ -693,26 +693,7 @@ namespace plutobook {
      */
     DefaultResourceFetcher* defaultResourceFetcher();
 
-    /**
-     * @brief The OutputStream is an abstract base class for writing data to an
-     * output stream.
-     */
-    class PLUTOBOOK_API OutputStream {
-    public:
-        /**
-         * @brief Destructor
-         */
-        virtual ~OutputStream() = default;
-
-        /**
-         * @brief Writes data to the output stream.
-         * @param data A pointer to the buffer containing the data to be
-         * written.
-         * @param length The length of the data to be written, in bytes.
-         * @return true if the data was written successfully, false otherwise.
-         */
-        virtual bool write(const char* data, size_t length) = 0;
-    };
+    class OutputStream;
 
     /**
      * @brief The Canvas class provides a basic interface for manipulating a 2D

@@ -3,6 +3,8 @@
 #include "text-shape.h"
 
 namespace plutobook {
+    class OutputStream;
+
     class Box;
     class BoxModel;
     class BoxFrame;
@@ -66,7 +68,7 @@ namespace plutobook {
 
         virtual void paint(const PaintInfo& info, const Point& offset,
                            PaintPhase phase) = 0;
-        virtual void serialize(std::ostream& o, int indent) const = 0;
+        virtual void serialize(OutputStream& o, int indent) const = 0;
 
         virtual const char* name() const { return "LineBox"; }
 
@@ -102,7 +104,7 @@ namespace plutobook {
 
         void paint(const PaintInfo& info, const Point& offset,
                    PaintPhase phase) final;
-        void serialize(std::ostream& o, int indent) const final;
+        void serialize(OutputStream& o, int indent) const final;
 
         ~TextLineBox() final;
 
@@ -128,7 +130,7 @@ namespace plutobook {
 
         void paint(const PaintInfo& info, const Point& offset,
                    PaintPhase phase) final;
-        void serialize(std::ostream& o, int indent) const final;
+        void serialize(OutputStream& o, int indent) const final;
 
         const char* name() const final { return "ReplacedLineBox"; }
 
@@ -199,7 +201,7 @@ namespace plutobook {
         void paintDecorations(const PaintInfo& info, const Point& offset) const;
         void paint(const PaintInfo& info, const Point& offset,
                    PaintPhase phase) override;
-        void serialize(std::ostream& o, int indent) const override;
+        void serialize(OutputStream& o, int indent) const override;
 
         const char* name() const override { return "FlowLineBox"; }
 

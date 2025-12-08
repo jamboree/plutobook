@@ -6,6 +6,7 @@
 #include "font-resource.h"
 #include "replaced-box.h"
 #include "graphics-context.h"
+#include "output-stream.h"
 
 #include <cmath>
 #include <utility>
@@ -18,9 +19,9 @@ public:
     explicit FileOutputStream(const std::string& filename);
 
     bool isOpen() const { return m_handle; }
-    bool write(const char* data, size_t length) final;
+    size_t write(const char* data, size_t length) final;
 
-    ~FileOutputStream() final;
+    ~FileOutputStream();
 
 private:
     FILE* m_handle;
@@ -34,9 +35,9 @@ FileOutputStream::FileOutputStream(const std::string& filename)
     }
 }
 
-bool FileOutputStream::write(const char* data, size_t length)
+size_t FileOutputStream::write(const char* data, size_t length)
 {
-    return length == fwrite(data, 1, length, m_handle);
+    return fwrite(data, 1, length, m_handle);
 }
 
 FileOutputStream::~FileOutputStream()

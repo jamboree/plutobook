@@ -1649,7 +1649,7 @@ void BlockFlowBox::paintContents(const PaintInfo& info, const Point& offset, Pai
     }
 }
 
-void BlockFlowBox::serializeChildren(std::ostream& o, int indent) const
+void BlockFlowBox::serializeChildren(OutputStream& o, int indent) const
 {
     if(isChildrenInline()) {
         m_lineLayout->serialize(o, indent);

@@ -4,6 +4,7 @@
 #include "fragment-builder.h"
 #include "graphics-context.h"
 #include "box-layer.h"
+#include "output-stream.h"
 
 #include <cmath>
 
@@ -217,7 +218,7 @@ void TextLineBox::paint(const PaintInfo& info, const Point& offset, PaintPhase p
     paintTextDecorations(*info, adjustedOffset, m_width, style());
 }
 
-void TextLineBox::serialize(std::ostream& o, int indent) const
+void TextLineBox::serialize(OutputStream& o, int indent) const
 {
     std::string data;
     m_shape.text().toUTF8String(data);
@@ -269,7 +270,7 @@ void ReplacedLineBox::paint(const PaintInfo& info, const Point& offset, PaintPha
     }
 }
 
-void ReplacedLineBox::serialize(std::ostream& o, int indent) const
+void ReplacedLineBox::serialize(OutputStream& o, int indent) const
 {
     Box::serializeStart(o, indent, false, m_box, this);
     m_box->serialize(o, indent + 1);
@@ -642,7 +643,7 @@ void FlowLineBox::paint(const PaintInfo& info, const Point& offset, PaintPhase p
     }
 }
 
-void FlowLineBox::serialize(std::ostream& o, int indent) const
+void FlowLineBox::serialize(OutputStream& o, int indent) const
 {
     Box::serializeStart(o, indent, m_children.empty(), m_box, this);
     for(auto child : m_children)

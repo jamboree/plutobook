@@ -15,7 +15,6 @@
 #include "plutobook.hpp"
 
 #include <cmath>
-#include <iostream>
 
 namespace plutobook {
 template<class F>
@@ -964,7 +963,7 @@ void Document::finishParsingDocument()
     }
 }
 
-void Document::serialize(std::ostream& o) const
+void Document::serialize(OutputStream& o) const
 {
     o << "<?container width=\'" << m_containerWidth << "\'"
       << " height=\'" << m_containerHeight << "\'?>\n";
@@ -1046,6 +1045,18 @@ Rect Document::pageContentRectAt(uint32_t pageIndex) const
     return Rect(0, pageIndex * m_containerHeight, m_containerWidth, m_containerHeight);
 }
 
+class HandleOutputStream final : public OutputStream {
+public:
+    explicit HandleOutputStream(FILE* handle) noexcept : m_handle(handle) {}
+
+    size_t write(const char* data, size_t length) final {
+        return fwrite(data, 1, length, m_handle);
+    }
+
+protected:
+    FILE* m_handle;
+};
+
 template<typename ResourceType>
 RefPtr<ResourceType> Document::fetchResource(const Url& url)
 {
@@ -1058,7 +1069,7 @@ RefPtr<ResourceType> Document::fetchResource(const Url& url)
     if(!url.protocolIs("data"))
         m_resourceCache.emplace(url, resource);
     if(resource == nullptr)
-        std::cerr << "WARNING: " << plutobook_get_error_message() << std::endl;
+        HandleOutputStream(stderr) << "WARNING: " << plutobook_get_error_message() << '\n';
     return resource;
 }
 

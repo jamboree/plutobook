@@ -1,6 +1,7 @@
 #pragma once
 
 #include "heap-string.h"
+#include "output-stream.h"
 
 namespace plutobook {
     enum class GlobalStringId : unsigned {
@@ -50,7 +51,7 @@ namespace plutobook {
         unsigned m_index = 0;
     };
 
-    inline std::ostream& operator<<(std::ostream& o, GlobalString in) {
+    inline OutputStream& operator<<(OutputStream& o, GlobalString in) {
         return o << std::string_view(in);
     }
 

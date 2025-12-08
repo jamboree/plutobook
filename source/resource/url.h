@@ -1,7 +1,8 @@
 #pragma once
 
+#include "output-stream.h"
+
 #include <string>
-#include <ostream>
 #include <boost/container_hash/hash.hpp>
 
 namespace plutobook {
@@ -63,7 +64,7 @@ namespace plutobook {
         return std::string_view(m_value).substr(begin, end - begin);
     }
 
-    inline std::ostream& operator<<(std::ostream& o, const Url& in) {
+    inline OutputStream& operator<<(OutputStream& o, const Url& in) {
         return o << in.value();
     }
 } // namespace plutobook

@@ -4,7 +4,7 @@
 #include <cairo/cairo.h>
 
 #include <cmath>
-#include <sstream>
+#include "output-stream.h"
 
 namespace plutobook {
 
@@ -380,7 +380,7 @@ void GraphicsContext::applyMask(const ImageBuffer& maskImage)
     cairo_set_matrix(m_canvas, &matrix);
 }
 
-static void append_attribute(std::ostream& output, const std::string_view& name, const std::string_view& value)
+static void append_attribute(OutputStream& output, const std::string_view& name, const std::string_view& value)
 {
     output << name << "='";
     for(auto cc : value) {
@@ -392,6 +392,19 @@ static void append_attribute(std::ostream& output, const std::string_view& name,
     output << '\'';
 }
 
+class StringOutputStream final : public OutputStream {
+public:
+    size_t write(const char* data, size_t length) final {
+        m_string.append(data, length);
+        return length;
+    }
+
+    const std::string& str() { return m_string; }
+
+private:
+    std::string m_string;
+};
+
 void GraphicsContext::addLinkAnnotation(const std::string_view& dest, const std::string_view& uri, const Rect& rect)
 {
     if(dest.empty() && uri.empty())
@@ -401,7 +414,7 @@ void GraphicsContext::addLinkAnnotation(const std::string_view& dest, const std:
     cairo_user_to_device(m_canvas, &x, &y);
     cairo_user_to_device_distance(m_canvas, &w, &h);
 
-    std::ostringstream ss;
+    StringOutputStream ss;
     ss << "rect=[" << x << ' '  << y << ' '  << w << ' '  << h << ']';
     if(!dest.empty()) {
         append_attribute(ss, "dest", dest);
@@ -421,7 +434,7 @@ void GraphicsContext::addLinkDestination(const std::string_view& name, const Poi
     double y = location.y;
     cairo_user_to_device(m_canvas, &x, &y);
 
-    std::ostringstream ss;
+    StringOutputStream ss;
     append_attribute(ss, "name", name);
     ss << " x=" << x << " y=" << y;
 

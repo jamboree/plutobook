@@ -7,6 +7,8 @@
 #include <memory>
 
 namespace plutobook {
+    class OutputStream;
+
     enum class PaintPhase { Decorations, Floats, Contents, Outlines };
 
     class GraphicsContext;
@@ -238,14 +240,14 @@ namespace plutobook {
 
         virtual void build();
 
-        static void serializeStart(std::ostream& o, int indent,
+        static void serializeStart(OutputStream& o, int indent,
                                    bool selfClosing, const Box* box,
                                    const LineBox* line);
-        static void serializeEnd(std::ostream& o, int indent, bool selfClosing,
+        static void serializeEnd(OutputStream& o, int indent, bool selfClosing,
                                  const Box* box, const LineBox* line);
 
-        void serialize(std::ostream& o, int indent) const;
-        virtual void serializeChildren(std::ostream& o, int indent) const;
+        void serialize(OutputStream& o, int indent) const;
+        virtual void serializeChildren(OutputStream& o, int indent) const;
 
         virtual const char* name() const { return "Box"; }
 
