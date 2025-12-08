@@ -190,7 +190,7 @@ void SvgImageBox::render(const SvgRenderState& state) const
 
     SvgBlendInfo blendInfo(m_clipper, m_masker, style());
     SvgRenderState newState(blendInfo, this, state, element()->transform());
-    m_image->draw(*newState, dstRect, srcRect);
+    m_image->draw(newState.context(), dstRect, srcRect);
 }
 
 void SvgImageBox::layout()

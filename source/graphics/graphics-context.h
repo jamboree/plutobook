@@ -1,5 +1,4 @@
-#ifndef PLUTOBOOK_GRAPHICSCONTEXT_H
-#define PLUTOBOOK_GRAPHICSCONTEXT_H
+#pragma once
 
 #include "box-style.h"
 
@@ -9,147 +8,227 @@ typedef struct _cairo cairo_t;
 typedef struct _cairo_surface cairo_surface_t;
 
 namespace plutobook {
+    class Path;
+    class ImageBuffer;
 
-class Path;
-class ImageBuffer;
+    using GradientStop = std::pair<float, Color>;
+    using GradientStops = std::vector<GradientStop>;
 
-using GradientStop = std::pair<float, Color>;
-using GradientStops = std::vector<GradientStop>;
+    struct LinearGradientValues {
+        float x1 = 0.f;
+        float y1 = 0.f;
+        float x2 = 0.f;
+        float y2 = 0.f;
+    };
 
-struct LinearGradientValues {
-    float x1 = 0.f;
-    float y1 = 0.f;
-    float x2 = 0.f;
-    float y2 = 0.f;
-};
+    struct RadialGradientValues {
+        float fx = 0.f;
+        float fy = 0.f;
+        float cx = 0.f;
+        float cy = 0.f;
+        float r = 0.f;
+    };
 
-struct RadialGradientValues {
-    float fx = 0.f;
-    float fy = 0.f;
-    float cx = 0.f;
-    float cy = 0.f;
-    float r = 0.f;
-};
+    enum class SpreadMethod { Pad, Reflect, Repeat };
 
-enum class SpreadMethod {
-    Pad,
-    Reflect,
-    Repeat
-};
+    using DashArray = std::vector<double>;
 
-using DashArray = std::vector<double>;
+    class StrokeData {
+    public:
+        explicit StrokeData(float lineWidth = 1.f) : m_lineWidth(lineWidth) {}
 
-class StrokeData {
-public:
-    explicit StrokeData(float lineWidth = 1.f) : m_lineWidth(lineWidth) {}
+        void setLineWidth(float lineWidth) { m_lineWidth = lineWidth; }
+        float lineWidth() const { return m_lineWidth; }
 
-    void setLineWidth(float lineWidth) { m_lineWidth = lineWidth; }
-    float lineWidth() const { return m_lineWidth; }
+        void setMiterLimit(float miterLimit) { m_miterLimit = miterLimit; }
+        float miterLimit() const { return m_miterLimit; }
 
-    void setMiterLimit(float miterLimit) { m_miterLimit = miterLimit; }
-    float miterLimit() const { return m_miterLimit; }
+        void setDashOffset(float dashOffset) { m_dashOffset = dashOffset; }
+        float dashOffset() const { return m_dashOffset; }
 
-    void setDashOffset(float dashOffset) { m_dashOffset = dashOffset; }
-    float dashOffset() const { return m_dashOffset; }
+        void setDashArray(DashArray dashArray) {
+            m_dashArray = std::move(dashArray);
+        }
+        const DashArray& dashArray() const { return m_dashArray; }
 
-    void setDashArray(DashArray dashArray) { m_dashArray = std::move(dashArray); }
-    const DashArray& dashArray() const { return m_dashArray; }
+        void setLineCap(LineCap lineCap) { m_lineCap = lineCap; }
+        LineCap lineCap() const { return m_lineCap; }
 
-    void setLineCap(LineCap lineCap) { m_lineCap = lineCap; }
-    LineCap lineCap() const { return m_lineCap; }
+        void setLineJoin(LineJoin lineJoin) { m_lineJoin = lineJoin; }
+        LineJoin lineJoin() const { return m_lineJoin; }
 
-    void setLineJoin(LineJoin lineJoin) { m_lineJoin = lineJoin; }
-    LineJoin lineJoin() const { return m_lineJoin; }
+    private:
+        float m_lineWidth;
+        float m_miterLimit{10.f};
+        float m_dashOffset{0.f};
+        LineCap m_lineCap{LineCap::Butt};
+        LineJoin m_lineJoin{LineJoin::Miter};
+        DashArray m_dashArray;
+    };
 
-private:
-    float m_lineWidth;
-    float m_miterLimit{10.f};
-    float m_dashOffset{0.f};
-    LineCap m_lineCap{LineCap::Butt};
-    LineJoin m_lineJoin{LineJoin::Miter};
-    DashArray m_dashArray;
-};
+    class GraphicsContext {
+    public:
+        GraphicsContext() = default;
+        GraphicsContext(const GraphicsContext&) = delete;
+        GraphicsContext& operator=(const GraphicsContext&) = delete;
 
-class GraphicsContext {
-public:
-    GraphicsContext() = delete;
-    explicit GraphicsContext(cairo_t* canvas);
-    ~GraphicsContext();
+        virtual void setColor(const Color& color) = 0;
+        virtual void setLinearGradient(const LinearGradientValues& values,
+                                       const GradientStops& stops,
+                                       const Transform& transform,
+                                       SpreadMethod method, float opacity) = 0;
+        virtual void setRadialGradient(const RadialGradientValues& values,
+                                       const GradientStops& stops,
+                                       const Transform& transform,
+                                       SpreadMethod method, float opacity) = 0;
+        virtual void setPattern(cairo_surface_t* pattern,
+                                const Transform& transform) = 0;
 
-    void setColor(const Color& color);
-    void setLinearGradient(const LinearGradientValues& values, const GradientStops& stops, const Transform& transform, SpreadMethod method, float opacity);
-    void setRadialGradient(const RadialGradientValues& values, const GradientStops& stops, const Transform& transform, SpreadMethod method, float opacity);
-    void setPattern(cairo_surface_t* surface, const Transform& transform);
+        virtual void translate(float tx, float ty) = 0;
+        virtual void scale(float sx, float sy) = 0;
+        virtual void rotate(float angle) = 0;
 
-    void translate(float tx, float ty);
-    void scale(float sx, float sy);
-    void rotate(float angle);
+        virtual Transform getTransform() const = 0;
+        virtual void addTransform(const Transform& transform) = 0;
+        virtual void setTransform(const Transform& transform) = 0;
+        virtual void resetTransform() = 0;
 
-    Transform getTransform() const;
-    void addTransform(const Transform& transform);
-    void setTransform(const Transform& transform);
-    void resetTransform();
+        virtual void fillRect(const Rect& rect,
+                              FillRule fillRule = FillRule::NonZero) = 0;
+        virtual void fillRoundedRect(const RoundedRect& rrect,
+                                     FillRule fillRule = FillRule::NonZero) = 0;
+        virtual void fillPath(const Path& path,
+                              FillRule fillRule = FillRule::NonZero) = 0;
 
-    void fillRect(const Rect& rect, FillRule fillRule = FillRule::NonZero);
-    void fillRoundedRect(const RoundedRect& rrect, FillRule fillRule = FillRule::NonZero);
-    void fillPath(const Path& path, FillRule fillRule = FillRule::NonZero);
+        virtual void strokeRect(const Rect& rect,
+                                const StrokeData& strokeData) = 0;
+        virtual void strokeRoundedRect(const RoundedRect& rrect,
+                                       const StrokeData& strokeData) = 0;
+        virtual void strokePath(const Path& path,
+                                const StrokeData& strokeData) = 0;
 
-    void strokeRect(const Rect& rect, const StrokeData& strokeData);
-    void strokeRoundedRect(const RoundedRect& rrect, const StrokeData& strokeData);
-    void strokePath(const Path& path, const StrokeData& strokeData);
+        virtual void clipRect(const Rect& rect,
+                              FillRule clipRule = FillRule::NonZero) = 0;
+        virtual void clipRoundedRect(const RoundedRect& rrect,
+                                     FillRule clipRule = FillRule::NonZero) = 0;
+        virtual void clipPath(const Path& path,
+                              FillRule clipRule = FillRule::NonZero) = 0;
 
-    void clipRect(const Rect& rect, FillRule clipRule = FillRule::NonZero);
-    void clipRoundedRect(const RoundedRect& rrect, FillRule clipRule = FillRule::NonZero);
-    void clipPath(const Path& path, FillRule clipRule = FillRule::NonZero);
+        virtual void clipOutRect(const Rect& rect) = 0;
+        virtual void clipOutRoundedRect(const RoundedRect& rrect) = 0;
+        virtual void clipOutPath(const Path& path) = 0;
 
-    void clipOutRect(const Rect& rect);
-    void clipOutRoundedRect(const RoundedRect& rrect);
-    void clipOutPath(const Path& path);
+        virtual void save() = 0;
+        virtual void restore() = 0;
 
-    void save();
-    void restore();
+        virtual void pushGroup() = 0;
+        virtual void popGroup(float opacity,
+                              BlendMode blendMode = BlendMode::Normal) = 0;
+        virtual void applyMask(const ImageBuffer& maskImage) = 0;
 
-    void pushGroup();
-    void popGroup(float opacity, BlendMode blendMode = BlendMode::Normal);
-    void applyMask(const ImageBuffer& maskImage);
+        virtual void addLinkAnnotation(const std::string_view& dest,
+                                       const std::string_view& uri,
+                                       const Rect& rect) = 0;
+        virtual void addLinkDestination(const std::string_view& name,
+                                        const Point& location) = 0;
+    };
 
-    void addLinkAnnotation(const std::string_view& dest, const std::string_view& uri, const Rect& rect);
-    void addLinkDestination(const std::string_view& name, const Point& location);
+    class CairoGraphicsContext final : public GraphicsContext {
+    public:
+        CairoGraphicsContext() = delete;
+        explicit CairoGraphicsContext(cairo_t* canvas);
+        ~CairoGraphicsContext();
 
-    cairo_t* canvas() const { return m_canvas; }
+        void setColor(const Color& color) override;
+        void setLinearGradient(const LinearGradientValues& values,
+                               const GradientStops& stops,
+                               const Transform& transform, SpreadMethod method,
+                               float opacity) override;
+        void setRadialGradient(const RadialGradientValues& values,
+                               const GradientStops& stops,
+                               const Transform& transform, SpreadMethod method,
+                               float opacity) override;
+        void setPattern(cairo_surface_t* surface,
+                        const Transform& transform) override;
 
-private:
-    GraphicsContext(const GraphicsContext&) = delete;
-    GraphicsContext& operator=(const GraphicsContext&) = delete;
-    cairo_t* m_canvas;
-};
+        void translate(float tx, float ty) override;
+        void scale(float sx, float sy) override;
+        void rotate(float angle) override;
 
-class ImageBuffer {
-public:
-    static std::unique_ptr<ImageBuffer> create(const Rect& rect);
-    static std::unique_ptr<ImageBuffer> create(float x, float y, float width, float height);
+        Transform getTransform() const override;
+        void addTransform(const Transform& transform) override;
+        void setTransform(const Transform& transform) override;
+        void resetTransform() override;
 
-    cairo_surface_t* surface() const { return m_surface; }
-    cairo_t* canvas() const { return m_canvas; }
+        void fillRect(const Rect& rect,
+                      FillRule fillRule = FillRule::NonZero) override;
+        void fillRoundedRect(const RoundedRect& rrect,
+                             FillRule fillRule = FillRule::NonZero) override;
+        void fillPath(const Path& path,
+                      FillRule fillRule = FillRule::NonZero) override;
 
-    const int x() const { return m_x; }
-    const int y() const { return m_y; }
+        void strokeRect(const Rect& rect,
+                        const StrokeData& strokeData) override;
+        void strokeRoundedRect(const RoundedRect& rrect,
+                               const StrokeData& strokeData) override;
+        void strokePath(const Path& path,
+                        const StrokeData& strokeData) override;
 
-    const int width() const;
-    const int height() const;
+        void clipRect(const Rect& rect,
+                      FillRule clipRule = FillRule::NonZero) override;
+        void clipRoundedRect(const RoundedRect& rrect,
+                             FillRule clipRule = FillRule::NonZero) override;
+        void clipPath(const Path& path,
+                      FillRule clipRule = FillRule::NonZero) override;
 
-    void convertToLuminanceMask();
+        void clipOutRect(const Rect& rect) override;
+        void clipOutRoundedRect(const RoundedRect& rrect) override;
+        void clipOutPath(const Path& path) override;
 
-    ~ImageBuffer();
+        void save() override;
+        void restore() override;
 
-private:
-    ImageBuffer(int x, int y, int width, int height);
-    cairo_surface_t* m_surface;
-    cairo_t* m_canvas;
-    const int m_x;
-    const int m_y;
-};
+        void pushGroup() override;
+        void popGroup(float opacity,
+                      BlendMode blendMode = BlendMode::Normal) override;
+        void applyMask(const ImageBuffer& maskImage) override;
 
+        void addLinkAnnotation(const std::string_view& dest,
+                               const std::string_view& uri,
+                               const Rect& rect) override;
+        void addLinkDestination(const std::string_view& name,
+                                const Point& location) override;
+
+        cairo_t* canvas() const { return m_canvas; }
+
+    private:
+        cairo_t* m_canvas;
+    };
+
+    class ImageBuffer {
+    public:
+        static std::unique_ptr<ImageBuffer> create(const Rect& rect);
+        static std::unique_ptr<ImageBuffer> create(float x, float y,
+                                                   float width, float height);
+
+        cairo_surface_t* surface() const { return m_surface; }
+        cairo_t* canvas() const { return m_canvas; }
+
+        const int x() const { return m_x; }
+        const int y() const { return m_y; }
+
+        const int width() const;
+        const int height() const;
+
+        void convertToLuminanceMask();
+
+        ~ImageBuffer();
+
+    private:
+        ImageBuffer(int x, int y, int width, int height);
+        cairo_surface_t* m_surface;
+        cairo_t* m_canvas;
+        const int m_x;
+        const int m_y;
+    };
 } // namespace plutobook
-
-#endif // PLUTOBOOK_GRAPHICSCONTEXT_H

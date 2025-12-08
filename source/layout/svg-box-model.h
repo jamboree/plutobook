@@ -49,9 +49,6 @@ namespace plutobook {
 
         ~SvgRenderState();
 
-        GraphicsContext& operator*() const { return m_context; }
-        GraphicsContext* operator->() const { return &m_context; }
-
         const Box* box() const { return m_box; }
         const SvgRenderState* parent() const { return m_parent; }
         const SvgBlendInfo& info() const { return m_info; }

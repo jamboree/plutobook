@@ -122,7 +122,7 @@ void SvgViewportContainerBox::render(const SvgRenderState& state) const
             lengthContext.valueForLength(element()->height())
         };
 
-        newState->clipRect(element()->getClipRect(viewportSize));
+        newState.context().clipRect(element()->getClipRect(viewportSize));
     }
 
     renderChildren(newState);

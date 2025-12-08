@@ -250,7 +250,11 @@ void BitmapImage::draw(GraphicsContext& context, const Rect& dstRect, const Rect
     cairo_pattern_set_matrix(pattern, &matrix);
     cairo_pattern_set_extend(pattern, CAIRO_EXTEND_NONE);
 
-    auto canvas = context.canvas();
+    cairo_t* canvas;
+    if (const auto gfx = dynamic_cast<CairoGraphicsContext*>(&context))
+        canvas = gfx->canvas();
+    else
+        return;
     cairo_save(canvas);
     cairo_set_fill_rule(canvas, CAIRO_FILL_RULE_WINDING);
     cairo_translate(canvas, dstRect.x, dstRect.y);
@@ -273,7 +277,11 @@ void BitmapImage::drawPattern(GraphicsContext& context, const Rect& destRect, co
     cairo_pattern_set_matrix(pattern, &matrix);
     cairo_pattern_set_extend(pattern, CAIRO_EXTEND_REPEAT);
 
-    auto canvas = context.canvas();
+    cairo_t* canvas;
+    if (const auto gfx = dynamic_cast<CairoGraphicsContext*>(&context))
+        canvas = gfx->canvas();
+    else
+        return;
     cairo_save(canvas);
     cairo_set_fill_rule(canvas, CAIRO_FILL_RULE_WINDING);
     cairo_rectangle(canvas, destRect.x, destRect.y, destRect.w, destRect.h);
@@ -352,10 +360,14 @@ void SvgImage::drawPattern(GraphicsContext& context, const Rect& destRect, const
     cairo_pattern_set_matrix(pattern, &pattern_matrix);
     cairo_pattern_set_extend(pattern, CAIRO_EXTEND_REPEAT);
 
-    GraphicsContext pattern_context(pattern_canvas);
+    CairoGraphicsContext pattern_context(pattern_canvas);
     m_document->render(pattern_context, Rect::Infinite);
 
-    auto canvas = context.canvas();
+    cairo_t* canvas;
+    if (const auto gfx = dynamic_cast<CairoGraphicsContext*>(&context))
+        canvas = gfx->canvas();
+    else
+        return;
     cairo_save(canvas);
     cairo_set_fill_rule(canvas, CAIRO_FILL_RULE_WINDING);
     cairo_rectangle(canvas, destRect.x, destRect.y, destRect.w, destRect.h);

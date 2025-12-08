@@ -40,7 +40,7 @@ void SvgTextBox::render(const SvgRenderState& state) const
     SvgBlendInfo blendInfo(m_clipper, m_masker, style());
     SvgRenderState newState(blendInfo, this, state, element()->transform());
     if(newState.mode() == SvgRenderMode::Clipping) {
-        newState->setColor(Color::White);
+        newState.context().setColor(Color::White);
     } else {
         m_fill.applyPaint(newState);
     }

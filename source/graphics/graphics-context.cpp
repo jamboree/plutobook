@@ -1,4 +1,5 @@
 #include "graphics-context.h"
+#include "graphics-context.h"
 #include "geometry.h"
 
 #include <cairo/cairo.h>
@@ -142,17 +143,17 @@ static void set_cairo_gradient(cairo_pattern_t* pattern, const GradientStops& st
     cairo_pattern_set_matrix(pattern, &matrix);
 }
 
-GraphicsContext::GraphicsContext(cairo_t* canvas)
+CairoGraphicsContext::CairoGraphicsContext(cairo_t* canvas)
     : m_canvas(cairo_reference(canvas))
 {
 }
 
-GraphicsContext::~GraphicsContext()
+CairoGraphicsContext::~CairoGraphicsContext()
 {
     cairo_destroy(m_canvas);
 }
 
-void GraphicsContext::setColor(const Color& color)
+void CairoGraphicsContext::setColor(const Color& color)
 {
     auto red = color.red() / 255.0;
     auto green = color.green() / 255.0;
@@ -161,7 +162,7 @@ void GraphicsContext::setColor(const Color& color)
     cairo_set_source_rgba(m_canvas, red, green, blue, alpha);
 }
 
-void GraphicsContext::setLinearGradient(const LinearGradientValues& values, const GradientStops& stops, const Transform& transform, SpreadMethod method, float opacity)
+void CairoGraphicsContext::setLinearGradient(const LinearGradientValues& values, const GradientStops& stops, const Transform& transform, SpreadMethod method, float opacity)
 {
     auto pattern = cairo_pattern_create_linear(values.x1, values.y1, values.x2, values.y2);
     set_cairo_gradient(pattern, stops, transform, method, opacity);
@@ -169,7 +170,7 @@ void GraphicsContext::setLinearGradient(const LinearGradientValues& values, cons
     cairo_pattern_destroy(pattern);
 }
 
-void GraphicsContext::setRadialGradient(const RadialGradientValues& values, const GradientStops& stops, const Transform& transform, SpreadMethod method, float opacity)
+void CairoGraphicsContext::setRadialGradient(const RadialGradientValues& values, const GradientStops& stops, const Transform& transform, SpreadMethod method, float opacity)
 {
     auto pattern = cairo_pattern_create_radial(values.fx, values.fy, 0, values.cx, values.cy, values.r);
     set_cairo_gradient(pattern, stops, transform, method, opacity);
@@ -177,7 +178,7 @@ void GraphicsContext::setRadialGradient(const RadialGradientValues& values, cons
     cairo_pattern_destroy(pattern);
 }
 
-void GraphicsContext::setPattern(cairo_surface_t* surface, const Transform& transform)
+void CairoGraphicsContext::setPattern(cairo_surface_t* surface, const Transform& transform)
 {
     auto pattern = cairo_pattern_create_for_surface(surface);
     auto matrix = to_cairo_matrix(transform);
@@ -188,46 +189,46 @@ void GraphicsContext::setPattern(cairo_surface_t* surface, const Transform& tran
     cairo_pattern_destroy(pattern);
 }
 
-void GraphicsContext::translate(float tx, float ty)
+void CairoGraphicsContext::translate(float tx, float ty)
 {
     cairo_translate(m_canvas, tx, ty);
 }
 
-void GraphicsContext::scale(float sx, float sy)
+void CairoGraphicsContext::scale(float sx, float sy)
 {
     cairo_scale(m_canvas, sx, sy);
 }
 
-void GraphicsContext::rotate(float angle)
+void CairoGraphicsContext::rotate(float angle)
 {
     cairo_rotate(m_canvas, deg2rad(angle));
 }
 
-Transform GraphicsContext::getTransform() const
+Transform CairoGraphicsContext::getTransform() const
 {
     cairo_matrix_t matrix;
     cairo_get_matrix(m_canvas, &matrix);
     return Transform(matrix.xx, matrix.yx, matrix.xy, matrix.yy, matrix.x0, matrix.y0);
 }
 
-void GraphicsContext::addTransform(const Transform& transform)
+void CairoGraphicsContext::addTransform(const Transform& transform)
 {
     cairo_matrix_t matrix = to_cairo_matrix(transform);
     cairo_transform(m_canvas, &matrix);
 }
 
-void GraphicsContext::setTransform(const Transform& transform)
+void CairoGraphicsContext::setTransform(const Transform& transform)
 {
     cairo_matrix_t matrix = to_cairo_matrix(transform);
     cairo_set_matrix(m_canvas, &matrix);
 }
 
-void GraphicsContext::resetTransform()
+void CairoGraphicsContext::resetTransform()
 {
     cairo_identity_matrix(m_canvas);
 }
 
-void GraphicsContext::fillRect(const Rect& rect, FillRule fillRule)
+void CairoGraphicsContext::fillRect(const Rect& rect, FillRule fillRule)
 {
     cairo_new_path(m_canvas);
     cairo_rectangle(m_canvas, rect.x, rect.y, rect.w, rect.h);
@@ -235,7 +236,7 @@ void GraphicsContext::fillRect(const Rect& rect, FillRule fillRule)
     cairo_fill(m_canvas);
 }
 
-void GraphicsContext::fillRoundedRect(const RoundedRect& rrect, FillRule fillRule)
+void CairoGraphicsContext::fillRoundedRect(const RoundedRect& rrect, FillRule fillRule)
 {
     if(!rrect.isRounded()) {
         fillRect(rrect.rect(), fillRule);
@@ -247,7 +248,7 @@ void GraphicsContext::fillRoundedRect(const RoundedRect& rrect, FillRule fillRul
     fillPath(path, fillRule);
 }
 
-void GraphicsContext::fillPath(const Path& path, FillRule fillRule)
+void CairoGraphicsContext::fillPath(const Path& path, FillRule fillRule)
 {
     cairo_new_path(m_canvas);
     set_cairo_path(m_canvas, path);
@@ -255,7 +256,7 @@ void GraphicsContext::fillPath(const Path& path, FillRule fillRule)
     cairo_fill(m_canvas);
 }
 
-void GraphicsContext::strokeRect(const Rect& rect, const StrokeData& strokeData)
+void CairoGraphicsContext::strokeRect(const Rect& rect, const StrokeData& strokeData)
 {
     cairo_new_path(m_canvas);
     cairo_rectangle(m_canvas, rect.x, rect.y, rect.w, rect.h);
@@ -263,7 +264,7 @@ void GraphicsContext::strokeRect(const Rect& rect, const StrokeData& strokeData)
     cairo_stroke(m_canvas);
 }
 
-void GraphicsContext::strokeRoundedRect(const RoundedRect& rrect, const StrokeData& strokeData)
+void CairoGraphicsContext::strokeRoundedRect(const RoundedRect& rrect, const StrokeData& strokeData)
 {
     if(!rrect.isRounded()) {
         strokeRect(rrect.rect(), strokeData);
@@ -275,7 +276,7 @@ void GraphicsContext::strokeRoundedRect(const RoundedRect& rrect, const StrokeDa
     strokePath(path, strokeData);
 }
 
-void GraphicsContext::strokePath(const Path& path, const StrokeData& strokeData)
+void CairoGraphicsContext::strokePath(const Path& path, const StrokeData& strokeData)
 {
     cairo_new_path(m_canvas);
     set_cairo_path(m_canvas, path);
@@ -283,7 +284,7 @@ void GraphicsContext::strokePath(const Path& path, const StrokeData& strokeData)
     cairo_stroke(m_canvas);
 }
 
-void GraphicsContext::clipRect(const Rect& rect, FillRule clipRule)
+void CairoGraphicsContext::clipRect(const Rect& rect, FillRule clipRule)
 {
     cairo_new_path(m_canvas);
     cairo_rectangle(m_canvas, rect.x, rect.y, rect.w, rect.h);
@@ -291,7 +292,7 @@ void GraphicsContext::clipRect(const Rect& rect, FillRule clipRule)
     cairo_clip(m_canvas);
 }
 
-void GraphicsContext::clipRoundedRect(const RoundedRect& rrect, FillRule clipRule)
+void CairoGraphicsContext::clipRoundedRect(const RoundedRect& rrect, FillRule clipRule)
 {
     if(!rrect.isRounded()) {
         clipRect(rrect.rect(), clipRule);
@@ -303,7 +304,7 @@ void GraphicsContext::clipRoundedRect(const RoundedRect& rrect, FillRule clipRul
     clipPath(path, clipRule);
 }
 
-void GraphicsContext::clipPath(const Path& path, FillRule clipRule)
+void CairoGraphicsContext::clipPath(const Path& path, FillRule clipRule)
 {
     cairo_new_path(m_canvas);
     set_cairo_path(m_canvas, path);
@@ -311,7 +312,7 @@ void GraphicsContext::clipPath(const Path& path, FillRule clipRule)
     cairo_clip(m_canvas);
 }
 
-void GraphicsContext::clipOutRect(const Rect& rect)
+void CairoGraphicsContext::clipOutRect(const Rect& rect)
 {
     double x1, y1, x2, y2;
     cairo_clip_extents(m_canvas, &x1, &y1, &x2, &y2);
@@ -322,7 +323,7 @@ void GraphicsContext::clipOutRect(const Rect& rect)
     cairo_clip(m_canvas);
 }
 
-void GraphicsContext::clipOutRoundedRect(const RoundedRect& rrect)
+void CairoGraphicsContext::clipOutRoundedRect(const RoundedRect& rrect)
 {
     if(!rrect.isRounded()) {
         clipOutRect(rrect.rect());
@@ -334,7 +335,7 @@ void GraphicsContext::clipOutRoundedRect(const RoundedRect& rrect)
     clipOutPath(path);
 }
 
-void GraphicsContext::clipOutPath(const Path& path)
+void CairoGraphicsContext::clipOutPath(const Path& path)
 {
     double x1, y1, x2, y2;
     cairo_clip_extents(m_canvas, &x1, &y1, &x2, &y2);
@@ -345,22 +346,22 @@ void GraphicsContext::clipOutPath(const Path& path)
     cairo_clip(m_canvas);
 }
 
-void GraphicsContext::save()
+void CairoGraphicsContext::save()
 {
     cairo_save(m_canvas);
 }
 
-void GraphicsContext::restore()
+void CairoGraphicsContext::restore()
 {
     cairo_restore(m_canvas);
 }
 
-void GraphicsContext::pushGroup()
+void CairoGraphicsContext::pushGroup()
 {
     cairo_push_group(m_canvas);
 }
 
-void GraphicsContext::popGroup(float opacity, BlendMode blendMode)
+void CairoGraphicsContext::popGroup(float opacity, BlendMode blendMode)
 {
     cairo_pop_group_to_source(m_canvas);
     cairo_set_operator(m_canvas, to_cairo_operator(blendMode));
@@ -368,7 +369,7 @@ void GraphicsContext::popGroup(float opacity, BlendMode blendMode)
     cairo_set_operator(m_canvas, CAIRO_OPERATOR_OVER);
 }
 
-void GraphicsContext::applyMask(const ImageBuffer& maskImage)
+void CairoGraphicsContext::applyMask(const ImageBuffer& maskImage)
 {
     cairo_matrix_t matrix;
     cairo_get_matrix(m_canvas, &matrix);
@@ -405,7 +406,7 @@ private:
     std::string m_string;
 };
 
-void GraphicsContext::addLinkAnnotation(const std::string_view& dest, const std::string_view& uri, const Rect& rect)
+void CairoGraphicsContext::addLinkAnnotation(const std::string_view& dest, const std::string_view& uri, const Rect& rect)
 {
     if(dest.empty() && uri.empty())
         return;
@@ -426,7 +427,7 @@ void GraphicsContext::addLinkAnnotation(const std::string_view& dest, const std:
     cairo_tag_end(m_canvas, CAIRO_TAG_LINK);
 }
 
-void GraphicsContext::addLinkDestination(const std::string_view& name, const Point& location)
+void CairoGraphicsContext::addLinkDestination(const std::string_view& name, const Point& location)
 {
     if(name.empty())
         return;

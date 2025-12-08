@@ -458,7 +458,7 @@ void Book::renderPage(plutobook_canvas_t* canvas, uint32_t pageIndex) const
 void Book::renderPage(cairo_t* canvas, uint32_t pageIndex) const
 {
     if(auto document = paginateIfNeeded()) {
-        GraphicsContext context(canvas);
+        CairoGraphicsContext context(canvas);
         document->renderPage(context, pageIndex);
     }
 }
@@ -494,7 +494,7 @@ void Book::renderDocument(plutobook_canvas_t* canvas, float x, float y, float wi
 void Book::renderDocument(cairo_t* canvas) const
 {
     if(auto document = layoutIfNeeded()) {
-        GraphicsContext context(canvas);
+        CairoGraphicsContext context(canvas);
         document->render(context, Rect::Infinite);
     }
 }
@@ -502,7 +502,7 @@ void Book::renderDocument(cairo_t* canvas) const
 void Book::renderDocument(cairo_t* canvas, float x, float y, float width, float height) const
 {
     if(auto document = layoutIfNeeded()) {
-        GraphicsContext context(canvas);
+        CairoGraphicsContext context(canvas);
         document->render(context, Rect(x, y, width, height));
     }
 }

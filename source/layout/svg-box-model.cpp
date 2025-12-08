@@ -70,7 +70,7 @@ void SvgPaintServer::applyPaint(const SvgRenderState& state) const
     if(m_painter) {
         m_painter->applyPaint(state, m_opacity);
     } else {
-        state->setColor(m_color.colorWithAlpha(m_opacity));
+        state.context().setColor(m_color.colorWithAlpha(m_opacity));
     }
 }
 

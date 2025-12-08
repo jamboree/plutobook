@@ -403,7 +403,11 @@ float TextShapeView::draw(GraphicsContext& context, const Point& origin, float e
 {
     if(m_startOffset == m_endOffset)
         return 0.f;
-    auto canvas = context.canvas();
+    cairo_t* canvas;
+    if (const auto gfx = dynamic_cast<CairoGraphicsContext*>(&context))
+        canvas = gfx->canvas();
+    else
+        return 0.f;
     auto direction = m_shape->direction();
     auto offset = origin;
     const auto& text = m_shape->text();

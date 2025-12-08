@@ -62,7 +62,7 @@ void SvgResourceMarkerBox::renderMarker(const SvgRenderState& state, const Point
     SvgBlendInfo blendInfo(m_clipper, m_masker, style());
     SvgRenderState newState(blendInfo, this, state, markerTransform(origin, angle, strokeWidth));
     if(isOverflowHidden())
-        newState->clipRect(element()->getClipRect(markerSize()));
+        newState.context().clipRect(element()->getClipRect(markerSize()));
     renderChildren(newState);
 }
 
@@ -148,11 +148,11 @@ void SvgResourceClipperBox::applyClipPath(const SvgRenderState& state) const
         if(clipShape == nullptr)
             continue;
         auto path = clipShape->path().transformed(clipTransform * clipShape->localTransform());
-        state->clipPath(path, clipShape->style()->clipRule());
+        state.context().clipPath(path, clipShape->style()->clipRule());
         return;
     }
 
-    state->clipRect(Rect(0, 0, 0, 0));
+    state.context().clipRect(Rect(0, 0, 0, 0));
 }
 
 void SvgResourceClipperBox::applyClipMask(const SvgRenderState& state) const
@@ -160,7 +160,7 @@ void SvgResourceClipperBox::applyClipMask(const SvgRenderState& state) const
     if(state.hasCycleReference(this))
         return;
     auto maskImage = ImageBuffer::create(state.currentTransform().mapRect(state.paintBoundingBox()));
-    GraphicsContext context(maskImage->canvas());
+    CairoGraphicsContext context(maskImage->canvas());
     context.addTransform(state.currentTransform());
     context.addTransform(element()->transform());
     if(element()->clipPathUnits() == SvgUnitsTypeObjectBoundingBox) {
@@ -174,7 +174,7 @@ void SvgResourceClipperBox::applyClipMask(const SvgRenderState& state) const
         renderChildren(newState);
     }
 
-    state->applyMask(*maskImage);
+    state.context().applyMask(*maskImage);
 }
 
 SvgResourceMaskerBox::SvgResourceMaskerBox(SvgMaskElement* element, const RefPtr<BoxStyle>& style)
@@ -233,7 +233,7 @@ void SvgResourceMaskerBox::applyMask(const SvgRenderState& state) const
     }
 
     auto maskImage = ImageBuffer::create(state.currentTransform().mapRect(state.paintBoundingBox()));
-    GraphicsContext context(maskImage->canvas());
+    CairoGraphicsContext context(maskImage->canvas());
     context.addTransform(state.currentTransform());
     context.clipRect(maskRect);
     if(element()->maskContentUnits() == SvgUnitsTypeObjectBoundingBox) {
@@ -249,7 +249,7 @@ void SvgResourceMaskerBox::applyMask(const SvgRenderState& state) const
 
     if(style()->maskType() == MaskType::Luminance)
         maskImage->convertToLuminanceMask();
-    state->applyMask(*maskImage);
+    state.context().applyMask(*maskImage);
 }
 
 SvgResourcePaintServerBox::SvgResourcePaintServerBox(ClassKind type, SvgElement* element, const RefPtr<BoxStyle>& style)
@@ -295,7 +295,7 @@ void SvgResourcePatternBox::applyPaint(const SvgRenderState& state, float opacit
     auto surface = cairo_recording_surface_create(CAIRO_CONTENT_COLOR_ALPHA, &rectangle);
     auto canvas = cairo_create(surface);
 
-    GraphicsContext context(canvas);
+    CairoGraphicsContext context(canvas);
     if(m_attributes.viewBox().isValid()) {
         context.addTransform(m_attributes.preserveAspectRatio().getTransform(m_attributes.viewBox(), patternRect.size()));
     } else if(m_attributes.patternContentUnits() == SvgUnitsTypeObjectBoundingBox) {
@@ -310,7 +310,7 @@ void SvgResourcePatternBox::applyPaint(const SvgRenderState& state, float opacit
 
     Transform patternTransform(m_attributes.patternTransform());
     patternTransform.translate(patternRect.x, patternRect.y);
-    state->setPattern(surface, patternTransform);
+    state.context().setPattern(surface, patternTransform);
 
     cairo_destroy(canvas);
     cairo_surface_destroy(surface);
@@ -373,7 +373,7 @@ void SvgResourceLinearGradientBox::applyPaint(const SvgRenderState& state, float
 {
     auto gradientStops = buildGradientStops(m_attributes.gradientContentElement());
     if(gradientStops.empty()) {
-        state->setColor(Color::Transparent);
+        state.context().setColor(Color::Transparent);
         return;
     }
 
@@ -387,7 +387,7 @@ void SvgResourceLinearGradientBox::applyPaint(const SvgRenderState& state, float
 
     if((gradientStops.size() == 1 || (values.x1 == values.x2 && values.y1 == values.y2))) {
         const auto& lastStop = gradientStops.back();
-        state->setColor(lastStop.second.colorWithAlpha(opacity));
+        state.context().setColor(lastStop.second.colorWithAlpha(opacity));
         return;
     }
 
@@ -398,7 +398,7 @@ void SvgResourceLinearGradientBox::applyPaint(const SvgRenderState& state, float
         gradientTransform.postMultiply(Transform(bbox.w, 0, 0, bbox.h, bbox.x, bbox.y));
     }
 
-    state->setLinearGradient(values, gradientStops, gradientTransform, spreadMethod, opacity);
+    state.context().setLinearGradient(values, gradientStops, gradientTransform, spreadMethod, opacity);
 }
 
 SvgResourceRadialGradientBox::SvgResourceRadialGradientBox(SvgRadialGradientElement* element, const RefPtr<BoxStyle>& style)
@@ -416,7 +416,7 @@ void SvgResourceRadialGradientBox::applyPaint(const SvgRenderState& state, float
 {
     auto gradientStops = buildGradientStops(m_attributes.gradientContentElement());
     if(gradientStops.empty()) {
-        state->setColor(Color::Transparent);
+        state.context().setColor(Color::Transparent);
         return;
     }
 
@@ -431,7 +431,7 @@ void SvgResourceRadialGradientBox::applyPaint(const SvgRenderState& state, float
 
     if(values.r == 0.f || gradientStops.size() == 1) {
         const auto& lastStop = gradientStops.back();
-        state->setColor(lastStop.second.colorWithAlpha(opacity));
+        state.context().setColor(lastStop.second.colorWithAlpha(opacity));
         return;
     }
 
@@ -442,7 +442,7 @@ void SvgResourceRadialGradientBox::applyPaint(const SvgRenderState& state, float
         gradientTransform.postMultiply(Transform(bbox.w, 0, 0, bbox.h, bbox.x, bbox.y));
     }
 
-    state->setRadialGradient(values, gradientStops, gradientTransform, spreadMethod, opacity);
+    state.context().setRadialGradient(values, gradientStops, gradientTransform, spreadMethod, opacity);
 }
 
 } // namespace plutobook

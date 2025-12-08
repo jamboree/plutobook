@@ -63,17 +63,17 @@ void SvgGeometryBox::render(const SvgRenderState& state) const
     SvgBlendInfo blendInfo(m_clipper, m_masker, style());
     SvgRenderState newState(blendInfo, this, state, element()->transform());
     if(newState.mode() == SvgRenderMode::Clipping) {
-        newState->setColor(Color::White);
-        newState->fillPath(path(), style()->clipRule());
+        newState.context().setColor(Color::White);
+        newState.context().fillPath(path(), style()->clipRule());
     } else {
         if(m_fill.isRenderable()) {
             m_fill.applyPaint(newState);
-            newState->fillPath(path(), style()->fillRule());
+            newState.context().fillPath(path(), style()->fillRule());
         }
 
         if(m_stroke.isRenderable()) {
             m_stroke.applyPaint(newState);
-            newState->strokePath(path(), element()->getStrokeData(style()));
+            newState.context().strokePath(path(), element()->getStrokeData(style()));
         }
 
         if(!m_markerPositions.empty()) {
