@@ -449,19 +449,19 @@ void SvgLineLayout::render(const SvgRenderState& state) const
         Point offset(fragment.x, fragment.y - style->fontAscent());
         Point origin(fragment.x, fragment.y);
 
-        state->save();
-        state->translate(origin.x, origin.y);
-        state->rotate(fragment.angle);
-        state->translate(-origin.x, -origin.y);
+        state.context().save();
+        state.context().translate(origin.x, origin.y);
+        state.context().rotate(fragment.angle);
+        state.context().translate(-origin.x, -origin.y);
 
         auto parent = fragment.item.box()->parentBox();
         if(state.mode() == SvgRenderMode::Painting && parent->isSvgTSpanBox()) {
             to<SvgTSpanBox>(*parent).fill().applyPaint(state);
         }
 
-        fragment.shape.draw(*state, origin, 0.f);
-        paintTextDecorations(*state, offset, fragment.width, style);
-        state->restore();
+        fragment.shape.draw(state.context(), origin, 0.f);
+        paintTextDecorations(state.context(), offset, fragment.width, style);
+        state.context().restore();
     }
 }
 

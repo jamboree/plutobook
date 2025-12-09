@@ -30,6 +30,8 @@
 #include "plutobook.h"
 
 namespace plutobook {
+    class GraphicsContext;
+
     /**
      * This constant defines an index that is guaranteed to be greater than any
      * valid page count. It is typically used as a sentinel value to represent
@@ -1355,6 +1357,15 @@ namespace plutobook {
          */
         void renderDocument(cairo_t* canvas, float x, float y, float width,
                             float height) const;
+
+        void build();
+
+        void layout(float width, float height);
+
+        void renderDocument(GraphicsContext& context, float x, float y,
+                            float width, float height) const;
+
+        void output(const std::string& filename);
 
         /**
          * @brief Writes a range of pages from the document to a PDF file.

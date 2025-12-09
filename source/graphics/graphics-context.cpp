@@ -1,5 +1,4 @@
 #include "graphics-context.h"
-#include "graphics-context.h"
 #include "geometry.h"
 
 #include <cairo/cairo.h>

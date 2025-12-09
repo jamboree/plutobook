@@ -507,6 +507,30 @@ void Book::renderDocument(cairo_t* canvas, float x, float y, float width, float 
     }
 }
 
+void Book::build()
+{
+    m_document->build();
+}
+
+void Book::layout(float width, float height)
+{
+    m_document->setContainerSize(width, height);
+    m_document->layout();
+}
+
+void Book::renderDocument(GraphicsContext& context, float x, float y,
+    float width, float height) const
+{
+    m_document->render(context, Rect(x, y, width, height));
+}
+
+void Book::output(const std::string& filename)
+{
+    FileOutputStream output(filename);
+    if (output.isOpen())
+        m_document->serialize(output);
+}
+
 bool Book::writeToPdf(const std::string& filename, uint32_t pageStart, uint32_t pageEnd, int pageStep) const
 {
     FileOutputStream output(filename);
