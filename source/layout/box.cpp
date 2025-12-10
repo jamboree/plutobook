@@ -631,15 +631,17 @@ void BoxModel::paintBackgroundStyle(const PaintInfo& info, const Rect& borderRec
 
     if(!clipRect.rect().intersects(info.rect()))
         return;
-    auto clipping = backgroundClip == BackgroundBox::PaddingBox || backgroundClip == BackgroundBox::ContentBox || clipRect.isRounded();
-    if(clipping) {
-        info->save();
-        info->clipRoundedRect(clipRect);
-    }
 
     info->setColor(backgroundColor);
-    info->fillRect(borderRect);
     if(backgroundImage) {
+        const bool clipping =
+            backgroundClip == BackgroundBox::PaddingBox || backgroundClip == BackgroundBox::ContentBox || clipRect.isRounded();
+        if (clipping) {
+            info->save();
+            info->clipRoundedRect(clipRect);
+        }
+        info->fillRect(borderRect);
+
         Rect positioningArea(0, 0, borderRect.w, borderRect.h);
         auto backgroundOrigin = backgroundStyle->backgroundOrigin();
         if(backgroundOrigin == BackgroundBox::PaddingBox || backgroundOrigin == BackgroundBox::ContentBox) {
@@ -729,10 +731,12 @@ void BoxModel::paintBackgroundStyle(const PaintInfo& info, const Rect& borderRec
             backgroundImage->setContainerSize(tileRect.size());
             backgroundImage->drawTiled(*info, destRect, tileRect);
         }
-    }
 
-    if(clipping) {
-        info->restore();
+        if (clipping) {
+            info->restore();
+        }
+    } else {
+        info->fillRoundedRect(clipRect);
     }
 }
 

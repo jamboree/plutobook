@@ -269,7 +269,7 @@ void BorderPainter::paint(const PaintInfo& info) const
         }
 
         if(!m_isRounded && firstEdge.style() == LineStyle::Solid) {
-            Path path;
+            info->setColor(firstEdge.color());
             for(auto side : { TopEdge, RightEdge, BottomEdge, LeftEdge }) {
                 const auto& edge = m_edges[side];
                 if(edge.isRenderable()) {
@@ -290,13 +290,9 @@ void BorderPainter::paint(const PaintInfo& info) const
                         sideRect.w = edge.width();
                         break;
                     }
-
-                    path.addRect(sideRect);
+                    info->fillRect(sideRect);
                 }
             }
-
-            info->setColor(firstEdge.color());
-            info->fillPath(path);
             return;
         }
     }
