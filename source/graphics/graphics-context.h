@@ -100,10 +100,9 @@ namespace plutobook {
         virtual void fillPath(const Path& path,
                               FillRule fillRule = FillRule::NonZero) = 0;
 
-        virtual void strokeRect(const Rect& rect,
-                                const StrokeData& strokeData) = 0;
-        virtual void strokeRoundedRect(const RoundedRect& rrect,
-                                       const StrokeData& strokeData) = 0;
+        virtual void outlineRect(const Rect& rect, float lineWidth) = 0;
+        virtual void outlineRoundedRect(const RoundedRect& rrect,
+                                        float lineWidth) = 0;
         virtual void strokePath(const Path& path,
                                 const StrokeData& strokeData) = 0;
 
@@ -167,10 +166,9 @@ namespace plutobook {
         void fillPath(const Path& path,
                       FillRule fillRule = FillRule::NonZero) override;
 
-        void strokeRect(const Rect& rect,
-                        const StrokeData& strokeData) override;
-        void strokeRoundedRect(const RoundedRect& rrect,
-                               const StrokeData& strokeData) override;
+        void outlineRect(const Rect& rect, float lineWidth) override;
+        void outlineRoundedRect(const RoundedRect& rrect,
+                                float lineWidth) override;
         void strokePath(const Path& path,
                         const StrokeData& strokeData) override;
 

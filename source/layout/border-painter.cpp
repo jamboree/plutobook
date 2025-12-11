@@ -231,6 +231,7 @@ BorderPainter::BorderPainter(BorderPainterType type, const Rect& borderRect, con
 
             m_isUniformStyle &= edge.style() == m_edges[m_firstVisibleEdge].style();
             m_isUniformColor &= edge.color() == m_edges[m_firstVisibleEdge].color();
+            m_isUniformWidth &= edge.width() == m_edges[m_firstVisibleEdge].width();
         }
     }
 
@@ -252,19 +253,30 @@ void BorderPainter::paint(const PaintInfo& info) const
     const auto& firstEdge = m_edges[m_firstVisibleEdge];
     if(m_isUniformStyle && m_isUniformColor && (firstEdge.style() == LineStyle::Solid || firstEdge.style() == LineStyle::Double)) {
         if(m_visibleEdgeSet == AllBorderEdges) {
-            Path path;
-            path.addRoundedRect(m_outer);
-            if(firstEdge.style() == LineStyle::Double) {
-                RoundedRect outerThirdRect(m_outer - edgeOutsets(m_edges, 1.f / 3.f));
-                RoundedRect innerThirdRect(m_outer - edgeOutsets(m_edges, 2.f / 3.f));
+            if (m_isUniformWidth) {
+                info->setColor(firstEdge.color());
+                if (firstEdge.style() == LineStyle::Double) {
+                    const auto lineWidth = firstEdge.width() / 3.f;
+                    info->outlineRoundedRect(m_outer, lineWidth);
+                    info->outlineRoundedRect(m_outer - RectOutsets(firstEdge.width() * (2.f / 3.f)), lineWidth);
+                } else {
+                    info->outlineRoundedRect(m_outer, firstEdge.width());
+                }
+            } else {
+                Path path;
+                path.addRoundedRect(m_outer);
+                if (firstEdge.style() == LineStyle::Double) {
+                    RoundedRect outerThirdRect(m_outer - edgeOutsets(m_edges, 1.f / 3.f));
+                    RoundedRect innerThirdRect(m_outer - edgeOutsets(m_edges, 2.f / 3.f));
 
-                path.addRoundedRect(outerThirdRect);
-                path.addRoundedRect(innerThirdRect);
+                    path.addRoundedRect(outerThirdRect);
+                    path.addRoundedRect(innerThirdRect);
+                }
+
+                path.addRoundedRect(m_inner);
+                info->setColor(firstEdge.color());
+                info->fillPath(path, FillRule::EvenOdd);
             }
-
-            path.addRoundedRect(m_inner);
-            info->setColor(firstEdge.color());
-            info->fillPath(path, FillRule::EvenOdd);
             return;
         }
 

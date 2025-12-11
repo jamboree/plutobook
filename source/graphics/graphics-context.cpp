@@ -255,24 +255,27 @@ void CairoGraphicsContext::fillPath(const Path& path, FillRule fillRule)
     cairo_fill(m_canvas);
 }
 
-void CairoGraphicsContext::strokeRect(const Rect& rect, const StrokeData& strokeData)
+void CairoGraphicsContext::outlineRect(const Rect& rect, float lineWidth)
 {
+    const auto inner = rect - RectOutsets(lineWidth);
     cairo_new_path(m_canvas);
     cairo_rectangle(m_canvas, rect.x, rect.y, rect.w, rect.h);
-    set_cairo_stroke_data(m_canvas, strokeData);
-    cairo_stroke(m_canvas);
+    cairo_rectangle(m_canvas, inner.x, inner.y, inner.w, inner.h);
+    cairo_set_fill_rule(m_canvas, CAIRO_FILL_RULE_EVEN_ODD);
+    cairo_fill(m_canvas);
 }
 
-void CairoGraphicsContext::strokeRoundedRect(const RoundedRect& rrect, const StrokeData& strokeData)
+void CairoGraphicsContext::outlineRoundedRect(const RoundedRect& rrect, float lineWidth)
 {
     if(!rrect.isRounded()) {
-        strokeRect(rrect.rect(), strokeData);
+        outlineRect(rrect.rect(), lineWidth);
         return;
     }
 
     Path path;
     path.addRoundedRect(rrect);
-    strokePath(path, strokeData);
+    path.addRoundedRect(rrect - RectOutsets(lineWidth));
+    fillPath(path, FillRule::EvenOdd);
 }
 
 void CairoGraphicsContext::strokePath(const Path& path, const StrokeData& strokeData)

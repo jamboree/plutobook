@@ -54,6 +54,7 @@ namespace plutobook {
 
         bool m_isUniformStyle{true};
         bool m_isUniformColor{true};
+        bool m_isUniformWidth{true};
 
         bool m_isOpaque{true};
         bool m_isRounded{false};
