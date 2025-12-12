@@ -65,7 +65,16 @@ static void set_cairo_stroke_data(cairo_t* cr, const StrokeData& strokeData)
     const auto& dashes = strokeData.dashArray();
     cairo_set_line_width(cr, strokeData.lineWidth());
     cairo_set_miter_limit(cr, strokeData.miterLimit());
-    cairo_set_dash(cr, dashes.data(), dashes.size(), strokeData.dashOffset());
+    double* dashBuf;
+    double smallDashBuf[16];
+    std::unique_ptr<double[]> bigDashBuf;
+    if(dashes.size() > 16) {
+        bigDashBuf.reset(dashBuf = new double[dashes.size()]);
+    } else {
+        dashBuf = smallDashBuf;
+    }
+    std::copy_n(dashes.data(), dashes.size(), dashBuf);
+    cairo_set_dash(cr, dashBuf, dashes.size(), strokeData.dashOffset());
     switch(strokeData.lineCap()) {
     case LineCap::Butt:
         cairo_set_line_cap(cr, CAIRO_LINE_CAP_BUTT);
@@ -227,24 +236,24 @@ void CairoGraphicsContext::resetTransform()
     cairo_identity_matrix(m_canvas);
 }
 
-void CairoGraphicsContext::fillRect(const Rect& rect, FillRule fillRule)
+void CairoGraphicsContext::fillRect(const Rect& rect)
 {
     cairo_new_path(m_canvas);
     cairo_rectangle(m_canvas, rect.x, rect.y, rect.w, rect.h);
-    cairo_set_fill_rule(m_canvas, to_cairo_fill_rule(fillRule));
+    cairo_set_fill_rule(m_canvas, CAIRO_FILL_RULE_WINDING);
     cairo_fill(m_canvas);
 }
 
-void CairoGraphicsContext::fillRoundedRect(const RoundedRect& rrect, FillRule fillRule)
+void CairoGraphicsContext::fillRoundedRect(const RoundedRect& rrect)
 {
     if(!rrect.isRounded()) {
-        fillRect(rrect.rect(), fillRule);
+        fillRect(rrect.rect());
         return;
     }
 
     Path path;
     path.addRoundedRect(rrect);
-    fillPath(path, fillRule);
+    fillPath(path, FillRule::NonZero);
 }
 
 void CairoGraphicsContext::fillPath(const Path& path, FillRule fillRule)

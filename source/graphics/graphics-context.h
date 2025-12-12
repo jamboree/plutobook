@@ -31,7 +31,7 @@ namespace plutobook {
 
     enum class SpreadMethod { Pad, Reflect, Repeat };
 
-    using DashArray = std::vector<double>;
+    using DashArray = std::vector<float>;
 
     class StrokeData {
     public:
@@ -93,10 +93,8 @@ namespace plutobook {
         virtual void setTransform(const Transform& transform) = 0;
         virtual void resetTransform() = 0;
 
-        virtual void fillRect(const Rect& rect,
-                              FillRule fillRule = FillRule::NonZero) = 0;
-        virtual void fillRoundedRect(const RoundedRect& rrect,
-                                     FillRule fillRule = FillRule::NonZero) = 0;
+        virtual void fillRect(const Rect& rect) = 0;
+        virtual void fillRoundedRect(const RoundedRect& rrect) = 0;
         virtual void fillPath(const Path& path,
                               FillRule fillRule = FillRule::NonZero) = 0;
 
@@ -159,10 +157,8 @@ namespace plutobook {
         void setTransform(const Transform& transform) override;
         void resetTransform() override;
 
-        void fillRect(const Rect& rect,
-                      FillRule fillRule = FillRule::NonZero) override;
-        void fillRoundedRect(const RoundedRect& rrect,
-                             FillRule fillRule = FillRule::NonZero) override;
+        void fillRect(const Rect& rect) override;
+        void fillRoundedRect(const RoundedRect& rrect) override;
         void fillPath(const Path& path,
                       FillRule fillRule = FillRule::NonZero) override;
 

@@ -461,6 +461,7 @@ public:
 enum class PathCommand : uint8_t {
     MoveTo,
     LineTo,
+    QuadTo,
     CubicTo,
     Close
 };
