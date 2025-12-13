@@ -404,19 +404,6 @@ static void append_attribute(OutputStream& output, const std::string_view& name,
     output << '\'';
 }
 
-class StringOutputStream final : public OutputStream {
-public:
-    size_t write(const char* data, size_t length) final {
-        m_string.append(data, length);
-        return length;
-    }
-
-    const std::string& str() { return m_string; }
-
-private:
-    std::string m_string;
-};
-
 void CairoGraphicsContext::addLinkAnnotation(const std::string_view& dest, const std::string_view& uri, const Rect& rect)
 {
     if(dest.empty() && uri.empty())

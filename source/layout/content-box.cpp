@@ -188,7 +188,7 @@ void ContentBoxBuilder::addQrCode(const CssFunctionValue& function)
     if(qrcodegen_encodeText(text.data(), tempBuffer, qrcode, qrcodegen_Ecc_LOW, qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true)) {
         auto size = qrcodegen_getSize(qrcode);
 
-        std::ostringstream ss;
+        StringOutputStream ss;
         ss << "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " << size << ' ' << size << "\">";
         ss << "<path d=\"";
         for(int y = 0; y < size; y++) {
@@ -202,7 +202,7 @@ void ContentBoxBuilder::addQrCode(const CssFunctionValue& function)
         ss << "\" fill=\"" << fill << "\"/>";
         ss << "</svg>";
 
-        addImage(SvgImage::create(ss.view(), emptyGlo, nullptr));
+        addImage(SvgImage::create(ss.str(), emptyGlo, nullptr));
     }
 }
 

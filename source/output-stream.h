@@ -2,6 +2,7 @@
 
 #include <charconv>
 #include <concepts>
+#include <string>
 #include <string_view>
 
 namespace plutobook {
@@ -39,5 +40,18 @@ namespace plutobook {
             write(str.data(), str.size());
             return *this;
         }
+    };
+
+    class StringOutputStream final : public OutputStream {
+    public:
+        size_t write(const char* data, size_t length) final {
+            m_string.append(data, length);
+            return length;
+        }
+
+        const std::string& str() { return m_string; }
+
+    private:
+        std::string m_string;
     };
 } // namespace plutobook
