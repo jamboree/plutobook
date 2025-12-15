@@ -8,14 +8,14 @@
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <mutex>
 
+typedef struct FT_FaceRec_* FT_Face;
 typedef struct hb_font_t hb_font_t;
-typedef struct _cairo_font_face cairo_font_face_t;
-typedef struct _cairo_scaled_font cairo_scaled_font_t;
 typedef struct _FcCharSet FcCharSet;
 typedef struct _FcConfig FcConfig;
 
 namespace plutobook {
     class Document;
+    class FTFontData;
 
     class FontResource final : public Resource {
     public:
@@ -23,16 +23,16 @@ namespace plutobook {
 
         static RefPtr<FontResource> create(Document* document, const Url& url);
         static bool supportsFormat(const std::string_view& format);
-        cairo_font_face_t* face() const { return m_face; }
+        FTFontData* fontData() const { return m_fontData; }
         FcCharSet* charSet() const { return m_charSet; }
 
         ~FontResource() final;
 
     private:
-        FontResource(cairo_font_face_t* face, FcCharSet* charSet)
-            : Resource(classKind), m_face(face), m_charSet(charSet) {}
+        FontResource(FTFontData* fontData, FcCharSet* charSet)
+            : Resource(classKind), m_fontData(fontData), m_charSet(charSet) {}
 
-        cairo_font_face_t* m_face;
+        FTFontData* m_fontData;
         FcCharSet* m_charSet;
     };
 
@@ -365,12 +365,13 @@ namespace plutobook {
 
     class SimpleFontData final : public FontData {
     public:
-        static RefPtr<SimpleFontData> create(cairo_scaled_font_t* font,
-                                             FcCharSet* charSet,
-                                             FontFeatureList features);
+        static RefPtr<SimpleFontData>
+        create(FT_Face face, FcCharSet* charSet,
+               const FontDataDescription& description,
+               const FontFeatureList& features);
 
         hb_font_t* hbFont() const { return m_hbFont; }
-        cairo_scaled_font_t* font() const { return m_font; }
+        FT_Face face() const { return m_face; }
         const FontDataInfo& info() const { return m_info; }
         const FontFeatureList& features() const { return m_features; }
 
@@ -393,16 +394,18 @@ namespace plutobook {
         ~SimpleFontData() final;
 
     private:
-        SimpleFontData(cairo_scaled_font_t* font, hb_font_t* hbFont,
-                       FcCharSet* charSet, const FontDataInfo& info,
-                       FontFeatureList features)
-            : m_font(font), m_hbFont(hbFont), m_charSet(charSet), m_info(info),
-              m_features(std::move(features)) {}
+        SimpleFontData(FT_Face face, hb_font_t* hbFont, FcCharSet* charSet,
+                       const FontDataInfo& info,
+                       const FontDataDescription& description,
+                       const FontFeatureList& features)
+            : m_face(face), m_hbFont(hbFont), m_charSet(charSet), m_info(info),
+              m_description(description), m_features(features) {}
 
-        cairo_scaled_font_t* m_font;
+        FT_Face m_face;
         hb_font_t* m_hbFont;
         FcCharSet* m_charSet;
         FontDataInfo m_info;
+        FontDataDescription m_description;
         FontFeatureList m_features;
     };
 
