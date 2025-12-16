@@ -1,5 +1,4 @@
 #include "graphics-context.h"
-#include "geometry.h"
 
 #include <cairo/cairo.h>
 
@@ -262,6 +261,11 @@ void CairoGraphicsContext::fillPath(const Path& path, FillRule fillRule)
     set_cairo_path(m_canvas, path);
     cairo_set_fill_rule(m_canvas, to_cairo_fill_rule(fillRule));
     cairo_fill(m_canvas);
+}
+
+void CairoGraphicsContext::fillGlyphs(hb_font_t* font, const GlyphRef glyphs[], unsigned glyphCount)
+{
+    //TODO
 }
 
 void CairoGraphicsContext::outlineRect(const Rect& rect, float lineWidth)

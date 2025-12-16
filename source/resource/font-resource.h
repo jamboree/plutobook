@@ -371,7 +371,6 @@ namespace plutobook {
                const FontFeatureList& features);
 
         hb_font_t* hbFont() const { return m_hbFont; }
-        FT_Face face() const { return m_face; }
         const FontDataInfo& info() const { return m_info; }
         const FontFeatureList& features() const { return m_features; }
 
@@ -394,18 +393,15 @@ namespace plutobook {
         ~SimpleFontData() final;
 
     private:
-        SimpleFontData(FT_Face face, hb_font_t* hbFont, FcCharSet* charSet,
+        SimpleFontData(hb_font_t* hbFont, FcCharSet* charSet,
                        const FontDataInfo& info,
-                       const FontDataDescription& description,
                        const FontFeatureList& features)
-            : m_face(face), m_hbFont(hbFont), m_charSet(charSet), m_info(info),
-              m_description(description), m_features(features) {}
+            : m_hbFont(hbFont), m_charSet(charSet), m_info(info),
+              m_features(features) {}
 
-        FT_Face m_face;
         hb_font_t* m_hbFont;
         FcCharSet* m_charSet;
         FontDataInfo m_info;
-        FontDataDescription m_description;
         FontFeatureList m_features;
     };
 

@@ -31,18 +31,21 @@ private:
     ResourceData m_resource;
 };
 
-FTFontData* FTFontData::create(ResourceData resource)
+static FT_Library getFTLibrary()
 {
     thread_local FT_Library ftLibrary;
     if(ftLibrary == nullptr) {
         if(auto error = FT_Init_FreeType(&ftLibrary)) {
             plutobook_set_error_message("font decode error: %s", FT_Error_String(error));
-            return nullptr;
         }
     }
+    return ftLibrary;
+}
 
+FTFontData* FTFontData::create(ResourceData resource)
+{
     FT_Face ftFace = nullptr;
-    if(auto error = FT_New_Memory_Face(ftLibrary, (FT_Byte*)(resource.content()), resource.contentLength(), 0, &ftFace)) {
+    if(auto error = FT_New_Memory_Face(getFTLibrary(), (FT_Byte*)(resource.content()), resource.contentLength(), 0, &ftFace)) {
         plutobook_set_error_message("font decode error: %s", FT_Error_String(error));
         return nullptr;
     }
@@ -289,9 +292,7 @@ RefPtr<FontData> RemoteFontFace::getFontData(const FontDataDescription& descript
     cairo_font_face_destroy(face);
     cairo_font_options_destroy(options);
 #endif
-    const auto face = m_resource->fontData()->face();
-    FT_Reference_Face(face);
-    return SimpleFontData::create(face, charSet, description, m_features);
+    return SimpleFontData::create(m_resource->fontData()->face(), charSet, description, m_features);
 }
 
 RefPtr<FontData> SegmentedFontFace::getFontData(const FontDataDescription& description)
@@ -362,7 +363,7 @@ RefPtr<SimpleFontData> SimpleFontData::create(FT_Face face, FcCharSet* charSet,
 
     hb_font_make_immutable(hbFont);
 
-    return adoptPtr(new SimpleFontData(face, hbFont, charSet, info, description, features));
+    return adoptPtr(new SimpleFontData(hbFont, charSet, info, features));
 }
 
 const SimpleFontData* SimpleFontData::getFontData(uint32_t codepoint, bool preferColor) const
@@ -377,7 +378,6 @@ const SimpleFontData* SimpleFontData::getFontData(uint32_t codepoint, bool prefe
 SimpleFontData::~SimpleFontData()
 {
     hb_font_destroy(m_hbFont);
-    FT_Done_Face(m_face);
     FcCharSetDestroy(m_charSet);
 }
 
@@ -450,6 +450,35 @@ constexpr int fcSlant(FontSelectionValue slope)
     return FC_SLANT_OBLIQUE;
 }
 
+static FT_Face createFTFaceForPattern(FcPattern* pattern)
+{
+    FT_Face font_face = nullptr;
+    char* filename = nullptr;
+    int id = 0;
+    FcResult ret;
+
+    ret = FcPatternGetFTFace(pattern, FC_FT_FACE, 0, &font_face);
+    if (ret == FcResultMatch) {
+        FT_Reference_Face(font_face);
+        return font_face;
+    }
+    if (ret == FcResultOutOfMemory)
+        return nullptr;
+
+    ret = FcPatternGetString(pattern, FC_FILE, 0, (FcChar8**)&filename);
+    if (ret != FcResultMatch)
+        return nullptr;
+    /* If FC_INDEX is not set, we just use 0 */
+    ret = FcPatternGetInteger(pattern, FC_INDEX, 0, &id);
+    if (ret == FcResultOutOfMemory)
+        return nullptr;
+
+    if (auto error = FT_New_Face(getFTLibrary(), filename, id, &font_face)) {
+        plutobook_set_error_message("font decode error: %s", FT_Error_String(error));
+    }
+    return font_face;
+}
+
 static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, const FontDataDescription& description)
 {
     if(pattern == nullptr)
@@ -473,12 +502,14 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
         ++matchCharSetIndex;
     }
 
+#if 0
     cairo_matrix_t ctm;
     cairo_matrix_init_identity(&ctm);
 
     cairo_matrix_t ftm;
     cairo_matrix_init(&ftm, 1.0, -matrix.yx, -matrix.xy, 1.0, 0.0, 0.0);
     cairo_matrix_scale(&ftm, description.size, description.size);
+#endif // 0
 
     FontFeatureList featureSettings;
     FontVariationList variationSettings;
@@ -501,6 +532,7 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
         ++matchVariationIndex;
     }
 
+#if 0
     auto options = cairo_font_options_create();
     auto variations = buildVariationSettings(description, variationSettings);
     cairo_font_options_set_variations(options, variations.data());
@@ -511,9 +543,15 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
 
     cairo_font_face_destroy(face);
     cairo_font_options_destroy(options);
+#endif // 0
+    auto face = createFTFaceForPattern(pattern);
     FcPatternDestroy(pattern);
-
-    return SimpleFontData::create(font, charSet, description, featureSettings);
+    if (face == nullptr) {
+        return nullptr;
+    }
+    const auto ret = SimpleFontData::create(face, charSet, description, featureSettings);
+    FT_Done_Face(face);
+    return ret;
 }
 
 static bool isGenericFamilyName(const std::string_view& familyName)

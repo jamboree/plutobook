@@ -1,14 +1,15 @@
 #pragma once
 
 #include "box-style.h"
+#include "geometry.h"
 
 #include <memory>
 
 typedef struct _cairo cairo_t;
 typedef struct _cairo_surface cairo_surface_t;
+typedef struct hb_font_t hb_font_t;
 
 namespace plutobook {
-    class Path;
     class ImageBuffer;
 
     using GradientStop = std::pair<float, Color>;
@@ -66,6 +67,11 @@ namespace plutobook {
         DashArray m_dashArray;
     };
 
+    struct GlyphRef {
+        unsigned m_index;
+        Point m_position;
+    };
+
     class GraphicsContext {
     public:
         GraphicsContext() = default;
@@ -97,6 +103,8 @@ namespace plutobook {
         virtual void fillRoundedRect(const RoundedRect& rrect) = 0;
         virtual void fillPath(const Path& path,
                               FillRule fillRule = FillRule::NonZero) = 0;
+        virtual void fillGlyphs(hb_font_t* font, const GlyphRef glyphs[],
+                                unsigned glyphCount) = 0;
 
         virtual void outlineRect(const Rect& rect, float lineWidth) = 0;
         virtual void outlineRoundedRect(const RoundedRect& rrect,
@@ -161,6 +169,8 @@ namespace plutobook {
         void fillRoundedRect(const RoundedRect& rrect) override;
         void fillPath(const Path& path,
                       FillRule fillRule = FillRule::NonZero) override;
+        void fillGlyphs(hb_font_t* font, const GlyphRef glyphs[],
+                        unsigned glyphCount) override;
 
         void outlineRect(const Rect& rect, float lineWidth) override;
         void outlineRoundedRect(const RoundedRect& rrect,

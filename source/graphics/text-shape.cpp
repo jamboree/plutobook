@@ -8,7 +8,7 @@
 
 #include <unicode/uchar.h>
 #include <unicode/uscript.h>
-#include <cairo/cairo-ft.h>
+//#include <cairo/cairo-ft.h>
 #include <harfbuzz/hb-ft.h>
 
 namespace plutobook {
@@ -403,17 +403,13 @@ float TextShapeView::draw(GraphicsContext& context, const Point& origin, float e
 {
     if(m_startOffset == m_endOffset)
         return 0.f;
-    cairo_t* canvas;
-    if (const auto gfx = dynamic_cast<CairoGraphicsContext*>(&context))
-        canvas = gfx->canvas();
-    else
-        return 0.f;
+
     auto direction = m_shape->direction();
     auto offset = origin;
     const auto& text = m_shape->text();
     for(const auto& run : m_shape->runs()) {
         const auto& glyphs = run->glyphs();
-        auto glyphBuffer = cairo_glyph_allocate(glyphs.size());
+        std::unique_ptr<GlyphRef[]> glyphBuffer(new GlyphRef[glyphs.size()]);
         uint32_t numGlyphs = 0;
         for(uint32_t glyphIndex = 0; glyphIndex < glyphs.size(); ++glyphIndex) {
             const auto& glyph = glyphs[glyphIndex];
@@ -427,9 +423,8 @@ float TextShapeView::draw(GraphicsContext& context, const Point& origin, float e
                 || (direction == Direction::Rtl && characterIndex < m_endOffset)) {
                 auto character = text.charAt(characterIndex);
                 if (!treatAsZeroWidthSpace(character)) {
-                    glyphBuffer[numGlyphs].index = glyph.glyphIndex;
-                    glyphBuffer[numGlyphs].x = offset.x + glyph.xOffset;
-                    glyphBuffer[numGlyphs].y = offset.y + glyph.yOffset;
+                    glyphBuffer[numGlyphs].m_index = glyph.glyphIndex;
+                    glyphBuffer[numGlyphs].m_position = offset + Point(glyph.xOffset, glyph.yOffset);
                     ++numGlyphs;
                 }
 
@@ -440,9 +435,13 @@ float TextShapeView::draw(GraphicsContext& context, const Point& origin, float e
             }
         }
 
+        context.fillGlyphs(run->fontData()->hbFont(), glyphBuffer.get(),
+                           numGlyphs);
+#if 0
         cairo_set_scaled_font(canvas, run->fontData()->font());
         cairo_show_glyphs(canvas, glyphBuffer, numGlyphs);
         cairo_glyph_free(glyphBuffer);
+#endif // 0
     }
 
     return offset.x - origin.x;
