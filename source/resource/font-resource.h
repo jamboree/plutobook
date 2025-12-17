@@ -8,9 +8,8 @@
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <mutex>
 
-typedef struct FT_FaceRec_* FT_Face;
-typedef struct hb_font_t hb_font_t;
-typedef struct _FcCharSet FcCharSet;
+struct hb_face_t;
+struct hb_font_t;
 typedef struct _FcConfig FcConfig;
 
 namespace plutobook {
@@ -24,16 +23,14 @@ namespace plutobook {
         static RefPtr<FontResource> create(Document* document, const Url& url);
         static bool supportsFormat(const std::string_view& format);
         FTFontData* fontData() const { return m_fontData; }
-        FcCharSet* charSet() const { return m_charSet; }
 
         ~FontResource() final;
 
     private:
-        FontResource(FTFontData* fontData, FcCharSet* charSet)
-            : Resource(classKind), m_fontData(fontData), m_charSet(charSet) {}
+        FontResource(FTFontData* fontData)
+            : Resource(classKind), m_fontData(fontData) {}
 
         FTFontData* m_fontData;
-        FcCharSet* m_charSet;
     };
 
     using FontSelectionValue = float;
@@ -366,8 +363,7 @@ namespace plutobook {
     class SimpleFontData final : public FontData {
     public:
         static RefPtr<SimpleFontData>
-        create(FT_Face face, FcCharSet* charSet,
-               const FontDataDescription& description,
+        create(hb_face_t* face, const FontDataDescription& description,
                const FontFeatureList& features);
 
         hb_font_t* hbFont() const { return m_hbFont; }
@@ -393,14 +389,11 @@ namespace plutobook {
         ~SimpleFontData() final;
 
     private:
-        SimpleFontData(hb_font_t* hbFont, FcCharSet* charSet,
-                       const FontDataInfo& info,
+        SimpleFontData(hb_font_t* hbFont, const FontDataInfo& info,
                        const FontFeatureList& features)
-            : m_hbFont(hbFont), m_charSet(charSet), m_info(info),
-              m_features(features) {}
+            : m_hbFont(hbFont), m_info(info), m_features(features) {}
 
         hb_font_t* m_hbFont;
-        FcCharSet* m_charSet;
         FontDataInfo m_info;
         FontFeatureList m_features;
     };

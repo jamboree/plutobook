@@ -100,7 +100,11 @@ uint32_t TextShapeRun::offsetForPosition(float position, Direction direction) co
 constexpr int kMaxGlyphs = 1 << 16;
 constexpr int kMaxCharacters = kMaxGlyphs;
 
-#define HB_TO_FLT(v) (static_cast<float>(v) / (1 << 16))
+#define HB_TO_FLT(v) std::scalbnf(v, -8)
+
+inline float HBFixedToFloat(hb_position_t v) {
+    return scalbnf(v, -8);
+}
 
 static bool isEmojiCodepoint(uint32_t codepoint, FontVariantEmoji variantEmoji)
 {
@@ -176,13 +180,13 @@ RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direct
         hb_buffer_set_script(hbBuffer, hbScript);
         hb_shape(fontData->hbFont(), hbBuffer, hbFeatures.data(), hbFeatures.size());
 
-        auto glyphInfos = hb_buffer_get_glyph_infos(hbBuffer, nullptr);
-        auto glyphPositions = hb_buffer_get_glyph_positions(hbBuffer, nullptr);
-        auto numGlyphs = hb_buffer_get_length(hbBuffer);
+        unsigned numGlyphs = 0;
+        auto glyphInfos = hb_buffer_get_glyph_infos(hbBuffer, &numGlyphs);
+        auto glyphPositions = hb_buffer_get_glyph_positions(hbBuffer, &numGlyphs);
 
         float width = 0.f;
         TextShapeRunGlyphDataList glyphs(numGlyphs);
-        for(size_t index = 0; index < numGlyphs; ++index) {
+        for(unsigned index = 0; index != numGlyphs; ++index) {
             const auto& glyphInfo = glyphInfos[index];
             const auto& glyphPosition = glyphPositions[index];
 
