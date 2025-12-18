@@ -2,6 +2,7 @@
 
 #include "box-style.h"
 #include "geometry.h"
+#include "graphics-handle.h"
 
 #include <memory>
 
@@ -72,6 +73,13 @@ namespace plutobook {
         Point m_position;
     };
 
+    class GraphicsManager {
+    public:
+        virtual ImageHandle createImage(const void* data, size_t size,
+                                        Size& extent) = 0;
+        virtual void destroyImage(ImageHandle handle) = 0;
+    };
+
     class GraphicsContext {
     public:
         GraphicsContext() = default;
@@ -105,6 +113,11 @@ namespace plutobook {
                               FillRule fillRule = FillRule::NonZero) = 0;
         virtual void fillGlyphs(hb_font_t* font, const GlyphRef glyphs[],
                                 unsigned glyphCount) = 0;
+        virtual void fillImage(ImageHandle image, const Rect& dstRect,
+                               const Rect& srcRect) = 0;
+        virtual void fillImagePattern(ImageHandle image, const Rect& destRect,
+                                      const Size& size, const Size& scale,
+                                      const Point& phase) = 0;
 
         virtual void outlineRect(const Rect& rect, float lineWidth) = 0;
         virtual void outlineRoundedRect(const RoundedRect& rrect,
@@ -171,6 +184,11 @@ namespace plutobook {
                       FillRule fillRule = FillRule::NonZero) override;
         void fillGlyphs(hb_font_t* font, const GlyphRef glyphs[],
                         unsigned glyphCount) override;
+        void fillImage(ImageHandle image, const Rect& dstRect,
+                       const Rect& srcRect) override;
+        void fillImagePattern(ImageHandle image, const Rect& destRect,
+                              const Size& size, const Size& scale,
+                              const Point& phase) override;
 
         void outlineRect(const Rect& rect, float lineWidth) override;
         void outlineRoundedRect(const RoundedRect& rrect,

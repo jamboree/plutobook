@@ -16,36 +16,21 @@
 
 namespace plutobook {
 
-class FTFontData {
-public:
-    static FTFontData* create(ResourceData resource);
-    hb_face_t* face() const { return m_face; }
-    ~FTFontData() {
-        hb_face_destroy(m_face);
-    }
-
-private:
-    FTFontData(hb_blob_t* blob, hb_face_t* face, ResourceData resource)
-        : m_face(face), m_resource(std::move(resource))
-    {}
-
-    hb_face_t* m_face;
-    ResourceData m_resource;
-};
-
-FTFontData* FTFontData::create(ResourceData resource)
+static hb_face_t* createFaceFromResource(ResourceData resource)
 {
-    auto blob = hb_blob_create_or_fail(resource.content(), resource.contentLength(),
-        HB_MEMORY_MODE_READONLY, nullptr, [](void*) {});
+    auto blob = hb_blob_create_or_fail(
+        resource.content(), resource.contentLength(),
+        HB_MEMORY_MODE_READONLY, resource.get(), [](void* p) {
+            plutobook_resource_data_destroy(
+                static_cast<plutobook_resource_data_t*>(p));
+        });
     if (!blob) {
         return nullptr;
     }
+    resource.release();
     auto face = hb_face_create_or_fail(blob, 0);
     hb_blob_destroy(blob);
-    if (!face) {
-        return nullptr;
-    }
-    return new FTFontData(blob, face, std::move(resource));
+    return face;
 }
 
 RefPtr<FontResource> FontResource::create(Document* document, const Url& url)
@@ -53,8 +38,8 @@ RefPtr<FontResource> FontResource::create(Document* document, const Url& url)
     auto resource = ResourceLoader::loadUrl(url, document->customResourceFetcher());
     if(resource.isNull())
         return nullptr;
-    auto fontData = FTFontData::create(std::move(resource));
-    if(fontData == nullptr) {
+    auto face = createFaceFromResource(std::move(resource));
+    if(face == nullptr) {
         plutobook_set_error_message("Unable to load font '%s': %s", url.value().data(), plutobook_get_error_message());
         return nullptr;
     }
@@ -70,7 +55,7 @@ RefPtr<FontResource> FontResource::create(Document* document, const Url& url)
     }
 #endif // 0
 
-    return adoptPtr(new FontResource(fontData));
+    return adoptPtr(new FontResource(face));
 }
 
 bool FontResource::supportsFormat(const std::string_view& format)
@@ -94,7 +79,7 @@ bool FontResource::supportsFormat(const std::string_view& format)
 
 FontResource::~FontResource()
 {
-    delete m_fontData;
+    hb_face_destroy(m_face);
 }
 
 FontSelectionAlgorithm::FontSelectionAlgorithm(const FontSelectionRequest& request)
@@ -280,7 +265,7 @@ RefPtr<FontData> RemoteFontFace::getFontData(const FontDataDescription& descript
     cairo_font_face_destroy(face);
     cairo_font_options_destroy(options);
 #endif
-    return SimpleFontData::create(m_resource->fontData()->face(), description, m_features);
+    return SimpleFontData::create(m_resource->face(), description, m_features);
 }
 
 RefPtr<FontData> SegmentedFontFace::getFontData(const FontDataDescription& description)

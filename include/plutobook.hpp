@@ -31,6 +31,10 @@
 
 namespace plutobook {
     class GraphicsContext;
+    class GraphicsManager;
+
+    PLUTOBOOK_API void setGraphicsManager(GraphicsManager& manager);
+    PLUTOBOOK_API GraphicsManager& graphicsManager();
 
     /**
      * This constant defines an index that is guaranteed to be greater than any

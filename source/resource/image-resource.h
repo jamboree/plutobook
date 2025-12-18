@@ -2,10 +2,11 @@
 
 #include "resource.h"
 #include "geometry.h"
+#include "graphics-handle.h"
 
 #include <memory>
 
-typedef struct _cairo_surface cairo_surface_t;
+// typedef struct _cairo_surface cairo_surface_t;
 
 namespace plutobook {
     class Image;
@@ -89,8 +90,8 @@ namespace plutobook {
         ~BitmapImage() final;
 
     private:
-        BitmapImage(cairo_surface_t* surface);
-        cairo_surface_t* m_surface;
+        BitmapImage(ImageHandle image, const Size& size);
+        ImageHandle m_image;
         Size m_intrinsicSize;
     };
 

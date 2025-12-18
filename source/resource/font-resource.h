@@ -14,7 +14,6 @@ typedef struct _FcConfig FcConfig;
 
 namespace plutobook {
     class Document;
-    class FTFontData;
 
     class FontResource final : public Resource {
     public:
@@ -22,15 +21,15 @@ namespace plutobook {
 
         static RefPtr<FontResource> create(Document* document, const Url& url);
         static bool supportsFormat(const std::string_view& format);
-        FTFontData* fontData() const { return m_fontData; }
+        hb_face_t* face() const { return m_face; }
 
         ~FontResource() final;
 
     private:
-        FontResource(FTFontData* fontData)
-            : Resource(classKind), m_fontData(fontData) {}
+        explicit FontResource(hb_face_t* face)
+            : Resource(classKind), m_face(face) {}
 
-        FTFontData* m_fontData;
+        hb_face_t* m_face;
     };
 
     using FontSelectionValue = float;

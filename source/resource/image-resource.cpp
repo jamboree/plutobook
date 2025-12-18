@@ -7,23 +7,6 @@
 
 #include "plutobook.hpp"
 
-#include <cairo/cairo.h>
-#ifdef PLUTOBOOK_HAS_WEBP
-#include <webp/decode.h>
-#endif
-
-#ifdef PLUTOBOOK_HAS_TURBOJPEG
-#define STBI_NO_JPEG
-#include <turbojpeg.h>
-#endif
-
-#ifdef CAIRO_HAS_PNG_FUNCTIONS
-#define STBI_NO_PNG
-#endif
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 #include <cstring>
 #include <cmath>
 
@@ -72,140 +55,14 @@ bool ImageResource::supportsMimeType(const std::string_view& mimeType)
         .contains(lower);
 }
 
-#ifdef CAIRO_HAS_PNG_FUNCTIONS
-
-struct png_read_stream_t {
-    const char* data;
-    size_t size;
-};
-
-static cairo_status_t png_read_function(void* closure, uint8_t* data, uint32_t length)
-{
-    auto stream = static_cast<png_read_stream_t*>(closure);
-    if(length > stream->size)
-        return CAIRO_STATUS_READ_ERROR;
-    std::memcpy(data, stream->data, length);
-    stream->data += length;
-    stream->size -= length;
-    return CAIRO_STATUS_SUCCESS;
-}
-
-#endif // CAIRO_HAS_PNG_FUNCTIONS
-
-static cairo_surface_t* decodeBitmapImage(const char* data, size_t size)
-{
-#ifdef CAIRO_HAS_PNG_FUNCTIONS
-    if(size > 8 && std::memcmp(data, "\x89PNG\r\n\x1A\n", 8) == 0) {
-        png_read_stream_t stream = { data, size };
-        return cairo_image_surface_create_from_png_stream(png_read_function, &stream);
-    }
-#endif // CAIRO_HAS_PNG_FUNCTIONS
-#ifdef PLUTOBOOK_HAS_TURBOJPEG
-    if(size > 3 && std::memcmp(data, "\xFF\xD8\xFF", 3) == 0) {
-        int width, height;
-        auto tj = tjInitDecompress();
-        if(!tj || tjDecompressHeader(tj, (uint8_t*)(data), size, &width, &height) == -1) {
-            plutobook_set_error_message("image decode error: %s", tjGetErrorStr());
-            tjDestroy(tj);
-            return nullptr;
-        }
-
-        auto surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, width, height);
-        auto surfaceData = cairo_image_surface_get_data(surface);
-        auto surfaceWidth = cairo_image_surface_get_width(surface);
-        auto surfaceStride = cairo_image_surface_get_stride(surface);
-        auto surfaceHeight = cairo_image_surface_get_height(surface);
-        tjDecompress2(tj, (uint8_t*)(data), size, surfaceData, surfaceWidth, surfaceStride, surfaceHeight, TJPF_BGRX, 0);
-        tjDestroy(tj);
-
-        auto mimeData = (uint8_t*)std::malloc(size);
-        std::memcpy(mimeData, data, size);
-
-        cairo_surface_mark_dirty(surface);
-        cairo_surface_set_mime_data(surface, CAIRO_MIME_TYPE_JPEG, mimeData, size, std::free, mimeData);
-        return surface;
-    }
-#endif // PLUTOBOOK_HAS_TURBOJPEG
-#ifdef PLUTOBOOK_HAS_WEBP
-    if(size > 14 && std::memcmp(data, "RIFF", 4) == 0 && std::memcmp(data + 8, "WEBPVP", 6) == 0) {
-        WebPDecoderConfig config;
-        if(!WebPInitDecoderConfig(&config)) {
-            plutobook_set_error_message("image decode error: WebPInitDecoderConfig failed");
-            return nullptr;
-        }
-
-        if(WebPGetFeatures((const uint8_t*)(data), size, &config.input) != VP8_STATUS_OK) {
-            plutobook_set_error_message("image decode error: WebPGetFeatures failed");
-            return nullptr;
-        }
-
-        auto surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, config.input.width, config.input.height);
-        auto surfaceData = cairo_image_surface_get_data(surface);
-        auto surfaceWidth = cairo_image_surface_get_width(surface);
-        auto surfaceHeight = cairo_image_surface_get_height(surface);
-        auto surfaceStride = cairo_image_surface_get_stride(surface);
-
-        config.output.colorspace = MODE_bgrA;
-        config.output.u.RGBA.rgba = surfaceData;
-        config.output.u.RGBA.stride = surfaceStride;
-        config.output.u.RGBA.size = surfaceStride * surfaceHeight;
-        config.output.width = surfaceWidth;
-        config.output.height = surfaceHeight;
-        config.output.is_external_memory = 1;
-        if(WebPDecode((const uint8_t*)(data), size, &config) != VP8_STATUS_OK) {
-            plutobook_set_error_message("image decode error: WebPDecode failed");
-            return nullptr;
-        }
-
-        cairo_surface_mark_dirty(surface);
-        return surface;
-    }
-#endif // PLUTOBOOK_HAS_WEBP
-
-    int width, height, channels;
-    auto imageData = stbi_load_from_memory((const stbi_uc*)(data), size, &width, &height, &channels, STBI_rgb_alpha);
-    if(imageData == nullptr) {
-        plutobook_set_error_message("image decode error: %s", stbi_failure_reason());
-        return nullptr;
-    }
-
-    auto surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
-    auto surfaceData = cairo_image_surface_get_data(surface);
-    auto surfaceWidth = cairo_image_surface_get_width(surface);
-    auto surfaceHeight = cairo_image_surface_get_height(surface);
-    auto surfaceStride = cairo_image_surface_get_stride(surface);
-    for(int y = 0; y < surfaceHeight; y++) {
-        uint32_t* src = (uint32_t*)(imageData + surfaceStride * y);
-        uint32_t* dst = (uint32_t*)(surfaceData + surfaceStride * y);
-        for(int x = 0; x < surfaceWidth; x++) {
-            uint32_t a = (src[x] >> 24) & 0xFF;
-            uint32_t b = (src[x] >> 16) & 0xFF;
-            uint32_t g = (src[x] >> 8) & 0xFF;
-            uint32_t r = (src[x] >> 0) & 0xFF;
-
-            uint32_t pr = (r * a) / 255;
-            uint32_t pg = (g * a) / 255;
-            uint32_t pb = (b * a) / 255;
-            dst[x] = (a << 24) | (pr << 16) | (pg << 8) | pb;
-        }
-    }
-
-    stbi_image_free(imageData);
-    cairo_surface_mark_dirty(surface);
-    return surface;
-}
-
 RefPtr<BitmapImage> BitmapImage::create(const char* data, size_t size)
 {
-    auto surface = decodeBitmapImage(data, size);
-    if(surface == nullptr)
-        return nullptr;
-    if(auto status = cairo_surface_status(surface)) {
-        plutobook_set_error_message("image decode error: %s", cairo_status_to_string(status));
+    Size extent;
+    auto image = graphicsManager().createImage(data, size, extent);
+    if (image == ImageHandle::Invalid) {
         return nullptr;
     }
-
-    return adoptPtr(new BitmapImage(surface));
+    return adoptPtr(new BitmapImage(image, extent));
 }
 
 void Image::drawTiled(GraphicsContext& context, const Rect& destRect, const Rect& tileRect)
@@ -241,54 +98,13 @@ void BitmapImage::draw(GraphicsContext& context, const Rect& dstRect, const Rect
     if(dstRect.isEmpty() || srcRect.isEmpty()) {
         return;
     }
-
-    auto xScale = srcRect.w / dstRect.w;
-    auto yScale = srcRect.h / dstRect.h;
-    cairo_matrix_t matrix = {xScale, 0, 0, yScale, srcRect.x, srcRect.y};
-
-    auto pattern = cairo_pattern_create_for_surface(m_surface);
-    cairo_pattern_set_matrix(pattern, &matrix);
-    cairo_pattern_set_extend(pattern, CAIRO_EXTEND_NONE);
-
-    cairo_t* canvas;
-    if (const auto gfx = dynamic_cast<CairoGraphicsContext*>(&context))
-        canvas = gfx->canvas();
-    else
-        return;
-    cairo_save(canvas);
-    cairo_set_fill_rule(canvas, CAIRO_FILL_RULE_WINDING);
-    cairo_translate(canvas, dstRect.x, dstRect.y);
-    cairo_rectangle(canvas, 0, 0, dstRect.w, dstRect.h);
-    cairo_set_source(canvas, pattern);
-    cairo_fill(canvas);
-    cairo_restore(canvas);
-    cairo_pattern_destroy(pattern);
+    context.fillImage(m_image, dstRect, srcRect);
 }
 
 void BitmapImage::drawPattern(GraphicsContext& context, const Rect& destRect, const Size& size, const Size& scale, const Point& phase)
 {
     assert(!destRect.isEmpty() && !size.isEmpty() && !scale.isEmpty());
-
-    cairo_matrix_t matrix;
-    cairo_matrix_init(&matrix, scale.w, 0, 0, scale.h, phase.x, phase.y);
-    cairo_matrix_invert(&matrix);
-
-    auto pattern = cairo_pattern_create_for_surface(m_surface);
-    cairo_pattern_set_matrix(pattern, &matrix);
-    cairo_pattern_set_extend(pattern, CAIRO_EXTEND_REPEAT);
-
-    cairo_t* canvas;
-    if (const auto gfx = dynamic_cast<CairoGraphicsContext*>(&context))
-        canvas = gfx->canvas();
-    else
-        return;
-    cairo_save(canvas);
-    cairo_set_fill_rule(canvas, CAIRO_FILL_RULE_WINDING);
-    cairo_rectangle(canvas, destRect.x, destRect.y, destRect.w, destRect.h);
-    cairo_set_source(canvas, pattern);
-    cairo_fill(canvas);
-    cairo_restore(canvas);
-    cairo_pattern_destroy(pattern);
+    context.fillImagePattern(m_image, destRect, size, scale, phase);
 }
 
 void BitmapImage::computeIntrinsicDimensions(float& intrinsicWidth, float& intrinsicHeight, double& intrinsicRatio)
@@ -304,11 +120,11 @@ void BitmapImage::computeIntrinsicDimensions(float& intrinsicWidth, float& intri
 
 BitmapImage::~BitmapImage()
 {
-    cairo_surface_destroy(m_surface);
+    graphicsManager().destroyImage(m_image);
 }
 
-BitmapImage::BitmapImage(cairo_surface_t* surface)
-    : Image(classKind), m_surface(surface), m_intrinsicSize(cairo_image_surface_get_width(m_surface), cairo_image_surface_get_height(m_surface))
+BitmapImage::BitmapImage(ImageHandle image, const Size& size)
+    : Image(classKind), m_image(image), m_intrinsicSize(size)
 {
 }
 
@@ -349,6 +165,7 @@ void SvgImage::drawPattern(GraphicsContext& context, const Rect& destRect, const
 {
     assert(!destRect.isEmpty() && !size.isEmpty() && !scale.isEmpty());
 
+#if 0
     cairo_matrix_t pattern_matrix;
     cairo_matrix_init(&pattern_matrix, 1, 0, 0, 1, -phase.x, -phase.y);
 
@@ -378,6 +195,7 @@ void SvgImage::drawPattern(GraphicsContext& context, const Rect& destRect, const
     cairo_pattern_destroy(pattern);
     cairo_destroy(pattern_canvas);
     cairo_surface_destroy(pattern_surface);
+#endif // 0
 }
 
 static SvgSvgElement* toSvgRootElement(Element* element)
