@@ -75,9 +75,9 @@ namespace plutobook {
 
     class GraphicsManager {
     public:
-        virtual ImageHandle createImage(const void* data, size_t size,
-                                        Size& extent) = 0;
+        virtual ImageHandle createImage(const void* data, size_t size) = 0;
         virtual void destroyImage(ImageHandle handle) = 0;
+        virtual Size getImageSize(ImageHandle handle) const = 0;
     };
 
     class GraphicsContext {

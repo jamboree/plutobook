@@ -90,7 +90,7 @@ namespace plutobook {
         ~BitmapImage() final;
 
     private:
-        BitmapImage(ImageHandle image, const Size& size);
+        explicit BitmapImage(ImageHandle image);
         ImageHandle m_image;
         Size m_intrinsicSize;
     };

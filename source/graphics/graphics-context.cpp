@@ -168,12 +168,15 @@ static void set_cairo_gradient(cairo_pattern_t* pattern, const GradientStops& st
 
 class DefaultGraphicsManager : public GraphicsManager {
 public:
-    ImageHandle createImage(const void* data, size_t size,
-                            Size& extent) override {
+    ImageHandle createImage(const void* data, size_t size) override {
         return ImageHandle::Invalid;
     }
 
     void destroyImage(ImageHandle handle) override {}
+
+    Size getImageSize(ImageHandle handle) const override {
+        std::unreachable();
+    }
 };
 
 DefaultGraphicsManager defaultGraphicsManager;
@@ -314,23 +317,30 @@ static cairo_surface_t* decodeBitmapImage(const char* data, size_t size)
 
 class CairoGraphicsManager : public GraphicsManager {
 public:
-    ImageHandle createImage(const void* data, size_t size,
-        Size& extent) override {
-        const auto surface = decodeBitmapImage(static_cast<const char*>(data), size);
+    ImageHandle createImage(const void* data, size_t size) override {
+        const auto surface =
+            decodeBitmapImage(static_cast<const char*>(data), size);
         if (surface == nullptr)
             return ImageHandle::Invalid;
         if (auto status = cairo_surface_status(surface)) {
-            plutobook_set_error_message("image decode error: %s", cairo_status_to_string(status));
+            plutobook_set_error_message("image decode error: %s",
+                                        cairo_status_to_string(status));
             return ImageHandle::Invalid;
         }
-        extent.w = cairo_image_surface_get_width(surface);
-        extent.h = cairo_image_surface_get_height(surface);
         return std::bit_cast<ImageHandle>(surface);
     }
 
     void destroyImage(ImageHandle handle) override {
         const auto surface = std::bit_cast<cairo_surface_t*>(handle);
         cairo_surface_destroy(surface);
+    }
+
+    Size getImageSize(ImageHandle handle) const override {
+        const auto surface = std::bit_cast<cairo_surface_t*>(handle);
+        Size size;
+        size.w = cairo_image_surface_get_width(surface);
+        size.h = cairo_image_surface_get_height(surface);
+        return size;
     }
 };
 

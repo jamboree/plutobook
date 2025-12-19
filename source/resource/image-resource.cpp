@@ -57,12 +57,11 @@ bool ImageResource::supportsMimeType(const std::string_view& mimeType)
 
 RefPtr<BitmapImage> BitmapImage::create(const char* data, size_t size)
 {
-    Size extent;
-    auto image = graphicsManager().createImage(data, size, extent);
+    auto image = graphicsManager().createImage(data, size);
     if (image == ImageHandle::Invalid) {
         return nullptr;
     }
-    return adoptPtr(new BitmapImage(image, extent));
+    return adoptPtr(new BitmapImage(image));
 }
 
 void Image::drawTiled(GraphicsContext& context, const Rect& destRect, const Rect& tileRect)
@@ -123,8 +122,8 @@ BitmapImage::~BitmapImage()
     graphicsManager().destroyImage(m_image);
 }
 
-BitmapImage::BitmapImage(ImageHandle image, const Size& size)
-    : Image(classKind), m_image(image), m_intrinsicSize(size)
+BitmapImage::BitmapImage(ImageHandle image)
+    : Image(classKind), m_image(image), m_intrinsicSize(graphicsManager().getImageSize(image))
 {
 }
 
