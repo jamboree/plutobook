@@ -211,35 +211,48 @@ RefPtr<FontData> LocalFontFace::getFontData(const FontDataDescription& descripti
     return fontDataCache()->getFontData(m_family, description);
 }
 
-static std::string buildVariationSettings(const FontDataDescription& description, const FontVariationList& variations)
-{
+#define FLT_TO_HB(v) static_cast<hb_position_t>(std::scalbnf(v, +8))
+#define HB_TO_FLT(v) std::scalbnf(v, -8)
+
+static hb_font_t* createHBFont(hb_face_t* face,
+                               const FontDataDescription& description,
+                               const FontVariationList& baseVariations) {
+    const auto font = hb_font_create(face);
+
+    hb_font_set_scale(font, FLT_TO_HB(description.size),
+                      FLT_TO_HB(description.size));
+
     constexpr FontTag wghtTag("wght");
     constexpr FontTag wdthTag("wdth");
     constexpr FontTag slntTag("slnt");
 
-    boost::unordered_flat_map<FontTag, float> variationSettings(description.variations.begin(), description.variations.end());
+    std::unique_ptr<hb_variation_t[]> variations(
+        new hb_variation_t[3 + description.variations.size() +
+                           baseVariations.size()]);
 
-    variationSettings.emplace(wghtTag, description.request.weight);
-    variationSettings.emplace(wdthTag, description.request.width);
-    variationSettings.emplace(slntTag, description.request.slope);
-
-    std::string output;
-    for(const auto& [tag, value] : variationSettings) {
-        const char name[4] = {
-            static_cast<char>(0xFF & (tag.value() >> 24)),
-            static_cast<char>(0xFF & (tag.value() >> 16)),
-            static_cast<char>(0xFF & (tag.value() >> 8)),
-            static_cast<char>(0xFF & (tag.value() >> 0))
-        };
-
-        if(!output.empty())
-            output += ',';
-        output.append(name, 4);
-        output += '=';
-        output += toString(value);
+    auto out = variations.get();
+    *out++ = {wghtTag.value(), description.request.weight};
+    *out++ = {wdthTag.value(), description.request.width};
+    *out++ = {slntTag.value(), description.request.slope};
+    for (const auto& [tag, value] : description.variations) {
+        *out++ = {tag.value(), value};
     }
+    for (const auto& [tag, value] : baseVariations) {
+        *out++ = {tag.value(), value};
+    }
+    const auto byTag = [](const hb_variation_t& variation) {
+        return variation.tag;
+    };
+    std::ranges::stable_sort(variations.get(), out, std::ranges::less{}, byTag);
+    out = std::ranges::unique(variations.get(), out, std::ranges::equal_to{},
+                              byTag)
+              .begin();
 
-    return output;
+    hb_font_set_variations(font, variations.get(), out - variations.get());
+
+    hb_font_make_immutable(font);
+
+    return font;
 }
 
 RefPtr<FontData> RemoteFontFace::getFontData(const FontDataDescription& description)
@@ -265,7 +278,8 @@ RefPtr<FontData> RemoteFontFace::getFontData(const FontDataDescription& descript
     cairo_font_face_destroy(face);
     cairo_font_options_destroy(options);
 #endif
-    return SimpleFontData::create(m_resource->face(), description, m_features);
+    const auto font = createHBFont(m_resource->face(), description, m_variations);
+    return SimpleFontData::create(font, m_features);
 }
 
 RefPtr<FontData> SegmentedFontFace::getFontData(const FontDataDescription& description)
@@ -278,10 +292,10 @@ RefPtr<FontData> SegmentedFontFace::getFontData(const FontDataDescription& descr
         if(auto font = face->getFontData(description)) {
             const auto& ranges = face->ranges();
             if(ranges.empty()) {
-                fonts.emplace_front(0, 0x10FFFF, std::move(font));
+                fonts.emplace_back(0, 0x10FFFF, std::move(font));
             } else {
                 for(const auto& range : ranges) {
-                    fonts.emplace_front(range.first, range.second, font);
+                    fonts.emplace_back(range.first, range.second, font);
                 }
             }
         }
@@ -292,36 +306,18 @@ RefPtr<FontData> SegmentedFontFace::getFontData(const FontDataDescription& descr
     return fontData;
 }
 
-#define FLT_TO_HB(v) static_cast<hb_position_t>(std::scalbnf(v, +8))
-#define HB_TO_FLT(v) std::scalbnf(v, -8)
-
-RefPtr<SimpleFontData> SimpleFontData::create(hb_face_t* face,
-    const FontDataDescription& description,
+RefPtr<SimpleFontData> SimpleFontData::create(hb_font_t* font,
     const FontFeatureList& features)
 {
-    auto hbFont = hb_font_create(face);
-
-    hb_font_set_scale(hbFont, FLT_TO_HB(description.size), FLT_TO_HB(description.size));
-
-    std::vector<hb_variation_t> settings;
-    for (const auto& variation : description.variations) {
-        hb_variation_t setting{variation.first.value(), variation.second};
-        settings.push_back(setting);
-    }
-
-    hb_font_set_variations(hbFont, settings.data(), settings.size());
-
-    hb_font_make_immutable(hbFont);
-
-    const auto get_glyph = [hbFont](hb_codepoint_t unicode) {
+    const auto get_glyph = [font](hb_codepoint_t unicode) {
         hb_codepoint_t glyph;
-        return hb_font_get_glyph(hbFont, unicode, 0, &glyph) ? glyph : ~hb_codepoint_t(0);
+        return hb_font_get_glyph(font, unicode, 0, &glyph) ? glyph : ~hb_codepoint_t(0);
     };
 
-    const auto glyph_extents = [hbFont](hb_codepoint_t glyph) {
+    const auto glyph_extents = [font](hb_codepoint_t glyph) {
         hb_glyph_extents_t extents{};
         if (glyph != ~hb_codepoint_t(0)) {
-            hb_font_get_glyph_extents(hbFont, glyph, &extents);
+            hb_font_get_glyph_extents(font, glyph, &extents);
         }
         return extents;
     };
@@ -331,7 +327,7 @@ RefPtr<SimpleFontData> SimpleFontData::create(hb_face_t* face,
     auto xGlyph = get_glyph('x');
 
     hb_font_extents_t font_extents;
-    hb_font_get_extents_for_direction(hbFont, HB_DIRECTION_LTR, &font_extents);
+    hb_font_get_extents_for_direction(font, HB_DIRECTION_LTR, &font_extents);
 
     FontDataInfo info;
     info.ascent = HB_TO_FLT(font_extents.ascender);
@@ -345,7 +341,7 @@ RefPtr<SimpleFontData> SimpleFontData::create(hb_face_t* face,
     //info.hasColor = FT_HAS_COLOR(face);
     info.hasColor = false;
 
-    return adoptPtr(new SimpleFontData(hbFont, info, features));
+    return adoptPtr(new SimpleFontData(font, info, features));
 }
 
 const SimpleFontData* SimpleFontData::getFontData(uint32_t codepoint, bool preferColor) const
@@ -486,7 +482,7 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
     while(FcPatternGetString(pattern, FC_FONT_FEATURES, matchFeatureIndex, (FcChar8**)(&matchFeatureName)) == FcResultMatch) {
         hb_feature_t feature;
         if(hb_feature_from_string(matchFeatureName, -1, &feature))
-            featureSettings.emplace_front(feature.tag, feature.value);
+            featureSettings.emplace_back(feature.tag, feature.value);
         ++matchFeatureIndex;
     }
 
@@ -495,7 +491,7 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
     while(FcPatternGetString(pattern, FC_FONT_VARIATIONS, matchVariationIndex, (FcChar8**)(&matchVariationName)) == FcResultMatch) {
         hb_variation_t variation;
         if(hb_variation_from_string(matchVariationName, -1, &variation))
-            variationSettings.emplace_front(variation.tag, variation.value);
+            variationSettings.emplace_back(variation.tag, variation.value);
         ++matchVariationIndex;
     }
 
@@ -516,9 +512,9 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
     if (face == nullptr) {
         return nullptr;
     }
-    const auto ret = SimpleFontData::create(face, description, featureSettings);
+    const auto font = createHBFont(face, description, variationSettings);
     hb_face_destroy(face);
-    return ret;
+    return SimpleFontData::create(font, featureSettings);
 }
 
 static bool isGenericFamilyName(const std::string_view& familyName)

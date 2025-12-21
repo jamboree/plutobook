@@ -6,7 +6,6 @@
 #include "css-property-id.h"
 
 #include "optional.h"
-#include <forward_list>
 #include <vector>
 #include <boost/unordered/unordered_flat_map.hpp>
 
@@ -480,9 +479,9 @@ namespace plutobook {
 
     using FontFeature = std::pair<FontTag, int>;
     using FontVariation = std::pair<FontTag, float>;
-    using FontFeatureList = std::forward_list<FontFeature>;
-    using FontVariationList = std::forward_list<FontVariation>;
-    using FontFamilyList = std::forward_list<GlobalString>;
+    using FontFeatureList = std::vector<FontFeature>;
+    using FontVariationList = std::vector<FontVariation>;
+    using FontFamilyList = std::vector<GlobalString>;
 
     class CssValue;
     class CssValuePtr;

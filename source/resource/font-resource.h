@@ -4,7 +4,6 @@
 #include "global-string.h"
 
 #include <vector>
-#include <forward_list>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <mutex>
 
@@ -182,8 +181,8 @@ namespace plutobook {
     using FontFeature = std::pair<FontTag, int>;
     using FontVariation = std::pair<FontTag, float>;
 
-    using FontFeatureList = std::forward_list<FontFeature>;
-    using FontVariationList = std::forward_list<FontVariation>;
+    using FontFeatureList = std::vector<FontFeature>;
+    using FontVariationList = std::vector<FontVariation>;
 
     constexpr FontSelectionValue kMediumFontSize = 16.f;
 
@@ -204,7 +203,7 @@ namespace plutobook {
         }
     };
 
-    using FontFamilyList = std::forward_list<GlobalString>;
+    using FontFamilyList = std::vector<GlobalString>;
 
     struct FontDescription {
         FontFamilyList families;
@@ -222,7 +221,7 @@ namespace plutobook {
     };
 
     using UnicodeRange = std::pair<uint32_t, uint32_t>;
-    using UnicodeRangeList = std::forward_list<UnicodeRange>;
+    using UnicodeRangeList = std::vector<UnicodeRange>;
 
     class FontData;
 
@@ -361,9 +360,8 @@ namespace plutobook {
 
     class SimpleFontData final : public FontData {
     public:
-        static RefPtr<SimpleFontData>
-        create(hb_face_t* face, const FontDataDescription& description,
-               const FontFeatureList& features);
+        static RefPtr<SimpleFontData> create(hb_font_t* font,
+                                             const FontFeatureList& features);
 
         hb_font_t* hbFont() const { return m_hbFont; }
         const FontDataInfo& info() const { return m_info; }
@@ -411,7 +409,7 @@ namespace plutobook {
         RefPtr<FontData> m_data;
     };
 
-    using FontDataRangeList = std::forward_list<FontDataRange>;
+    using FontDataRangeList = std::vector<FontDataRange>;
 
     class SegmentedFontData final : public FontData {
     public:

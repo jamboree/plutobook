@@ -1908,10 +1908,10 @@ void FontFeaturesBuilder::buildKerning(FontFeatureList& features) const
     case CssValueID::Auto:
         break;
     case CssValueID::Normal:
-        features.emplace_front(kernTag, 1);
+        features.emplace_back(kernTag, 1);
         break;
     case CssValueID::None:
-        features.emplace_front(kernTag, 0);
+        features.emplace_back(kernTag, 0);
         break;
     default:
         assert(false);
@@ -1931,11 +1931,11 @@ void FontFeaturesBuilder::buildVariantLigatures(FontFeatureList& features) const
         if(ident->value() == CssValueID::Normal)
             return;
         assert(ident->value() == CssValueID::None);
-        features.emplace_front(ligaTag, 0);
-        features.emplace_front(cligTag, 0);
-        features.emplace_front(hligTag, 0);
-        features.emplace_front(dligTag, 0);
-        features.emplace_front(caltTag, 0);
+        features.emplace_back(ligaTag, 0);
+        features.emplace_back(cligTag, 0);
+        features.emplace_back(hligTag, 0);
+        features.emplace_back(dligTag, 0);
+        features.emplace_back(caltTag, 0);
         return;
     }
 
@@ -1943,30 +1943,30 @@ void FontFeaturesBuilder::buildVariantLigatures(FontFeatureList& features) const
         const auto& ident = to<CssIdentValue>(*value);
         switch(ident.value()) {
         case CssValueID::CommonLigatures:
-            features.emplace_front(ligaTag, 1);
-            features.emplace_front(cligTag, 1);
+            features.emplace_back(ligaTag, 1);
+            features.emplace_back(cligTag, 1);
             break;
         case CssValueID::NoCommonLigatures:
-            features.emplace_front(ligaTag, 0);
-            features.emplace_front(cligTag, 0);
+            features.emplace_back(ligaTag, 0);
+            features.emplace_back(cligTag, 0);
             break;
         case CssValueID::HistoricalLigatures:
-            features.emplace_front(hligTag, 1);
+            features.emplace_back(hligTag, 1);
             break;
         case CssValueID::NoHistoricalLigatures:
-            features.emplace_front(hligTag, 0);
+            features.emplace_back(hligTag, 0);
             break;
         case CssValueID::DiscretionaryLigatures:
-            features.emplace_front(dligTag, 1);
+            features.emplace_back(dligTag, 1);
             break;
         case CssValueID::NoDiscretionaryLigatures:
-            features.emplace_front(dligTag, 0);
+            features.emplace_back(dligTag, 0);
             break;
         case CssValueID::Contextual:
-            features.emplace_front(caltTag, 1);
+            features.emplace_back(caltTag, 1);
             break;
         case CssValueID::NoContextual:
-            features.emplace_front(caltTag, 0);
+            features.emplace_back(caltTag, 0);
             break;
         default:
             assert(false);
@@ -1985,10 +1985,10 @@ void FontFeaturesBuilder::buildVariantPosition(FontFeatureList& features) const
     case CssValueID::Normal:
         break;
     case CssValueID::Sub:
-        features.emplace_front(subsTag, 1);
+        features.emplace_back(subsTag, 1);
         break;
     case CssValueID::Super:
-        features.emplace_front(supsTag, 1);
+        features.emplace_back(supsTag, 1);
         break;
     default:
         assert(false);
@@ -2010,24 +2010,24 @@ void FontFeaturesBuilder::buildVariantCaps(FontFeatureList& features) const
     case CssValueID::Normal:
         break;
     case CssValueID::SmallCaps:
-        features.emplace_front(smcpTag, 1);
+        features.emplace_back(smcpTag, 1);
         break;
     case CssValueID::AllSmallCaps:
-        features.emplace_front(c2scTag, 1);
-        features.emplace_front(smcpTag, 1);
+        features.emplace_back(c2scTag, 1);
+        features.emplace_back(smcpTag, 1);
         break;
     case CssValueID::PetiteCaps:
-        features.emplace_front(pcapTag, 1);
+        features.emplace_back(pcapTag, 1);
         break;
     case CssValueID::AllPetiteCaps:
-        features.emplace_front(c2pcTag, 1);
-        features.emplace_front(pcapTag, 1);
+        features.emplace_back(c2pcTag, 1);
+        features.emplace_back(pcapTag, 1);
         break;
     case CssValueID::Unicase:
-        features.emplace_front(unicTag, 1);
+        features.emplace_back(unicTag, 1);
         break;
     case CssValueID::TitlingCaps:
-        features.emplace_front(titlTag, 1);
+        features.emplace_back(titlTag, 1);
         break;
     default:
         assert(false);
@@ -2055,28 +2055,28 @@ void FontFeaturesBuilder::buildVariantNumeric(FontFeatureList& features) const
         const auto& ident = to<CssIdentValue>(*value);
         switch(ident.value()) {
         case CssValueID::LiningNums:
-            features.emplace_front(lnumTag, 1);
+            features.emplace_back(lnumTag, 1);
             break;
         case CssValueID::OldstyleNums:
-            features.emplace_front(onumTag, 1);
+            features.emplace_back(onumTag, 1);
             break;
         case CssValueID::ProportionalNums:
-            features.emplace_front(pnumTag, 1);
+            features.emplace_back(pnumTag, 1);
             break;
         case CssValueID::TabularNums:
-            features.emplace_front(tnumTag, 1);
+            features.emplace_back(tnumTag, 1);
             break;
         case CssValueID::DiagonalFractions:
-            features.emplace_front(fracTag, 1);
+            features.emplace_back(fracTag, 1);
             break;
         case CssValueID::StackedFractions:
-            features.emplace_front(afrcTag, 1);
+            features.emplace_back(afrcTag, 1);
             break;
         case CssValueID::Ordinal:
-            features.emplace_front(ordnTag, 1);
+            features.emplace_back(ordnTag, 1);
             break;
         case CssValueID::SlashedZero:
-            features.emplace_front(zeroTag, 1);
+            features.emplace_back(zeroTag, 1);
             break;
         default:
             assert(false);
@@ -2106,31 +2106,31 @@ void FontFeaturesBuilder::buildVariantEastAsian(FontFeatureList& features) const
         const auto& ident = to<CssIdentValue>(*value);
         switch(ident.value()) {
         case CssValueID::Jis78:
-            features.emplace_front(jp78Tag, 1);
+            features.emplace_back(jp78Tag, 1);
             break;
         case CssValueID::Jis83:
-            features.emplace_front(jp83Tag, 1);
+            features.emplace_back(jp83Tag, 1);
             break;
         case CssValueID::Jis90:
-            features.emplace_front(jp90Tag, 1);
+            features.emplace_back(jp90Tag, 1);
             break;
         case CssValueID::Jis04:
-            features.emplace_front(jp04Tag, 1);
+            features.emplace_back(jp04Tag, 1);
             break;
         case CssValueID::Simplified:
-            features.emplace_front(smplTag, 1);
+            features.emplace_back(smplTag, 1);
             break;
         case CssValueID::Traditional:
-            features.emplace_front(tradTag, 1);
+            features.emplace_back(tradTag, 1);
             break;
         case CssValueID::FullWidth:
-            features.emplace_front(fwidTag, 1);
+            features.emplace_back(fwidTag, 1);
             break;
         case CssValueID::ProportionalWidth:
-            features.emplace_front(pwidTag, 1);
+            features.emplace_back(pwidTag, 1);
             break;
         case CssValueID::Ruby:
-            features.emplace_front(rubyTag, 1);
+            features.emplace_back(rubyTag, 1);
             break;
         default:
             assert(false);
@@ -2149,7 +2149,7 @@ void FontFeaturesBuilder::buildFeatureSettings(FontFeatureList& features) const
 
     for(const auto& value : to<CssListValue>(*m_featureSettings)) {
         const auto& feature = to<CssFontFeatureValue>(*value);
-        features.emplace_front(feature.tag(), feature.value());
+        features.emplace_back(feature.tag(), feature.value());
     }
 }
 
