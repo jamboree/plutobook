@@ -69,8 +69,8 @@ namespace plutobook {
     };
 
     struct GlyphRef {
-        unsigned m_index;
-        Point m_position;
+        unsigned index;
+        Point position;
     };
 
     class GraphicsManager {
@@ -78,6 +78,14 @@ namespace plutobook {
         virtual ImageHandle createImage(const void* data, size_t size) = 0;
         virtual void destroyImage(ImageHandle handle) = 0;
         virtual Size getImageSize(ImageHandle handle) const = 0;
+    };
+
+    struct GradientInfo {
+        GradientStops stops;
+        Transform transform;
+        const Rect* objectBoundingBox = nullptr;
+        SpreadMethod method;
+        float opacity;
     };
 
     class GraphicsContext {
@@ -88,13 +96,9 @@ namespace plutobook {
 
         virtual void setColor(const Color& color) = 0;
         virtual void setLinearGradient(const LinearGradientValues& values,
-                                       const GradientStops& stops,
-                                       const Transform& transform,
-                                       SpreadMethod method, float opacity) = 0;
+                                       const GradientInfo& info) = 0;
         virtual void setRadialGradient(const RadialGradientValues& values,
-                                       const GradientStops& stops,
-                                       const Transform& transform,
-                                       SpreadMethod method, float opacity) = 0;
+                                       const GradientInfo& info) = 0;
         virtual void setPattern(cairo_surface_t* pattern,
                                 const Transform& transform) = 0;
 
@@ -159,13 +163,9 @@ namespace plutobook {
 
         void setColor(const Color& color) override;
         void setLinearGradient(const LinearGradientValues& values,
-                               const GradientStops& stops,
-                               const Transform& transform, SpreadMethod method,
-                               float opacity) override;
+                               const GradientInfo& info) override;
         void setRadialGradient(const RadialGradientValues& values,
-                               const GradientStops& stops,
-                               const Transform& transform, SpreadMethod method,
-                               float opacity) override;
+                               const GradientInfo& info) override;
         void setPattern(cairo_surface_t* surface,
                         const Transform& transform) override;
 

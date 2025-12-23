@@ -371,8 +371,9 @@ void SvgResourceLinearGradientBox::build()
 
 void SvgResourceLinearGradientBox::applyPaint(const SvgRenderState& state, float opacity) const
 {
-    auto gradientStops = buildGradientStops(m_attributes.gradientContentElement());
-    if(gradientStops.empty()) {
+    GradientInfo info;
+    info.stops = buildGradientStops(m_attributes.gradientContentElement());
+    if(info.stops.empty()) {
         state.context().setColor(Color::Transparent);
         return;
     }
@@ -385,20 +386,22 @@ void SvgResourceLinearGradientBox::applyPaint(const SvgRenderState& state, float
         lengthContext.valueForLength(m_attributes.y2())
     };
 
-    if((gradientStops.size() == 1 || (values.x1 == values.x2 && values.y1 == values.y2))) {
-        const auto& lastStop = gradientStops.back();
+    if((info.stops.size() == 1 || (values.x1 == values.x2 && values.y1 == values.y2))) {
+        const auto& lastStop = info.stops.back();
         state.context().setColor(lastStop.second.colorWithAlpha(opacity));
         return;
     }
 
-    auto spreadMethod = toSpreadMethod(m_attributes.spreadMethod());
-    auto gradientTransform = m_attributes.gradientTransform();
+    info.method = toSpreadMethod(m_attributes.spreadMethod());
+    info.transform = m_attributes.gradientTransform();
+    Rect bbox;
     if(m_attributes.gradientUnits() == SvgUnitsTypeObjectBoundingBox) {
-        const auto& bbox = state.fillBoundingBox();
-        gradientTransform.postMultiply(Transform(bbox.w, 0, 0, bbox.h, bbox.x, bbox.y));
+        bbox = state.fillBoundingBox();
+        info.objectBoundingBox = &bbox;
     }
+    info.opacity = opacity;
 
-    state.context().setLinearGradient(values, gradientStops, gradientTransform, spreadMethod, opacity);
+    state.context().setLinearGradient(values, info);
 }
 
 SvgResourceRadialGradientBox::SvgResourceRadialGradientBox(SvgRadialGradientElement* element, const RefPtr<BoxStyle>& style)
@@ -414,8 +417,9 @@ void SvgResourceRadialGradientBox::build()
 
 void SvgResourceRadialGradientBox::applyPaint(const SvgRenderState& state, float opacity) const
 {
-    auto gradientStops = buildGradientStops(m_attributes.gradientContentElement());
-    if(gradientStops.empty()) {
+    GradientInfo info;
+    info.stops = buildGradientStops(m_attributes.gradientContentElement());
+    if(info.stops.empty()) {
         state.context().setColor(Color::Transparent);
         return;
     }
@@ -429,20 +433,22 @@ void SvgResourceRadialGradientBox::applyPaint(const SvgRenderState& state, float
         lengthContext.valueForLength(m_attributes.r())
     };
 
-    if(values.r == 0.f || gradientStops.size() == 1) {
-        const auto& lastStop = gradientStops.back();
+    if(values.r == 0.f || info.stops.size() == 1) {
+        const auto& lastStop = info.stops.back();
         state.context().setColor(lastStop.second.colorWithAlpha(opacity));
         return;
     }
 
-    auto spreadMethod = toSpreadMethod(m_attributes.spreadMethod());
-    auto gradientTransform = m_attributes.gradientTransform();
-    if(m_attributes.gradientUnits() == SvgUnitsTypeObjectBoundingBox) {
-        const auto& bbox = state.fillBoundingBox();
-        gradientTransform.postMultiply(Transform(bbox.w, 0, 0, bbox.h, bbox.x, bbox.y));
+    info.method = toSpreadMethod(m_attributes.spreadMethod());
+    info.transform = m_attributes.gradientTransform();
+    Rect bbox;
+    if (m_attributes.gradientUnits() == SvgUnitsTypeObjectBoundingBox) {
+        bbox = state.fillBoundingBox();
+        info.objectBoundingBox = &bbox;
     }
+    info.opacity = opacity;
 
-    state.context().setRadialGradient(values, gradientStops, gradientTransform, spreadMethod, opacity);
+    state.context().setRadialGradient(values, info);
 }
 
 } // namespace plutobook

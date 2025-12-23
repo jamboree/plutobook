@@ -427,8 +427,8 @@ float TextShapeView::draw(GraphicsContext& context, const Point& origin, float e
                 || (direction == Direction::Rtl && characterIndex < m_endOffset)) {
                 auto character = text.charAt(characterIndex);
                 if (!treatAsZeroWidthSpace(character)) {
-                    glyphBuffer[numGlyphs].m_index = glyph.glyphIndex;
-                    glyphBuffer[numGlyphs].m_position = offset + Point(glyph.xOffset, glyph.yOffset);
+                    glyphBuffer[numGlyphs].index = glyph.glyphIndex;
+                    glyphBuffer[numGlyphs].position = offset + Point(glyph.xOffset, glyph.yOffset);
                     ++numGlyphs;
                 }
 

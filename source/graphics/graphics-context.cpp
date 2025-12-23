@@ -139,17 +139,17 @@ static void set_cairo_path(cairo_t* cr, const Path& path)
     }
 }
 
-static void set_cairo_gradient(cairo_pattern_t* pattern, const GradientStops& stops, const Transform& transform, SpreadMethod method, float opacity)
+static void set_cairo_gradient(cairo_pattern_t* pattern, const GradientInfo& info)
 {
-    for(const auto& stop : stops) {
+    for(const auto& stop : info.stops) {
         auto red = stop.second.red() / 255.0;
         auto green = stop.second.green() / 255.0;
         auto blue = stop.second.blue() / 255.0;
         auto alpha = stop.second.alpha() / 255.0;
-        cairo_pattern_add_color_stop_rgba(pattern, stop.first, red, green, blue, alpha * opacity);
+        cairo_pattern_add_color_stop_rgba(pattern, stop.first, red, green, blue, alpha * info.opacity);
     }
 
-    switch(method) {
+    switch(info.method) {
     case SpreadMethod::Pad:
         cairo_pattern_set_extend(pattern, CAIRO_EXTEND_PAD);
         break;
@@ -161,7 +161,13 @@ static void set_cairo_gradient(cairo_pattern_t* pattern, const GradientStops& st
         break;
     }
 
-    auto matrix = to_cairo_matrix(transform);
+    cairo_matrix_t matrix;
+    if (info.objectBoundingBox) {
+        const auto& bbox = *info.objectBoundingBox;
+        matrix = to_cairo_matrix(Transform(bbox.w, 0, 0, bbox.h, bbox.x, bbox.y) * info.transform);
+    } else {
+        matrix = to_cairo_matrix(info.transform);
+    }
     cairo_matrix_invert(&matrix);
     cairo_pattern_set_matrix(pattern, &matrix);
 }
@@ -178,19 +184,6 @@ public:
         std::unreachable();
     }
 };
-
-DefaultGraphicsManager defaultGraphicsManager;
-GraphicsManager* g_graphicsManager = &defaultGraphicsManager;
-
-void setGraphicsManager(GraphicsManager& manager)
-{
-    g_graphicsManager = &manager;
-}
-
-GraphicsManager& graphicsManager()
-{
-    return *g_graphicsManager;
-}
 
 #ifdef CAIRO_HAS_PNG_FUNCTIONS
 
@@ -344,6 +337,20 @@ public:
     }
 };
 
+//DefaultGraphicsManager defaultGraphicsManager;
+CairoGraphicsManager defaultGraphicsManager;
+GraphicsManager* g_graphicsManager = &defaultGraphicsManager;
+
+void setGraphicsManager(GraphicsManager& manager)
+{
+    g_graphicsManager = &manager;
+}
+
+GraphicsManager& graphicsManager()
+{
+    return *g_graphicsManager;
+}
+
 CairoGraphicsContext::CairoGraphicsContext(cairo_t* canvas)
     : m_canvas(cairo_reference(canvas))
 {
@@ -363,18 +370,18 @@ void CairoGraphicsContext::setColor(const Color& color)
     cairo_set_source_rgba(m_canvas, red, green, blue, alpha);
 }
 
-void CairoGraphicsContext::setLinearGradient(const LinearGradientValues& values, const GradientStops& stops, const Transform& transform, SpreadMethod method, float opacity)
+void CairoGraphicsContext::setLinearGradient(const LinearGradientValues& values, const GradientInfo& info)
 {
     auto pattern = cairo_pattern_create_linear(values.x1, values.y1, values.x2, values.y2);
-    set_cairo_gradient(pattern, stops, transform, method, opacity);
+    set_cairo_gradient(pattern, info);
     cairo_set_source(m_canvas, pattern);
     cairo_pattern_destroy(pattern);
 }
 
-void CairoGraphicsContext::setRadialGradient(const RadialGradientValues& values, const GradientStops& stops, const Transform& transform, SpreadMethod method, float opacity)
+void CairoGraphicsContext::setRadialGradient(const RadialGradientValues& values, const GradientInfo& info)
 {
     auto pattern = cairo_pattern_create_radial(values.fx, values.fy, 0, values.cx, values.cy, values.r);
-    set_cairo_gradient(pattern, stops, transform, method, opacity);
+    set_cairo_gradient(pattern, info);
     cairo_set_source(m_canvas, pattern);
     cairo_pattern_destroy(pattern);
 }
