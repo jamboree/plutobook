@@ -54,7 +54,7 @@ namespace plutobook {
     public:
         ContentBoxBuilder(Counters& counters, Element* element, Box* box);
 
-        void build();
+        void build(const CssValue& content);
 
     private:
         void addText(const HeapString& text);

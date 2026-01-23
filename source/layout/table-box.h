@@ -48,8 +48,13 @@ namespace plutobook {
         size_t columnCount() const;
 
         const TableSectionBoxList& sections() const { return m_sections; }
+
+        TableSectionBox* headerSection() const;
+        TableSectionBox* footerSection() const;
+
         TableSectionBox* topSection() const;
         TableSectionBox* bottomSection() const;
+
         TableSectionBox* sectionAbove(const TableSectionBox* sectionBox) const;
         TableSectionBox* sectionBelow(const TableSectionBox* sectionBox) const;
 
@@ -158,6 +163,8 @@ namespace plutobook {
 
         void addChild(Box* newChild) final;
 
+        void updateOverflowRect() final;
+
         Optional<float> firstLineBaseline() const final;
         Optional<float> lastLineBaseline() const final;
 
@@ -172,10 +179,14 @@ namespace plutobook {
 
         void distributeExcessHeightToRows(float distributableHeight);
 
-        void layoutRows(FragmentBuilder* fragmentainer);
+        void layoutRows(FragmentBuilder* fragmentainer, float headerHeight,
+                        float footerHeight);
         void layout(FragmentBuilder* fragmentainer) final;
         void build() final;
 
+        void paintCollapsedBorders(
+            const PaintInfo& info, const Point& offset,
+            const TableCollapsedBorderEdge& currentEdge) const;
         void paint(const PaintInfo& info, const Point& offset,
                    PaintPhase phase) final;
 
@@ -218,6 +229,8 @@ namespace plutobook {
         TableRowBox(Node* node, const RefPtr<BoxStyle>& style);
 
         void addChild(Box* newChild) final;
+
+        void updateOverflowRect() final;
 
         TableCellBox* firstCell() const;
         TableCellBox* lastCell() const;
@@ -309,6 +322,7 @@ namespace plutobook {
 
         uint32_t span() const { return m_span; }
         void setSpan(uint32_t span) { m_span = span; }
+        TableColumnBox* columnGroup() const;
 
         const char* name() const final { return "TableColumnBox"; }
 
@@ -319,8 +333,9 @@ namespace plutobook {
     enum class TableCollapsedBorderSource : uint8_t {
         None,
         Table,
+        ColumnGroup,
         Column,
-        Section,
+        RowGroup,
         Row,
         Cell
     };
@@ -423,6 +438,7 @@ namespace plutobook {
 
         bool isBaselineAligned() const;
         float cellBaselinePosition() const;
+        float heightForRowSizing() const;
 
         void computeBorderWidths(float& borderTop, float& borderBottom,
                                  float& borderLeft, float& borderRight) const;

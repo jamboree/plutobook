@@ -1,25 +1,10 @@
 #include "fragment-builder.h"
-#include "box.h"
 
 namespace plutobook {
 
-constexpr bool needsFragmentBreakBetween(BreakBetween between, FragmentType type)
-{
-    if(type == FragmentType::Column)
-        return between == BreakBetween::Column;
-    return between >= BreakBetween::Page;
-}
-
-constexpr bool needsFragmentBreakInside(BreakInside inside, FragmentType type)
-{
-    if(type == FragmentType::Page)
-        return inside == BreakInside::Avoid || inside == BreakInside::AvoidPage;
-    return inside == BreakInside::Avoid || inside == BreakInside::AvoidColumn;
-}
-
 float FragmentBuilder::applyFragmentBreakBefore(const BoxFrame* child, float offset)
 {
-    if(!needsFragmentBreakBetween(child->style()->breakBefore(), fragmentType()))
+    if(!needsBreakBetween(child->style()->breakBefore()))
         return offset;
     auto fragmentHeight = fragmentHeightForOffset(offset);
     addForcedFragmentBreak(offset);
@@ -30,7 +15,7 @@ float FragmentBuilder::applyFragmentBreakBefore(const BoxFrame* child, float off
 
 float FragmentBuilder::applyFragmentBreakAfter(const BoxFrame* child, float offset)
 {
-    if(!needsFragmentBreakBetween(child->style()->breakAfter(), fragmentType()))
+    if(!needsBreakBetween(child->style()->breakAfter()))
         return offset;
     auto fragmentHeight = fragmentHeightForOffset(offset);
     addForcedFragmentBreak(offset);
@@ -41,7 +26,7 @@ float FragmentBuilder::applyFragmentBreakAfter(const BoxFrame* child, float offs
 
 float FragmentBuilder::applyFragmentBreakInside(const BoxFrame* child, float offset)
 {
-    if(!child->isReplaced() && !needsFragmentBreakInside(child->style()->breakInside(), fragmentType()))
+    if(!child->isReplaced() && !needsBreakInside(child->style()->breakInside()))
         return offset;
     auto childHeight = child->height();
     if(child->isFloating())
@@ -54,6 +39,20 @@ float FragmentBuilder::applyFragmentBreakInside(const BoxFrame* child, float off
     if(remainingHeight < childHeight && remainingHeight < fragmentHeight)
         return offset + remainingHeight;
     return offset;
+}
+
+bool FragmentBuilder::needsBreakBetween(BreakBetween between) const
+{
+    if(fragmentType() == FragmentType::Column)
+        return between == BreakBetween::Column;
+    return between >= BreakBetween::Page;
+}
+
+bool FragmentBuilder::needsBreakInside(BreakInside inside) const
+{
+    if(fragmentType() == FragmentType::Page)
+        return inside == BreakInside::Avoid || inside == BreakInside::AvoidPage;
+    return inside == BreakInside::Avoid || inside == BreakInside::AvoidColumn;
 }
 
 } // namespace plutobook

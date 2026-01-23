@@ -257,7 +257,7 @@ BlockFlowBox* Box::createAnonymousBlock(const BoxStyle* parentStyle)
 
 bool Box::canContainFixedPositionedBoxes() const
 {
-    return (hasTransform() && isBlockBox()) || !parentBox();
+    return (hasTransform() && isBlockBox()) || !parentBox() || isPageMarginBox();
 }
 
 bool Box::canContainAbsolutePositionedBoxes() const
@@ -867,16 +867,24 @@ void BoxModel::updateMarginWidths(const BlockBox* container)
 
 void BoxModel::updateVerticalPaddings(const BlockBox* container)
 {
-    auto containerWidth = containingBlockWidthForContent(container);
-    m_padding[TopEdge] = style()->padding(TopEdge).calcMin(containerWidth);
-    m_padding[BottomEdge] = style()->padding(BottomEdge).calcMin(containerWidth);
+    if (isBorderCollapsed()) {
+        m_padding[TopEdge] = m_padding[BottomEdge] = 0;
+    } else {
+        auto containerWidth = containingBlockWidthForContent(container);
+        m_padding[TopEdge] = style()->padding(TopEdge).calcMin(containerWidth);
+        m_padding[BottomEdge] = style()->padding(BottomEdge).calcMin(containerWidth);
+    }
 }
 
 void BoxModel::updateHorizontalPaddings(const BlockBox* container)
 {
-    auto containerWidth = containingBlockWidthForContent(container);
-    m_padding[LeftEdge] = style()->padding(LeftEdge).calcMin(containerWidth);
-    m_padding[RightEdge] = style()->padding(RightEdge).calcMin(containerWidth);
+    if(isBorderCollapsed()) {
+        m_padding[LeftEdge] = m_padding[RightEdge] = 0;
+    } else {
+        auto containerWidth = containingBlockWidthForContent(container);
+        m_padding[LeftEdge] = style()->padding(LeftEdge).calcMin(containerWidth);
+        m_padding[RightEdge] = style()->padding(RightEdge).calcMin(containerWidth);
+    }
 }
 
 void BoxModel::updatePaddingWidths(const BlockBox* container)

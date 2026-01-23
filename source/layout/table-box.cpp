@@ -1,6 +1,7 @@
 #include "table-box.h"
 #include "border-painter.h"
 #include "fragment-builder.h"
+#include "box-view.h"
 
 #include <span>
 #include <ranges>
@@ -12,9 +13,15 @@ TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
     , m_borderHorizontalSpacing(0.f)
     , m_borderVerticalSpacing(0.f)
 {
-    if(style->borderCollapse() == BorderCollapse::Separate) {
+    switch (style->borderCollapse()) {
+    case BorderCollapse::Separate:
         m_borderHorizontalSpacing = style->borderHorizontalSpacing();
         m_borderVerticalSpacing = style->borderVerticalSpacing();
+        setIsBorderCollapsed(false);
+        break;
+    case BorderCollapse::Collapse:
+        setIsBorderCollapsed(true);
+        break;
     }
 }
 
@@ -43,26 +50,7 @@ void TableBox::updateOverflowRect()
     for(auto caption : m_captions)
         addOverflowRect(caption, caption->x(), caption->y());
     for(auto section : m_sections) {
-        for(auto row : section->rows()) {
-            for(const auto& [col, cell] : row->cells()) {
-                auto cellBox = cell.box();
-                if(cell.inColOrRowSpan())
-                    continue;
-                Point offset(section->location() + row->location() + cellBox->location());
-                addOverflowRect(cellBox, offset.x, offset.y);
-                if(style()->borderCollapse() == BorderCollapse::Separate)
-                    continue;
-                const auto& edges = cellBox->collapsedBorderEdges();
-                auto topHalfWidth = edges.topEdge().width() / 2.f;
-                auto bottomHalfWidth = edges.bottomEdge().width() / 2.f;
-                auto leftHalfWidth = edges.leftEdge().width() / 2.f;
-                auto rightHalfWidth = edges.rightEdge().width() / 2.f;
-
-                Rect borderRect(offset, cellBox->size());
-                borderRect.expand(topHalfWidth, rightHalfWidth, bottomHalfWidth, leftHalfWidth);
-                addOverflowRect(borderRect.y, borderRect.bottom(), borderRect.x, borderRect.right());
-            }
-        }
+        addOverflowRect(section, section->x(), section->y());
     }
 }
 
@@ -117,7 +105,7 @@ void TableBox::computePreferredWidths(float& minPreferredWidth, float& maxPrefer
 
 void TableBox::computeBorderWidths(float& borderTop, float& borderBottom, float& borderLeft, float& borderRight) const
 {
-    if(style()->borderCollapse() == BorderCollapse::Separate) {
+    if (!isBorderCollapsed()) {
         BlockBox::computeBorderWidths(borderTop, borderBottom, borderLeft, borderRight);
         return;
     }
@@ -186,6 +174,22 @@ Optional<float> TableBox::inlineBlockBaseline() const
     return firstLineBaseline();
 }
 
+TableSectionBox* TableBox::headerSection() const
+{
+    auto section = topSection();
+    if (section && section->isTableHeader())
+        return section;
+    return nullptr;
+}
+
+TableSectionBox* TableBox::footerSection() const
+{
+    auto section = bottomSection();
+    if (section && section->isTableFooter())
+        return section;
+    return nullptr;
+}
+
 TableSectionBox* TableBox::topSection() const
 {
     if(m_sections.empty())
@@ -202,28 +206,32 @@ TableSectionBox* TableBox::bottomSection() const
 
 TableSectionBox* TableBox::sectionAbove(const TableSectionBox* sectionBox) const
 {
-    auto prevSection = sectionBox->prevSibling();
-    while(prevSection) {
+    if (sectionBox->isTableHeader())
+        return nullptr;
+    auto prevSection = sectionBox->isTableFooter() ? lastChild() : sectionBox->prevSibling();
+    while (prevSection) {
         auto section = to<TableSectionBox>(prevSection);
-        if(section && section->firstRow())
+        if (section && !section->isTableHeader() && !section->isTableFooter() && section->firstRow())
             return section;
         prevSection = prevSection->prevSibling();
     }
 
-    return nullptr;
+    return headerSection();
 }
 
 TableSectionBox* TableBox::sectionBelow(const TableSectionBox* sectionBox) const
 {
-    auto nextSection = sectionBox->nextSibling();
-    while(nextSection) {
+    if (sectionBox->isTableFooter())
+        return nullptr;
+    auto nextSection = sectionBox->isTableHeader() ? firstChild() : sectionBox->nextSibling();
+    while (nextSection) {
         auto section = to<TableSectionBox>(nextSection);
-        if(section && section->firstRow())
+        if (section && !section->isTableHeader() && !section->isTableFooter() && section->firstRow())
             return section;
         nextSection = nextSection->nextSibling();
     }
 
-    return nullptr;
+    return footerSection();
 }
 
 TableCellBox* TableBox::cellAbove(const TableCellBox* cellBox) const
@@ -243,7 +251,8 @@ TableCellBox* TableBox::cellAbove(const TableCellBox* cellBox) const
 TableCellBox* TableBox::cellBelow(const TableCellBox* cellBox) const
 {
     const TableRowBox* rowBox = nullptr;
-    if(auto rowIndex = cellBox->rowIndex(); rowIndex < cellBox->section()->rowCount() - 1) {
+    auto rowIndex = cellBox->rowIndex() + cellBox->rowSpan() - 1;
+    if (rowIndex < cellBox->section()->rowCount() - 1) {
         rowBox = cellBox->section()->rowAt(rowIndex + 1);
     } else if(auto section = sectionBelow(cellBox->section())) {
         rowBox = section->firstRow();
@@ -272,7 +281,7 @@ TableCellBox* TableBox::cellAfter(const TableCellBox* cellBox) const
 
 float TableBox::availableHorizontalSpace() const
 {
-    if(!m_columns.empty() && style()->borderCollapse() == BorderCollapse::Separate)
+    if (!m_columns.empty() && !isBorderCollapsed())
         return contentBoxWidth() - borderHorizontalSpacing() * (m_columns.size() + 1);
     return contentBoxWidth();
 }
@@ -345,15 +354,27 @@ void TableBox::layout(FragmentBuilder* fragmentainer)
             }
         }
 
+        const auto* header = headerSection();
+        const auto* footer = footerSection();
+
         auto sectionTop = height() + borderVerticalSpacing();
         for(auto section : m_sections) {
             if(fragmentainer) {
                 fragmentainer->enterFragment(sectionTop);
             }
 
+            float headerHeight = 0;
+            float footerHeight = 0;
+            if (header && header != section)
+                headerHeight += borderVerticalSpacing() + header->height();
+            if (footer && footer != section) {
+                footerHeight += borderVerticalSpacing() + footer->height();
+            }
+
             section->setY(sectionTop);
             section->setX(borderAndPadding(LeftEdge));
-            section->layoutRows(fragmentainer);
+            section->layoutRows(fragmentainer, headerHeight, footerHeight);
+            section->updateOverflowRect();
             if(fragmentainer) {
                 fragmentainer->leaveFragment(sectionTop);
             }
@@ -429,9 +450,13 @@ void TableBox::build()
         }
     }
 
-    if(headerSection)
+    if (headerSection) {
+        headerSection->setIsTableHeader(true);
         m_sections.insert(m_sections.begin(), headerSection);
-    if(footerSection) {
+    }
+
+    if (footerSection) {
+        footerSection->setIsTableFooter(true);
         m_sections.push_back(footerSection);
     }
 
@@ -441,7 +466,7 @@ void TableBox::build()
         m_tableLayout->build();
     }
 
-    if(style()->borderCollapse() == BorderCollapse::Collapse) {
+    if (isBorderCollapsed()) {
         for(auto section : m_sections) {
             for(auto row : section->rows()) {
                 for(const auto& [col, cell] : row->cells()) {
@@ -469,7 +494,7 @@ void TableBox::paintDecorations(const PaintInfo& info, const Point& offset)
     }
 
     paintBackground(info, borderRect);
-    if(style()->borderCollapse() == BorderCollapse::Separate) {
+    if (!isBorderCollapsed()) {
         paintBorder(info, borderRect);
     }
 }
@@ -488,15 +513,55 @@ void TableBox::paintContents(const PaintInfo& info, const Point& offset, PaintPh
         }
     }
 
-    if(phase == PaintPhase::Decorations && style()->borderCollapse() == BorderCollapse::Collapse) {
-        for(const auto& edge : m_collapsedBorderEdges) {
-            for(auto section : m_sections | std::views::reverse) {
-                for(auto row : section->rows() | std::views::reverse) {
-                    Point adjustedOffset(offset + section->location() + row->location());
-                    for(const auto& [col, cell] : row->cells()) {
-                        if(!cell.inColOrRowSpan()) {
-                            cell->paintCollapsedBorders(info, adjustedOffset, edge);
+    auto shouldPaintCollapsedBorders = phase == PaintPhase::Decorations && !m_collapsedBorderEdges.empty() && isBorderCollapsed();
+    if (view()->currentPage()) {
+        if (auto header = headerSection()) {
+            const auto& rect = info.rect();
+            if (rect.y > offset.y + header->y()) {
+                Point headerOffset(offset.x, rect.y - header->y());
+                if (isBorderCollapsed())
+                    headerOffset.y += border(TopEdge);
+                header->paint(info, headerOffset, phase);
+                if (shouldPaintCollapsedBorders) {
+                    for (const auto& edge : m_collapsedBorderEdges) {
+                        header->paintCollapsedBorders(info, headerOffset, edge);
+                    }
+                }
+            }
+        }
+    }
+
+    if (shouldPaintCollapsedBorders) {
+        for (const auto& edge : m_collapsedBorderEdges) {
+            for (auto section : m_sections | std::views::reverse) {
+                section->paintCollapsedBorders(info, offset, edge);
+            }
+        }
+    }
+
+    if (view()->currentPage()) {
+        if (auto footer = footerSection()) {
+            const auto& rect = info.rect();
+            if (rect.bottom() < offset.y + footer->y()) {
+                float sectionBottom = 0.f;
+                for (auto section : m_sections) {
+                    auto sectionTop = offset.y + section->y();
+                    if (sectionTop < rect.bottom()) {
+                        for (auto row : section->rows() | std::views::reverse) {
+                            auto rowBottom = sectionTop + row->y() + row->height();
+                            if (rowBottom < rect.bottom()) {
+                                sectionBottom = rowBottom;
+                                break;
+                            }
                         }
+                    }
+                }
+
+                Point footerOffset(offset.x, sectionBottom - footer->y());
+                footer->paint(info, footerOffset, phase);
+                if (shouldPaintCollapsedBorders) {
+                    for (const auto& edge : m_collapsedBorderEdges) {
+                        footer->paintCollapsedBorders(info, footerOffset, edge);
                     }
                 }
             }
@@ -552,8 +617,13 @@ void FixedTableLayoutAlgorithm::build()
             if(!cell.inColOrRowSpan() && m_widths[col].isAuto()) {
                 auto cellBox = cell.box();
                 auto cellStyleWidth = cellBox->style()->width();
-                if(cellStyleWidth.isFixed())
-                    cellStyleWidth = Length(Length::Type::Fixed, cellBox->adjustBorderBoxWidth(cellStyleWidth.value()));
+                if (cellStyleWidth.isFixed()) {
+                    cellBox->updateHorizontalPaddings(nullptr);
+                    cellStyleWidth = Length(Length::Type::Fixed, cellBox->adjustBorderBoxWidth(cellStyleWidth.value()) / cellBox->colSpan());
+                } else if (cellStyleWidth.isPercent()) {
+                    cellStyleWidth = Length(Length::Type::Percent, cellStyleWidth.value() / cellBox->colSpan());
+                }
+
                 if(!cellStyleWidth.isZero()) {
                     for(size_t index = 0; index < cellBox->colSpan(); ++index) {
                         m_widths[col + index] = cellStyleWidth;
@@ -890,14 +960,14 @@ void AutoTableLayoutAlgorithm::computeIntrinsicWidths(float& minWidth, float& ma
                 if(cell.inColOrRowSpan())
                     continue;
                 cellBox->updateHorizontalPaddings(nullptr);
-                if(cellBox->colSpan() > 1)
-                    continue;
-                auto& columnWidth = m_columnWidths[col];
-                columnWidth.minWidth = std::max(columnWidth.minWidth, cellBox->minPreferredWidth());
-                if(columnWidth.maxFixedWidth > 0.f) {
-                    columnWidth.maxWidth = std::max(columnWidth.maxWidth, std::max(columnWidth.minWidth, columnWidth.maxFixedWidth));
-                } else {
-                    columnWidth.maxWidth = std::max(columnWidth.maxWidth, cellBox->maxPreferredWidth());
+                if (cellBox->colSpan() == 1) {
+                    auto& columnWidth = m_columnWidths[col];
+                    columnWidth.minWidth = std::max(columnWidth.minWidth, cellBox->minPreferredWidth());
+                    if (columnWidth.maxFixedWidth > 0.f) {
+                        columnWidth.maxWidth = std::max(columnWidth.maxWidth, std::max(columnWidth.minWidth, columnWidth.maxFixedWidth));
+                    } else {
+                        columnWidth.maxWidth = std::max(columnWidth.maxWidth, cellBox->maxPreferredWidth());
+                    }
                 }
             }
         }
@@ -1003,6 +1073,14 @@ void TableSectionBox::addChild(Box* newChild)
     newRow->addChild(newChild);
 }
 
+void TableSectionBox::updateOverflowRect()
+{
+    BoxFrame::updateOverflowRect();
+    for (auto rowBox : m_rows) {
+        addOverflowRect(rowBox, rowBox->x(), rowBox->y());
+    }
+}
+
 Optional<float> TableSectionBox::firstLineBaseline() const
 {
     if(m_rows.empty())
@@ -1080,32 +1158,45 @@ void TableSectionBox::distributeExcessHeightToRows(float distributableHeight)
     }
 }
 
-static void distributeSpanCellToRows(const TableCellBox* cellBox, std::span<TableRowBox*> allRows, float borderSpacing)
-{
-    auto cellMinHeight = cellBox->height();
-    auto cellStyleHeight = cellBox->style()->height();
-    if(cellStyleHeight.isFixed()) {
-        cellMinHeight = std::max(cellMinHeight, cellStyleHeight.value());
-    }
-
-    auto rows = allRows.subspan(cellBox->rowIndex(), cellBox->rowSpan());
-    for(auto rowBox : rows)
-        cellMinHeight -= rowBox->height();
-    cellMinHeight -= borderSpacing * (rows.size() - 1);
-    if(auto delta = std::max(0.f, cellMinHeight / rows.size())) {
-        for(auto rowBox : rows) {
-            rowBox->setHeight(delta + rowBox->height());
-        }
-    }
-}
-
-void TableSectionBox::layoutRows(FragmentBuilder* fragmentainer)
+void TableSectionBox::layoutRows(FragmentBuilder* fragmentainer, float headerHeight, float footerHeight)
 {
     float rowTop = 0;
     auto verticalSpacing = table()->borderVerticalSpacing();
     for(size_t rowIndex = 0; rowIndex < m_rows.size(); ++rowIndex) {
         auto rowBox = m_rows[rowIndex];
         if(fragmentainer) {
+            auto fragmentHeight = fragmentainer->fragmentHeightForOffset(rowTop);
+            if (fragmentHeight > 0.f) {
+                auto maxRowHeight = rowBox->height();
+                for (const auto& [col, cell] : rowBox->cells()) {
+                    auto cellBox = cell.box();
+                    if (cell.inColOrRowSpan())
+                        continue;
+                    auto rowHeight = -verticalSpacing;
+                    for (size_t index = 0; index < cellBox->rowSpan(); ++index) {
+                        auto row = m_rows[rowIndex + index];
+                        rowHeight += verticalSpacing + row->height();
+                    }
+
+                    maxRowHeight = std::max(rowHeight, maxRowHeight);
+                }
+
+                auto remainingHeight = fragmentainer->fragmentRemainingHeightForOffset(rowTop, AssociateWithLatterFragment);
+                if (maxRowHeight >= remainingHeight - footerHeight - verticalSpacing && maxRowHeight < fragmentHeight) {
+                    rowTop += remainingHeight + headerHeight;
+                    if (table()->isBorderCollapsed()) {
+                        if (headerHeight) {
+                            rowTop += table()->border(TopEdge);
+                        } else {
+                            float borderTop = 0.f;
+                            for (const auto& [col, cell] : rowBox->cells())
+                                borderTop = std::max(borderTop, cell->border(TopEdge));
+                            rowTop += borderTop;
+                        }
+                    }
+                }
+            }
+
             fragmentainer->enterFragment(rowTop);
         }
 
@@ -1145,10 +1236,24 @@ void TableSectionBox::layoutRows(FragmentBuilder* fragmentainer)
             }
         }
 
+        rowBox->updateOverflowRect();
         rowTop += verticalSpacing + rowBox->height();
     }
 
     setHeight(rowTop - verticalSpacing);
+}
+
+static void distributeSpanCellToRows(TableCellBox* cellBox, std::span<TableRowBox*> allRows, float borderSpacing)
+{
+    auto cellMinHeight = cellBox->heightForRowSizing();
+    auto rows = allRows.subspan(cellBox->rowIndex(), cellBox->rowSpan());
+    for (auto rowBox : rows)
+        cellMinHeight -= rowBox->height();
+    cellMinHeight -= borderSpacing * (rows.size() - 1);
+    if (cellMinHeight > 0.f) {
+        auto lastRow = rows.back();
+        lastRow->setHeight(cellMinHeight + lastRow->height());
+    }
 }
 
 void TableSectionBox::layout(FragmentBuilder* fragmentainer)
@@ -1158,6 +1263,9 @@ void TableSectionBox::layout(FragmentBuilder* fragmentainer)
     auto horizontalSpacing = table()->borderHorizontalSpacing();
     auto direction = table()->style()->direction();
     for(auto rowBox : m_rows) {
+        float cellMaxAscent = 0.f;
+        float cellMaxDescent = 0.f;
+        float cellMaxHeight = rowBox->maxFixedHeight();
         for(const auto& [col, cell] : rowBox->cells()) {
             auto cellBox = cell.box();
             if(cell.inColOrRowSpan())
@@ -1178,33 +1286,23 @@ void TableSectionBox::layout(FragmentBuilder* fragmentainer)
             cellBox->setOverrideWidth(width);
             cellBox->updatePaddingWidths(table());
             cellBox->layout(fragmentainer);
-        }
-    }
 
-    for(auto rowBox : m_rows) {
-        float cellMaxAscent = 0.f;
-        float cellMaxDescent = 0.f;
-        float cellMaxHeight = rowBox->maxFixedHeight();
-        for(const auto& [col, cell] : rowBox->cells()) {
-            auto cellBox = cell.box();
-            if(cell.inColOrRowSpan())
-                continue;
-            if(cellBox->rowSpan() == 1)
-                cellMaxHeight = std::max(cellMaxHeight, cellBox->height());
-            if(cellBox->isBaselineAligned()) {
-                if(cellBox->rowSpan() == 1) {
+            if (cellBox->rowSpan() == 1)
+                cellMaxHeight = std::max(cellMaxHeight, cellBox->heightForRowSizing());
+            if (cellBox->isBaselineAligned()) {
+                if (cellBox->rowSpan() == 1) {
                     auto ascent = cellBox->cellBaselinePosition();
                     auto descent = cellBox->height() - ascent;
                     cellMaxAscent = std::max(cellMaxAscent, ascent);
                     cellMaxDescent = std::max(cellMaxDescent, descent);
                     cellMaxHeight = std::max(cellMaxHeight, cellMaxAscent + cellMaxDescent);
-                } else {
+                }
+                else {
                     cellMaxAscent = std::max(cellMaxAscent, cellBox->cellBaselinePosition());
                     cellMaxHeight = std::max(cellMaxHeight, cellMaxAscent);
                 }
             }
         }
-
         rowBox->setWidth(width());
         rowBox->setHeight(cellMaxHeight);
         rowBox->setMaxBaseline(cellMaxAscent);
@@ -1298,9 +1396,26 @@ void TableSectionBox::build()
     BoxFrame::build();
 }
 
+void TableSectionBox::paintCollapsedBorders(const PaintInfo& info, const Point& offset, const TableCollapsedBorderEdge& currentEdge) const
+{
+    for (auto row : m_rows | std::views::reverse) {
+        Point adjustedOffset(offset + location() + row->location());
+        for (const auto& [col, cell] : row->cells()) {
+            auto cellBox = cell.box();
+            if (!cell.inColOrRowSpan()) {
+                cellBox->paintCollapsedBorders(info, adjustedOffset, currentEdge);
+            }
+        }
+    }
+}
+
 void TableSectionBox::paint(const PaintInfo& info, const Point& offset, PaintPhase phase)
 {
     for(auto rowBox : m_rows) {
+        if (phase == PaintPhase::Outlines && !rowBox->hasLayer() && rowBox->style()->visibility() == Visibility::Visible) {
+            rowBox->paintOutlines(info, offset + location() + rowBox->location());
+        }
+
         for(const auto& [col, cell] : rowBox->cells()) {
             auto cellBox = cell.box();
             if(cell.inColOrRowSpan() || (cellBox->emptyCells() == EmptyCells::Hide && !cellBox->firstChild()))
@@ -1308,6 +1423,8 @@ void TableSectionBox::paint(const PaintInfo& info, const Point& offset, PaintPha
             Point adjustedOffset(offset + location() + rowBox->location());
             if(phase == PaintPhase::Decorations) {
                 if(auto columnBox = table()->columnAt(col)) {
+                    if (auto columnGroupBox = columnBox->columnGroup())
+                        cellBox->paintBackgroundBehindCell(info, adjustedOffset, columnGroupBox->style());
                     cellBox->paintBackgroundBehindCell(info, adjustedOffset, columnBox->style());
                 }
 
@@ -1321,6 +1438,10 @@ void TableSectionBox::paint(const PaintInfo& info, const Point& offset, PaintPha
                 cellBox->paint(info, adjustedOffset, phase);
             }
         }
+    }
+
+    if (phase == PaintPhase::Outlines && style()->visibility() == Visibility::Visible) {
+        paintOutlines(info, offset + location());
     }
 }
 
@@ -1347,6 +1468,17 @@ void TableRowBox::addChild(Box* newChild)
     newCell->addChild(newChild);
 }
 
+void TableRowBox::updateOverflowRect()
+{
+    BoxFrame::updateOverflowRect();
+    for (const auto& [col, cell] : m_cells) {
+        auto cellBox = cell.box();
+        if (!cell.inColOrRowSpan()) {
+            addOverflowRect(cellBox, cellBox->x(), cellBox->y());
+        }
+    }
+}
+
 TableCellBox* TableRowBox::cellAt(uint32_t columnIndex) const
 {
     auto it = m_cells.find(columnIndex);
@@ -1357,6 +1489,10 @@ TableCellBox* TableRowBox::cellAt(uint32_t columnIndex) const
 
 void TableRowBox::paint(const PaintInfo& info, const Point& offset, PaintPhase phase)
 {
+    if (phase == PaintPhase::Outlines && style()->visibility() == Visibility::Visible) {
+        paintOutlines(info, offset + location());
+    }
+
     for(const auto& [col, cell] : m_cells) {
         auto cellBox = cell.box();
         if(cell.inColOrRowSpan() || (cellBox->emptyCells() == EmptyCells::Hide && !cellBox->firstChild()))
@@ -1373,6 +1509,14 @@ void TableRowBox::paint(const PaintInfo& info, const Point& offset, PaintPhase p
 TableColumnBox::TableColumnBox(Node* node, const RefPtr<BoxStyle>& style)
     : Box(classKind, node, style)
 {
+}
+
+TableColumnBox* TableColumnBox::columnGroup() const
+{
+    auto column = to<TableColumnBox>(parentBox());
+    if (column && column->style()->display() == Display::TableColumnGroup)
+        return column;
+    return nullptr;
 }
 
 bool TableCollapsedBorderEdge::isSameIgnoringColor(const TableCollapsedBorderEdge& edge) const
@@ -1459,13 +1603,13 @@ TableCollapsedBorderEdge TableCollapsedBorderEdges::calcTopEdge(const TableCellB
     }
 
     if(auto section = cellBox->section(); cellBox->rowIndex() == 0) {
-        edge = chooseEdge(edge, getTopEdge(TableCollapsedBorderSource::Section, section->style()));
-        if(!edge.exists()) {
+        edge = chooseEdge(edge, getTopEdge(TableCollapsedBorderSource::RowGroup, section->style()));
+        if (!edge.exists()) {
             return edge;
         }
 
-        if(auto sectionAbove = table->sectionAbove(section)) {
-            edge = chooseEdge(getBottomEdge(TableCollapsedBorderSource::Section, sectionAbove->style()), edge);
+        if (auto sectionAbove = table->sectionAbove(section)) {
+            edge = chooseEdge(getBottomEdge(TableCollapsedBorderSource::RowGroup, sectionAbove->style()), edge);
             if(!edge.exists()) {
                 return edge;
             }
@@ -1474,6 +1618,13 @@ TableCollapsedBorderEdge TableCollapsedBorderEdges::calcTopEdge(const TableCellB
                 edge = chooseEdge(edge, getTopEdge(TableCollapsedBorderSource::Column, column->style()));
                 if(!edge.exists()) {
                     return edge;
+                }
+
+                if (auto columnGroup = column->columnGroup()) {
+                    edge = chooseEdge(edge, getTopEdge(TableCollapsedBorderSource::ColumnGroup, columnGroup->style()));
+                    if (!edge.exists()) {
+                        return edge;
+                    }
                 }
             }
 
@@ -1512,13 +1663,13 @@ TableCollapsedBorderEdge TableCollapsedBorderEdges::calcBottomEdge(const TableCe
     }
 
     if(auto section = cellBox->section(); cellBox->rowIndex() + cellBox->rowSpan() == section->rowCount()) {
-        edge = chooseEdge(edge, getBottomEdge(TableCollapsedBorderSource::Section, section->style()));
-        if(!edge.exists()) {
+        edge = chooseEdge(edge, getBottomEdge(TableCollapsedBorderSource::RowGroup, section->style()));
+        if (!edge.exists()) {
             return edge;
         }
 
-        if(auto sectionBelow = table->sectionBelow(section)) {
-            edge = chooseEdge(edge, getTopEdge(TableCollapsedBorderSource::Section, sectionBelow->style()));
+        if (auto sectionBelow = table->sectionBelow(section)) {
+            edge = chooseEdge(edge, getTopEdge(TableCollapsedBorderSource::RowGroup, sectionBelow->style()));
             if(!edge.exists()) {
                 return edge;
             }
@@ -1527,6 +1678,13 @@ TableCollapsedBorderEdge TableCollapsedBorderEdges::calcBottomEdge(const TableCe
                 edge = chooseEdge(edge, getBottomEdge(TableCollapsedBorderSource::Column, column->style()));
                 if(!edge.exists()) {
                     return edge;
+                }
+
+                if (auto columnGroup = column->columnGroup()) {
+                    edge = chooseEdge(edge, getBottomEdge(TableCollapsedBorderSource::ColumnGroup, columnGroup->style()));
+                    if (!edge.exists()) {
+                        return edge;
+                    }
                 }
             }
 
@@ -1567,29 +1725,35 @@ TableCollapsedBorderEdge TableCollapsedBorderEdges::calcLeftEdge(const TableCell
             return edge;
         }
 
-        edge = chooseEdge(edge, getLeftEdge(TableCollapsedBorderSource::Section, cellBox->section()->style()));
-        if(!edge.exists()) {
+        edge = chooseEdge(edge, getLeftEdge(TableCollapsedBorderSource::RowGroup, cellBox->section()->style()));
+        if (!edge.exists()) {
             return edge;
         }
     }
 
-    if(auto column = cellBox->column()) {
+    if (auto column = table->columnAt(direction == Direction::Ltr ? cellBox->columnIndex() : cellBox->columnIndex() + cellBox->colSpan() - 1)) {
         edge = chooseEdge(edge, getLeftEdge(TableCollapsedBorderSource::Column, column->style()));
-        if(!edge.exists()) {
+        if (!edge.exists()) {
             return edge;
         }
-    }
 
-    if(cellBefore) {
-        if(auto column = cellBefore->column()) {
-            edge = chooseEdge(getLeftEdge(TableCollapsedBorderSource::Column, column->style()), edge);
-            if(!edge.exists()) {
+        if (auto columnGroup = column->columnGroup(); columnGroup && (direction == Direction::Ltr ? !column->prevSibling() : !column->nextSibling())) {
+            edge = chooseEdge(edge, getLeftEdge(TableCollapsedBorderSource::ColumnGroup, columnGroup->style()));
+            if (!edge.exists()) {
                 return edge;
             }
         }
     }
 
-    if(isStartColumn) {
+    if (!isStartColumn) {
+        if (auto column = table->columnAt(direction == Direction::Ltr ? cellBox->columnIndex() - 1 : cellBox->columnIndex() + cellBox->colSpan())) {
+            auto rightEdge = getRightEdge(TableCollapsedBorderSource::Column, column->style());
+            edge = direction == Direction::Ltr ? chooseEdge(rightEdge, edge) : chooseEdge(edge, rightEdge);
+            if (!edge.exists()) {
+                return edge;
+            }
+        }
+    } else {
         edge = chooseEdge(edge, getLeftEdge(TableCollapsedBorderSource::Table, table->style()));
         if(!edge.exists()) {
             return edge;
@@ -1626,29 +1790,35 @@ TableCollapsedBorderEdge TableCollapsedBorderEdges::calcRightEdge(const TableCel
             return edge;
         }
 
-        edge = chooseEdge(edge, getRightEdge(TableCollapsedBorderSource::Section, cellBox->section()->style()));
+        edge = chooseEdge(edge, getRightEdge(TableCollapsedBorderSource::RowGroup, cellBox->section()->style()));
         if(!edge.exists()) {
             return edge;
         }
     }
 
-    if(auto column = cellBox->column()) {
+    if (auto column = table->columnAt(direction == Direction::Ltr ? cellBox->columnIndex() + cellBox->colSpan() - 1 : cellBox->columnIndex())) {
         edge = chooseEdge(edge, getRightEdge(TableCollapsedBorderSource::Column, column->style()));
-        if(!edge.exists()) {
+        if (!edge.exists()) {
             return edge;
         }
-    }
 
-    if(cellAfter) {
-        if(auto column = cellAfter->column()) {
-            edge = chooseEdge(edge, getRightEdge(TableCollapsedBorderSource::Column, column->style()));
-            if(!edge.exists()) {
+        if (auto columnGroup = column->columnGroup(); columnGroup && (direction == Direction::Ltr ? !column->nextSibling() : !column->prevSibling())) {
+            edge = chooseEdge(edge, getRightEdge(TableCollapsedBorderSource::ColumnGroup, columnGroup->style()));
+            if (!edge.exists()) {
                 return edge;
             }
         }
     }
 
-    if(isEndColumn) {
+    if (!isEndColumn) {
+        if (auto column = table->columnAt(direction == Direction::Ltr ? cellBox->columnIndex() + cellBox->colSpan() : cellBox->columnIndex() - 1)) {
+            auto leftEdge = getLeftEdge(TableCollapsedBorderSource::Column, column->style());
+            edge = direction == Direction::Ltr ? chooseEdge(edge, leftEdge) : chooseEdge(leftEdge, edge);
+            if (!edge.exists()) {
+                return edge;
+            }
+        }
+    } else {
         edge = chooseEdge(edge, getRightEdge(TableCollapsedBorderSource::Table, table->style()));
         if(!edge.exists()) {
             return edge;
@@ -1693,6 +1863,14 @@ float TableCellBox::cellBaselinePosition() const
     return padding(TopEdge) + border(TopEdge) + contentBoxHeight();
 }
 
+float TableCellBox::heightForRowSizing() const
+{
+    auto cellStyleHeight = style()->height();
+    if (cellStyleHeight.isFixed())
+        return std::max(height(), adjustBorderBoxHeight(cellStyleHeight.value()));
+    return height();
+}
+
 float TableCellBox::computeVerticalAlignShift() const
 {
     auto rowHeight = overrideHeight();
@@ -1717,7 +1895,7 @@ float TableCellBox::computeVerticalAlignShift() const
 
 void TableCellBox::computeBorderWidths(float& borderTop, float& borderBottom, float& borderLeft, float& borderRight) const
 {
-    if(style()->borderCollapse() == BorderCollapse::Separate) {
+    if (!table()->isBorderCollapsed()) {
         BlockBox::computeBorderWidths(borderTop, borderBottom, borderLeft, borderRight);
         return;
     }
@@ -1731,7 +1909,7 @@ void TableCellBox::computeBorderWidths(float& borderTop, float& borderBottom, fl
 
 const TableCollapsedBorderEdges& TableCellBox::collapsedBorderEdges() const
 {
-    assert(table()->borderCollapse() == BorderCollapse::Collapse);
+    assert(table()->isBorderCollapsed());
     if(m_collapsedBorderEdges == nullptr)
         m_collapsedBorderEdges = TableCollapsedBorderEdges::create(this);
     return *m_collapsedBorderEdges;
@@ -1835,7 +2013,7 @@ void TableCellBox::paintDecorations(const PaintInfo& info, const Point& offset)
 {
     Rect borderRect(offset, size());
     paintBackground(info, borderRect);
-    if(table()->borderCollapse() == BorderCollapse::Separate) {
+    if (!table()->isBorderCollapsed()) {
         paintBorder(info, borderRect);
     }
 }

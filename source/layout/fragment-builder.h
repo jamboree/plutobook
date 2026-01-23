@@ -1,8 +1,8 @@
 #pragma once
 
-namespace plutobook {
-    class BoxFrame;
+#include "box.h"
 
+namespace plutobook {
     enum class FragmentType { Column, Page };
 
     enum FragmentBoundaryRule {
@@ -36,7 +36,11 @@ namespace plutobook {
 
         float fragmentOffset() const { return m_fragmentOffset; }
 
+        bool needsBreakBetween(BreakBetween between) const;
+        bool needsBreakInside(BreakInside inside) const;
+
     private:
         float m_fragmentOffset = 0;
     };
+
 } // namespace plutobook

@@ -122,8 +122,17 @@ void HtmlElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
     if(pseudoType == PseudoType::Marker && !parent->isListItemBox())
         return;
     auto style = document()->styleSheet().pseudoStyleForElement(this, pseudoType, parent->style());
-    if(style == nullptr || style->display() == Display::None)
+    if (style == nullptr || style->display() == Display::None) {
         return;
+    }
+
+    auto content = style->get(CssPropertyID::Content);
+    if (content == nullptr || content->hasID(CssValueID::None))
+        return;
+    if (pseudoType != PseudoType::Marker && content->hasID(CssValueID::Normal)) {
+        return;
+    }
+
     auto box = Box::create(nullptr, style);
     parent->addChild(box);
     if(pseudoType == PseudoType::Before || pseudoType == PseudoType::After) {
@@ -131,7 +140,7 @@ void HtmlElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
         buildPseudoBox(counters, box, PseudoType::Marker);
     }
 
-    ContentBoxBuilder(counters, this, box).build();
+    ContentBoxBuilder(counters, this, box).build(*content);
 }
 
 void HtmlElement::buildElementBox(Counters& counters, Box* box)
@@ -778,6 +787,9 @@ void HtmlTableColElement::collectAttributeStyle(AttributeStyle& style) const
             table->collectAdditionalColGroupAttributeStyle(style);
         }
     }
+    if (auto attr = findAttribute(widthAttr)) {
+        addHtmlLengthAttributeStyle(style, CssPropertyID::Width, attr->value());
+    }
 }
 
 Box* HtmlTableColElement::createBox(const RefPtr<BoxStyle>& style)
@@ -808,6 +820,9 @@ void HtmlTableCellElement::collectAttributeStyle(AttributeStyle& style) const
     HtmlTablePartElement::collectAttributeStyle(style);
     if(auto table = findParentTable()) {
         table->collectAdditionalCellAttributeStyle(style);
+    }
+    if (auto attr = findAttribute(widthAttr)) {
+        addHtmlLengthAttributeStyle(style, CssPropertyID::Width, attr->value());
     }
 }
 

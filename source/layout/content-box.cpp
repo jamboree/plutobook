@@ -108,6 +108,7 @@ void ContentBoxBuilder::addElement(const CssValue& value)
         return;
     m_box->addChild(newBox);
     element.buildElementBox(m_counters, newBox);
+    newBox->setIsRunning(true);
     m_lastTextBox = nullptr;
 }
 
@@ -227,12 +228,11 @@ const HeapString& ContentBoxBuilder::resolveAttr(const CssAttrValue& attr) const
     return attribute->value();
 }
 
-void ContentBoxBuilder::build()
+void ContentBoxBuilder::build(const CssValue& content)
 {
-    auto content = m_style->get(CssPropertyID::Content);
-    if(content && content->hasID(CssValueID::None))
+    if (content.hasID(CssValueID::None))
         return;
-    if(content == nullptr || content->hasID(CssValueID::Normal)) {
+    if (content.hasID(CssValueID::Normal)) {
         if(m_style->pseudoType() != PseudoType::Marker)
             return;
         if(auto image = m_style->listStyleImage()) {
@@ -278,7 +278,7 @@ void ContentBoxBuilder::build()
         return;
     }
 
-    for(const auto& value : to<CssListValue>(*content)) {
+    for (const auto& value : to<CssListValue>(content)) {
         if(auto string = to<CssStringValue>(value)) {
             addText(string->value());
         } else if(auto image = to<CssImageValue>(value)) {
