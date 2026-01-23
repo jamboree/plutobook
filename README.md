@@ -1,8 +1,8 @@
-[![Actions](https://github.com/plutoprint/plutobook/actions/workflows/main.yml/badge.svg)](https://github.com/plutoprint/plutobook/actions)
+[![Actions](https://img.shields.io/github/actions/workflow/status/plutoprint/plutobook/main.yml)](https://github.com/plutoprint/plutobook/actions)
 [![Releases](https://img.shields.io/github/v/release/plutoprint/plutobook)](https://github.com/plutoprint/plutobook/releases)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/plutoprint/plutobook/blob/main/LICENSE)
-[![Sponsor](https://img.shields.io/badge/Sponsor-Github-orange.svg)](https://github.com/sponsors/plutoprint)
-[![Packaging status](https://repology.org/badge/tiny-repos/plutobook.svg)](https://repology.org/project/plutobook/versions)
+[![License](https://img.shields.io/github/license/plutoprint/plutobook)](https://github.com/plutoprint/plutobook/blob/main/LICENSE)
+[![Sponsors](https://img.shields.io/github/sponsors/plutoprint)](https://github.com/sponsors/plutoprint)
+[![Packages](https://repology.org/badge/tiny-repos/plutobook.svg)](https://repology.org/project/plutobook/versions)
 
 > Prefer Python? Try [PlutoPrint](https://github.com/plutoprint/plutoprint) — a Python library built on PlutoBook for easy paged HTML rendering.
 
@@ -519,4 +519,4 @@ Contributions to PlutoBook are welcome! Feel free to open issues for bug reports
 
 ## License
 
-PlutoBook is licensed under the [MIT License](https://github.com/plutoprint/plutobook/blob/main/LICENSE), allowing for both personal and commercial use.
+PlutoBook is licensed under the [Mozilla Public License Version 2.0](https://github.com/plutoprint/plutobook/blob/main/LICENSE), allowing for both personal and commercial use.

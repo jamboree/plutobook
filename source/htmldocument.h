@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #ifndef PLUTOBOOK_HTMLDOCUMENT_H
 #define PLUTOBOOK_HTMLDOCUMENT_H
 
@@ -172,6 +180,7 @@ public:
 
     unsigned span() const;
 
+    void collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const final;
     void collectAdditionalAttributeStyle(std::string& output) const final;
     Box* createBox(const RefPtr<BoxStyle>& style) final;
 };
@@ -183,6 +192,7 @@ public:
     unsigned colSpan() const;
     unsigned rowSpan() const;
 
+    void collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const final;
     void collectAdditionalAttributeStyle(std::string& output) const final;
     Box* createBox(const RefPtr<BoxStyle>& style) final;
 };

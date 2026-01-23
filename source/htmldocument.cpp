@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "htmldocument.h"
 #include "htmlparser.h"
 #include "cssrule.h"
@@ -120,8 +128,17 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
     if(pseudoType == PseudoType::Marker && !parent->isListItemBox())
         return;
     auto style = document()->pseudoStyleForElement(this, pseudoType, parent->style());
-    if(style == nullptr || style->display() == Display::None)
+    if(style == nullptr || style->display() == Display::None) {
         return;
+    }
+
+    auto content = style->get(CSSPropertyID::Content);
+    if(content == nullptr || content->id() == CSSValueID::None)
+        return;
+    if(pseudoType != PseudoType::Marker && content->id() == CSSValueID::Normal) {
+        return;
+    }
+
     auto box = Box::create(nullptr, style);
     parent->addChild(box);
     if(pseudoType == PseudoType::Before || pseudoType == PseudoType::After) {
@@ -129,7 +146,7 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
         buildPseudoBox(counters, box, PseudoType::Marker);
     }
 
-    ContentBoxBuilder(counters, this, box).build();
+    ContentBoxBuilder(counters, this, box).build(*content);
 }
 
 void HTMLElement::buildElementBox(Counters& counters, Box* box)
@@ -803,6 +820,15 @@ unsigned HTMLTableColElement::span() const
     return parseNonNegativeIntegerAttribute(spanAttr).value_or(1);
 }
 
+void HTMLTableColElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
+{
+    if(name == widthAttr) {
+        addHTMLLengthAttributeStyle(output, "width", value);
+    } else {
+        HTMLTablePartElement::collectAttributeStyle(output, name, value);
+    }
+}
+
 void HTMLTableColElement::collectAdditionalAttributeStyle(std::string& output) const
 {
     HTMLTablePartElement::collectAdditionalAttributeStyle(output);
@@ -834,6 +860,15 @@ unsigned HTMLTableCellElement::colSpan() const
 unsigned HTMLTableCellElement::rowSpan() const
 {
     return parseNonNegativeIntegerAttribute(rowspanAttr).value_or(1);
+}
+
+void HTMLTableCellElement::collectAttributeStyle(std::string& output, const GlobalString& name, const HeapString& value) const
+{
+    if(name == widthAttr) {
+        addHTMLLengthAttributeStyle(output, "width", value);
+    } else {
+        HTMLTablePartElement::collectAttributeStyle(output, name, value);
+    }
 }
 
 void HTMLTableCellElement::collectAdditionalAttributeStyle(std::string& output) const

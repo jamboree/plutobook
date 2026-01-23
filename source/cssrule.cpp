@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "cssrule.h"
 #include "cssparser.h"
 #include "document.h"
@@ -775,14 +783,14 @@ bool CSSRuleData::matchPseudoClassHasSelector(const Element* element, const CSSS
                 }
             }
 
-            return false;
+            break;
         case CSSComplexSelector::Combinator::DirectAdjacent:
         case CSSComplexSelector::Combinator::InDirectAdjacent:
             for(auto sibling = element->nextSiblingElement(); sibling; sibling = sibling->nextSiblingElement()) {
                 if(checkDescendants(sibling))
                     return true;
                 if(combinator == CSSComplexSelector::Combinator::DirectAdjacent) {
-                    return false;
+                    break;
                 }
             }
 

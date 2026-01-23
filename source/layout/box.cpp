@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "box.h"
 #include "boxlayer.h"
 #include "flexiblebox.h"
@@ -183,7 +191,7 @@ BlockFlowBox* Box::createAnonymousBlock(const BoxStyle* parentStyle)
 
 bool Box::canContainFixedPositionedBoxes() const
 {
-    return (hasTransform() && isBlockBox()) || !parentBox();
+    return (hasTransform() && isBlockBox()) || !parentBox() || isPageMarginBox();
 }
 
 bool Box::canContainAbsolutePositionedBoxes() const
@@ -731,16 +739,24 @@ void BoxModel::updateMarginWidths(const BlockBox* container)
 
 void BoxModel::updateVerticalPaddings(const BlockBox* container)
 {
-    auto containerWidth = containingBlockWidthForContent(container);
-    m_paddingTop = style()->paddingTop().calcMin(containerWidth);
-    m_paddingBottom = style()->paddingBottom().calcMin(containerWidth);
+    if(isBorderCollapsed()) {
+        m_paddingTop = m_paddingBottom = 0;
+    } else {
+        auto containerWidth = containingBlockWidthForContent(container);
+        m_paddingTop = style()->paddingTop().calcMin(containerWidth);
+        m_paddingBottom = style()->paddingBottom().calcMin(containerWidth);
+    }
 }
 
 void BoxModel::updateHorizontalPaddings(const BlockBox* container)
 {
-    auto containerWidth = containingBlockWidthForContent(container);
-    m_paddingLeft = style()->paddingLeft().calcMin(containerWidth);
-    m_paddingRight = style()->paddingRight().calcMin(containerWidth);
+    if(isBorderCollapsed()) {
+        m_paddingLeft = m_paddingRight = 0;
+    } else {
+        auto containerWidth = containingBlockWidthForContent(container);
+        m_paddingLeft = style()->paddingLeft().calcMin(containerWidth);
+        m_paddingRight = style()->paddingRight().calcMin(containerWidth);
+    }
 }
 
 void BoxModel::updatePaddingWidths(const BlockBox* container)

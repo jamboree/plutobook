@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "plutobook.hpp"
 #include "htmldocument.h"
 #include "xmldocument.h"
@@ -7,9 +15,13 @@
 #include "replacedbox.h"
 #include "graphicscontext.h"
 
-#include <fstream>
 #include <cmath>
 #include <utility>
+#include <cstdio>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 namespace plutobook {
 
@@ -17,24 +29,48 @@ class FileOutputStream final : public OutputStream {
 public:
     explicit FileOutputStream(const std::string& filename);
 
-    bool isOpen() const { return m_stream.is_open(); }
+    bool isOpen() const { return m_handle; }
     bool write(const char* data, size_t length) final;
 
+    ~FileOutputStream() final;
+
 private:
-    std::ofstream m_stream;
+    FILE* m_handle;
 };
 
-FileOutputStream::FileOutputStream(const std::string& filename)
-    : m_stream(filename, std::ios::binary)
+static FILE* output_stream_fopen(const char* filename)
 {
-    if(!m_stream.is_open()) {
+#ifdef _WIN32
+    wchar_t wfilename[1024];
+    if(!MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, sizeof(wfilename) / sizeof(wchar_t))) {
+        errno = EINVAL;
+        return NULL;
+    }
+
+    return _wfopen(wfilename, L"wb");
+#else
+    return fopen(filename, "wb");
+#endif
+}
+
+FileOutputStream::FileOutputStream(const std::string& filename)
+    : m_handle(output_stream_fopen(filename.data()))
+{
+    if(m_handle == NULL) {
         plutobook_set_error_message("Unable to open file '%s': %s", filename.data(), std::strerror(errno));
     }
 }
 
 bool FileOutputStream::write(const char* data, size_t length)
 {
-    return m_stream.write(data, length).good();
+    return length == fwrite(data, 1, length, m_handle);
+}
+
+FileOutputStream::~FileOutputStream()
+{
+    if(m_handle) {
+        fclose(m_handle);
+    }
 }
 
 static plutobook_stream_status_t stream_write_func(void* closure, const char* data, unsigned int length)

@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "contentbox.h"
 #include "replacedbox.h"
 #include "imageresource.h"
@@ -108,6 +116,7 @@ void ContentBoxBuilder::addElement(const CSSValue& value)
         return;
     m_box->addChild(newBox);
     element.buildElementBox(m_counters, newBox);
+    newBox->setIsRunning(true);
     m_lastTextBox = nullptr;
 }
 
@@ -202,7 +211,7 @@ void ContentBoxBuilder::addQrCode(const CSSFunctionValue& function)
         ss << "\" fill=\"" << fill << "\"/>";
         ss << "</svg>";
 
-        addImage(SVGImage::create(ss.view(), emptyGlo, nullptr));
+        addImage(SVGImage::create(ss.str(), emptyGlo, nullptr));
     }
 }
 
@@ -227,12 +236,11 @@ const HeapString& ContentBoxBuilder::resolveAttr(const CSSAttrValue& attr) const
     return attribute->value();
 }
 
-void ContentBoxBuilder::build()
+void ContentBoxBuilder::build(const CSSValue& content)
 {
-    auto content = m_style->get(CSSPropertyID::Content);
-    if(content && content->id() == CSSValueID::None)
+    if(content.id() == CSSValueID::None)
         return;
-    if(content == nullptr || content->id() == CSSValueID::Normal) {
+    if(content.id() == CSSValueID::Normal) {
         if(m_style->pseudoType() != PseudoType::Marker)
             return;
         if(auto image = m_style->listStyleImage()) {
@@ -278,7 +286,7 @@ void ContentBoxBuilder::build()
         return;
     }
 
-    for(const auto& value : to<CSSListValue>(*content)) {
+    for(const auto& value : to<CSSListValue>(content)) {
         if(auto string = to<CSSStringValue>(value)) {
             addText(string->value());
         } else if(auto image = to<CSSImageValue>(value)) {

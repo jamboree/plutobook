@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "textshape.h"
 #include "fontresource.h"
 #include "graphicscontext.h"
@@ -424,15 +432,17 @@ float TextShapeView::draw(GraphicsContext& context, const Point& origin, float e
             if((direction == Direction::Ltr && characterIndex >= m_startOffset)
                 || (direction == Direction::Rtl && characterIndex < m_endOffset)) {
                 auto character = text.charAt(characterIndex);
-                glyphBuffer[numGlyphs].index = glyph.glyphIndex;
-                glyphBuffer[numGlyphs].x = offset.x + glyph.xOffset;
-                glyphBuffer[numGlyphs].y = offset.y + glyph.yOffset;
+                if(!treatAsZeroWidthSpace(character)) {
+                    glyphBuffer[numGlyphs].index = glyph.glyphIndex;
+                    glyphBuffer[numGlyphs].x = offset.x + glyph.xOffset;
+                    glyphBuffer[numGlyphs].y = offset.y + glyph.yOffset;
+                    numGlyphs++;
+                }
+
                 offset.x += glyph.advance;
                 if(expansion && treatAsSpace(character)) {
                     offset.x += expansion;
                 }
-
-                numGlyphs++;
             }
         }
 

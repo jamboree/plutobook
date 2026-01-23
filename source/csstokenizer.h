@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #ifndef PLUTOBOOK_CSSTOKENIZER_H
 #define PLUTOBOOK_CSSTOKENIZER_H
 
@@ -270,9 +278,7 @@ private:
 
 class CSSTokenizer {
 public:
-    explicit CSSTokenizer(const std::string_view& input)
-        : m_input(input)
-    {}
+    explicit CSSTokenizer(const std::string_view& input);
 
     CSSTokenStream tokenize();
 

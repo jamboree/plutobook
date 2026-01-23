@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #ifndef PLUTOBOOK_TABLEBOX_H
 #define PLUTOBOOK_TABLEBOX_H
 
@@ -44,8 +52,13 @@ public:
     size_t columnCount() const;
 
     const TableSectionBoxList& sections() const { return m_sections; }
+
+    TableSectionBox* headerSection() const;
+    TableSectionBox* footerSection() const;
+
     TableSectionBox* topSection() const;
     TableSectionBox* bottomSection() const;
+
     TableSectionBox* sectionAbove(const TableSectionBox* sectionBox) const;
     TableSectionBox* sectionBelow(const TableSectionBox* sectionBox) const;
 
@@ -54,7 +67,6 @@ public:
     TableCellBox* cellBefore(const TableCellBox* cellBox) const;
     TableCellBox* cellAfter(const TableCellBox* cellBox) const;
 
-    BorderCollapse borderCollapse() const { return style()->borderCollapse(); }
     float borderHorizontalSpacing() const { return m_borderHorizontalSpacing; }
     float borderVerticalSpacing() const { return m_borderVerticalSpacing; }
 
@@ -148,6 +160,8 @@ public:
     bool isTableSectionBox() const final { return true; }
     void addChild(Box* newChild) final;
 
+    void updateOverflowRect() final;
+
     std::optional<float> firstLineBaseline() const final;
     std::optional<float> lastLineBaseline() const final;
 
@@ -162,10 +176,11 @@ public:
 
     void distributeExcessHeightToRows(float distributableHeight);
 
-    void layoutRows(FragmentBuilder* fragmentainer);
+    void layoutRows(FragmentBuilder* fragmentainer, float headerHeight, float footerHeight);
     void layout(FragmentBuilder* fragmentainer) final;
     void build() final;
 
+    void paintCollapsedBorders(const PaintInfo& info, const Point& offset, const TableCollapsedBorderEdge& currentEdge) const;
     void paint(const PaintInfo& info, const Point& offset, PaintPhase phase) final;
 
     const char* name() const final { return "TableSectionBox"; }
@@ -213,6 +228,8 @@ public:
 
     bool isTableRowBox() const final { return true; }
     void addChild(Box* newChild) final;
+
+    void updateOverflowRect() final;
 
     TableCellBox* firstCell() const;
     TableCellBox* lastCell() const;
@@ -319,6 +336,7 @@ public:
 
     uint32_t span() const { return m_span; }
     void setSpan(uint32_t span) { m_span = span; }
+    TableColumnBox* columnGroup() const;
 
     const char* name() const final { return "TableColumnBox"; }
 
@@ -334,8 +352,9 @@ struct is_a<TableColumnBox> {
 enum class TableCollapsedBorderSource : uint8_t {
     None,
     Table,
+    ColumnGroup,
     Column,
-    Section,
+    RowGroup,
     Row,
     Cell
 };
@@ -415,6 +434,7 @@ public:
 
     bool isBaselineAligned() const;
     float cellBaselinePosition() const;
+    float heightForRowSizing() const;
 
     void computeBorderWidths(float& borderTop, float& borderBottom, float& borderLeft, float& borderRight) const;
 

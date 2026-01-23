@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "boxview.h"
 #include "pagebox.h"
 #include "document.h"
@@ -51,7 +59,6 @@ void BoxView::build()
 
     if(m_backgroundStyle) {
         auto node = m_backgroundStyle->node();
-        assert(node && node->isElementNode());
         if(auto box = node->box()) {
             box->setIsBackgroundStolen(true);
         }

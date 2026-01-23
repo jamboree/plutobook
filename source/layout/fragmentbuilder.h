@@ -1,9 +1,17 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #ifndef PLUTOBOOK_FRAGMENTBUILDER_H
 #define PLUTOBOOK_FRAGMENTBUILDER_H
 
-namespace plutobook {
+#include "box.h"
 
-class BoxFrame;
+namespace plutobook {
 
 enum class FragmentType {
     Column,
@@ -30,13 +38,16 @@ public:
     float applyFragmentBreakAfter(const BoxFrame* child, float offset);
     float applyFragmentBreakInside(const BoxFrame* child, float offset);
 
-    void enterFragment(float offset) { m_fragmentOffset += offset; }
-    void leaveFragment(float offset) { m_fragmentOffset -= offset; }
+    void enterFragment(float offset);
+    void leaveFragment(float offset);
 
-    float fragmentOffset() const { return m_fragmentOffset; }
+    float fragmentOffset() const;
+
+    bool needsBreakBetween(BreakBetween between) const;
+    bool needsBreakInside(BreakInside inside) const;
 
 private:
-    float m_fragmentOffset = 0;
+    int64_t m_fragmentOffset = 0;
 };
 
 } // namespace plutobook

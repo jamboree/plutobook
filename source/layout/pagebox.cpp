@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "pagebox.h"
 #include "boxview.h"
 #include "contentbox.h"
@@ -396,6 +404,18 @@ void PageBox::layout(FragmentBuilder* fragmentainer)
     Rect bottomEdgeRect(leftWidth, m_pageHeight - bottomHeight, m_pageWidth - leftWidth - rightWidth, bottomHeight);
     Rect leftEdgeRect(0, topHeight, leftWidth, m_pageHeight - topHeight - bottomHeight);
 
+    const auto inv_scale = 1.f / m_pageScale;
+
+    topLeftCornerRect.scale(inv_scale);
+    topRightCornerRect.scale(inv_scale);
+    bottomRightCornerRect.scale(inv_scale);
+    bottomLeftCornerRect.scale(inv_scale);
+
+    topEdgeRect.scale(inv_scale);
+    rightEdgeRect.scale(inv_scale);
+    bottomEdgeRect.scale(inv_scale);
+    leftEdgeRect.scale(inv_scale);
+
     layoutCornerPageMargin(margins[PageMarginType::TopLeftCorner], topLeftCornerRect);
     layoutEdgePageMargins(margins[PageMarginType::TopLeft], margins[PageMarginType::TopCenter], margins[PageMarginType::TopRight], topEdgeRect, BoxSideTop);
 
@@ -711,7 +731,7 @@ void PageLayout::buildPageMargin(const Counters& counters, PageBox* pageBox, Pag
     auto marginBox = new (m_document->heap()) PageMarginBox(marginStyle, marginType);
     Counters marginCounters(counters);
     marginCounters.update(marginBox);
-    ContentBoxBuilder(marginCounters, nullptr, marginBox).build();
+    ContentBoxBuilder(marginCounters, nullptr, marginBox).build(*content);
     pageBox->addChild(marginBox);
 }
 

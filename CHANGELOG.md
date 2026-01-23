@@ -1,5 +1,53 @@
 # Changelog
 
+## PlutoBook 0.13.0 (2026-01-14)
+
+- Support repeating table headers and footers
+- Support column group background painting and border resolution
+- Support absolute and fixed positioning inside page margin boxes
+- Fix table row and cell height sizing
+- Fix table column and row span width and padding calculations
+- Fix collapsed table border resolution order for adjacent columns
+- Prevent page breaks inside table rows
+- Remove table padding for collapsed border
+- Relicense under the Mozilla Public License 2.0 (MPL-2.0)
+
+Backers and sponsors:
+
+- [Peter Nguyen](https://github.com/jupetern)
+- [Ashish Kulkarni](https://github.com/ashkulz)
+
+## PlutoBook 0.12.0 (2025-12-23)
+
+- Add support for the `width` style attribute on `td`, `th`, `col`, and `colgroup` elements
+- Support outline painting for table rows and sections
+- Fix unnecessary pseudo-element box generation when content is `none` or `normal`
+
+Backers and sponsors:
+
+- [Peter Nguyen](https://github.com/jupetern)
+- [Ashish Kulkarni](https://github.com/ashkulz)
+
+## PlutoBook 0.11.3 (2025-12-11)
+
+- Fix GCC 12 compilation error
+- Refactor SSL verification settings in curl
+- Remove incorrect `isElementNode` assertion in `BoxView::build()`
+
+Backers and sponsors:
+
+- [Ashish Kulkarni](https://github.com/ashkulz)
+
+## PlutoBook 0.11.2 (2025-12-05)
+
+- Fix `:has()` matching by preventing premature return so all sub-selectors are evaluated
+- Handle UTF-8 filenames on Windows when opening output files
+- Skip zero-width spaces during text rendering to prevent invisible characters in PDF output
+
+Backers and sponsors:
+
+- [Ashish Kulkarni](https://github.com/ashkulz)
+
 ## PlutoBook 0.11.1 (2025-11-23)
 
 - Fix URL resolution for Windows absolute paths by mapping them to proper `file://` URLs

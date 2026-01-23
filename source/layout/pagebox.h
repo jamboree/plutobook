@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #ifndef PLUTOBOOK_PAGEBOX_H
 #define PLUTOBOOK_PAGEBOX_H
 
@@ -73,6 +81,8 @@ public:
     bool requiresLayer() const final { return true; }
     PageMarginType marginType() const { return m_marginType; }
     PageBox* pageBox() const;
+
+    float pageScale() const { return pageBox()->pageScale(); }
 
     bool isHorizontalFlow() const;
     bool isVerticalFlow() const;

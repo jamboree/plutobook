@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #ifndef PLUTOBOOK_CONTENTBOX_H
 #define PLUTOBOOK_CONTENTBOX_H
 
@@ -67,7 +75,7 @@ class ContentBoxBuilder {
 public:
     ContentBoxBuilder(Counters& counters, Element* element, Box* box);
 
-    void build();
+    void build(const CSSValue& content);
 
 private:
     void addText(const HeapString& text);

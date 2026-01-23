@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "resource.h"
 #include "stringutils.h"
 #include "url.h"
@@ -285,8 +293,8 @@ ResourceData DefaultResourceFetcher::fetchUrl(const std::string& url)
         curl_easy_setopt(curl, CURLOPT_CAPATH, m_caPath.data());
     }
 
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, m_verifyPeer);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, m_verifyHost);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, m_verifyPeer ? 2L : 0L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, m_verifyHost ? 1L : 0L);
 #ifdef CURLSSLOPT_NATIVE_CA
     curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
 #endif

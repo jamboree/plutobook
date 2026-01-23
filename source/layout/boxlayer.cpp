@@ -1,5 +1,14 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "boxlayer.h"
 #include "inlinebox.h"
+#include "pagebox.h"
 #include "multicolumnbox.h"
 #include "graphicscontext.h"
 
@@ -92,13 +101,15 @@ void BoxLayer::paintLayer(BoxLayer* rootLayer, GraphicsContext& context, const R
         location.y += std::max(0.f, rect.y);
     }
 
-    if(!m_box->hasTransform()) {
+    if(!m_box->hasTransform() && !m_box->isPageMarginBox()) {
         paintLayerContents(rootLayer, context, rect, location);
         return;
     }
 
     Transform transform(m_transform);
     transform.postTranslate(location.x, location.y);
+    if(auto marginBox = to<PageMarginBox>(m_box))
+        transform.postScale(marginBox->pageScale(), marginBox->pageScale());
     Rect rectangle = transform.inverted().mapRect(rect);
 
     context.save();

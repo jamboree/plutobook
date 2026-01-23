@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2022-2026 Samuel Ugochukwu <sammycageagle@gmail.com>
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "csstokenizer.h"
 #include "stringutils.h"
 
@@ -11,6 +19,12 @@ constexpr bool isNewLine(char cc) { return (cc == '\n' || cc == '\r' || cc == '\
 constexpr bool isNonPrintable(char cc) { return (cc >= 0 && cc <= 0x8) || cc == 0xb || (cc >= 0xf && cc <= 0x1f) || cc == 0x7f; }
 
 const CSSToken CSSTokenStream::eofToken(CSSToken::Type::EndOfFile);
+
+CSSTokenizer::CSSTokenizer(const std::string_view& input)
+    : m_input(input)
+{
+    m_tokenList.reserve(input.length() / 3);
+}
 
 CSSTokenStream CSSTokenizer::tokenize()
 {
