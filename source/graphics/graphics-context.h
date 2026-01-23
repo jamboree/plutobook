@@ -129,10 +129,8 @@ namespace plutobook {
         virtual void strokePath(const Path& path,
                                 const StrokeData& strokeData) = 0;
 
-        virtual void clipRect(const Rect& rect,
-                              FillRule clipRule = FillRule::NonZero) = 0;
-        virtual void clipRoundedRect(const RoundedRect& rrect,
-                                     FillRule clipRule = FillRule::NonZero) = 0;
+        virtual void clipRect(const Rect& rect) = 0;
+        virtual void clipRoundedRect(const RoundedRect& rrect) = 0;
         virtual void clipPath(const Path& path,
                               FillRule clipRule = FillRule::NonZero) = 0;
 
@@ -196,10 +194,8 @@ namespace plutobook {
         void strokePath(const Path& path,
                         const StrokeData& strokeData) override;
 
-        void clipRect(const Rect& rect,
-                      FillRule clipRule = FillRule::NonZero) override;
-        void clipRoundedRect(const RoundedRect& rrect,
-                             FillRule clipRule = FillRule::NonZero) override;
+        void clipRect(const Rect& rect) override;
+        void clipRoundedRect(const RoundedRect& rrect) override;
         void clipPath(const Path& path,
                       FillRule clipRule = FillRule::NonZero) override;
 

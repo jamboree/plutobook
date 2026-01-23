@@ -544,24 +544,24 @@ void CairoGraphicsContext::strokePath(const Path& path, const StrokeData& stroke
     cairo_stroke(m_canvas);
 }
 
-void CairoGraphicsContext::clipRect(const Rect& rect, FillRule clipRule)
+void CairoGraphicsContext::clipRect(const Rect& rect)
 {
     cairo_new_path(m_canvas);
     cairo_rectangle(m_canvas, rect.x, rect.y, rect.w, rect.h);
-    cairo_set_fill_rule(m_canvas, to_cairo_fill_rule(clipRule));
+    cairo_set_fill_rule(m_canvas, CAIRO_FILL_RULE_WINDING);
     cairo_clip(m_canvas);
 }
 
-void CairoGraphicsContext::clipRoundedRect(const RoundedRect& rrect, FillRule clipRule)
+void CairoGraphicsContext::clipRoundedRect(const RoundedRect& rrect)
 {
     if(!rrect.isRounded()) {
-        clipRect(rrect.rect(), clipRule);
+        clipRect(rrect.rect());
         return;
     }
 
     Path path;
     path.addRoundedRect(rrect);
-    clipPath(path, clipRule);
+    clipPath(path, FillRule::NonZero);
 }
 
 void CairoGraphicsContext::clipPath(const Path& path, FillRule clipRule)
