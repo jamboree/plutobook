@@ -433,12 +433,15 @@ bool Book::loadHtml(const std::string_view& content, const std::string_view& use
     return true;
 }
 
+void checkCssHeapValue();
+
 void Book::clearContent()
 {
     m_document.reset();
     m_needsBuild = true;
     m_needsLayout = true;
     m_needsPagination = true;
+    checkCssHeapValue();
 }
 
 void Book::renderPage(Canvas& canvas, uint32_t pageIndex) const
