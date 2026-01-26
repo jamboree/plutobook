@@ -1510,4 +1510,7 @@ namespace plutobook {
         ResourceFetcher* m_customResourceFetcher{nullptr};
         std::unique_ptr<Document> m_document;
     };
+
+    PLUTOBOOK_API int getWidth(const Document* doc);
+    PLUTOBOOK_API int getHeight(const Document* doc);
 } // namespace plutobook

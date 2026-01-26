@@ -667,4 +667,14 @@ Document* Book::paginateIfNeeded() const
     return document;
 }
 
+int getWidth(const Document* doc)
+{
+    return doc->width();
+}
+
+int getHeight(const Document* doc)
+{
+    return doc->height();
+}
+
 } // namespace plutobook
