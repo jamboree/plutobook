@@ -340,10 +340,9 @@ namespace plutobook {
 
     class CssHeapValue : public CssValue, public RefCounted<CssHeapValue> {
     public:
-        //using CssValue::CssValue;
-        explicit CssHeapValue(ClassKind type) noexcept;
+        using CssValue::CssValue;
 
-        virtual ~CssHeapValue();
+        virtual ~CssHeapValue() = default;
     };
 
     class CssValuePtr {

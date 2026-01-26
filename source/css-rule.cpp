@@ -1394,24 +1394,4 @@ bool AttributeStyle::addProperty(CssPropertyID id, std::string_view value)
         m_properties, id, false);
 }
 
-unsigned count1[28] = {};
-unsigned count2[28] = {};
-CssHeapValue::CssHeapValue(ClassKind type) noexcept : CssValue(type) {
-    ++count1[unsigned(type)];
-}
-
-CssHeapValue::~CssHeapValue()
-{
-    ++count2[unsigned(type())];
-}
-
-void checkCssHeapValue()
-{
-    for (unsigned i = 0; i != 28; ++i) {
-        if (count1[i] != count2[i]) {
-            fprintf(stderr, "Memory leak detected in CssHeapValue of type %u: count1=%u count2=%u\n", i, count1[i], count2[i]);
-        }
-    }
-}
-
 } // namespace plutobook
