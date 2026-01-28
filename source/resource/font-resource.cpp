@@ -537,7 +537,7 @@ static RefPtr<SimpleFontData> createFontData(FcConfig* config, GlobalString fami
     std::string familyName(family);
     FcPatternAddString(pattern, FC_FAMILY, (FcChar8*)(familyName.data()));
     FcPatternAddBool(pattern, FC_SCALABLE, FcTrue);
-    if(familyName == "emoji") {
+    if(iequals(familyName, "emoji")) {
         FcPatternAddBool(pattern, FC_COLOR, FcTrue);
     }
 
@@ -556,7 +556,7 @@ static RefPtr<SimpleFontData> createFontData(FcConfig* config, GlobalString fami
         int matchFamilyIndex = 0;
         while(FcPatternGetWithBinding(matchPattern, FC_FAMILY, matchFamilyIndex, &matchValue, &matchBinding) == FcResultMatch) {
             std::string_view matchFamilyName = (const char*)(matchValue.u.s);
-            if (matchBinding == FcValueBindingStrong || matchFamilyName == configFamilyName || matchFamilyName == familyName) {
+            if (matchBinding == FcValueBindingStrong || iequals(matchFamilyName, configFamilyName) || iequals(matchFamilyName, familyName)) {
                matchResult = FcResultMatch;
                break;
             }
@@ -637,7 +637,7 @@ bool FontDataCache::isFamilyAvailable(GlobalString family)
             int matchFamilyIndex = 0;
             char* matchFamilyName = nullptr;
             while(FcPatternGetString(matchPattern, FC_FAMILY, matchFamilyIndex, (FcChar8**)(&matchFamilyName)) == FcResultMatch) {
-                if(family.value() == matchFamilyName)
+                if(iequals(family.value(), matchFamilyName))
                     return true;
                 ++matchFamilyIndex;
             }

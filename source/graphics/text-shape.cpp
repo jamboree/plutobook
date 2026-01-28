@@ -114,19 +114,33 @@ static bool isEmojiCodepoint(uint32_t codepoint, FontVariantEmoji variantEmoji)
 RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direction, bool disableSpacing, const BoxStyle* style)
 {
     const auto& font = style->font();
-    auto fontFeatures = style->fontFeatures();
-    auto fontVariantEmoji = style->fontVariantEmoji();
-    auto letterSpacing = disableSpacing ? 0 : style->letterSpacing();
-    auto wordSpacing = disableSpacing ? 0 : style->wordSpacing();
+    const auto fontFeatures = style->fontFeatures();
+    const auto fontVariantEmoji = style->fontVariantEmoji();
+    const auto letterSpacing = disableSpacing ? 0 : style->letterSpacing();
+    const auto wordSpacing = disableSpacing ? 0 : style->wordSpacing();
 
-    auto hbBuffer = hb_buffer_create();
-    auto hbDirection = direction == Direction::Ltr ? HB_DIRECTION_LTR : HB_DIRECTION_RTL;
-    auto textBuffer = (const uint16_t*)(text.getBuffer());
+    const auto hbBuffer = hb_buffer_create();
+    const auto hbDirection = direction == Direction::Ltr ? HB_DIRECTION_LTR : HB_DIRECTION_RTL;
+    const auto textBuffer = (const uint16_t*)(text.getBuffer());
 
     float totalWidth = 0.f;
     int startIndex = 0;
     int totalLength = text.length();
     TextShapeRunList textRuns;
+
+    std::vector<hb_feature_t> hbFeatures;
+    const auto addFeatures = [&hbFeatures](const FontFeatureList& features) {
+        hbFeatures.reserve(hbFeatures.size() + features.size());
+        for (const auto& feature : features) {
+            hb_feature_t hbFeature;
+            hbFeature.tag = feature.first.value();
+            hbFeature.value = feature.second;
+            hbFeature.start = 0;
+            hbFeature.end = static_cast<unsigned>(-1);
+            hbFeatures.push_back(hbFeature);
+        }
+    };
+    addFeatures(fontFeatures);
 
     CharacterBreakIterator iterator(text);
     while(totalLength > 0) {
@@ -155,23 +169,11 @@ RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direct
         }
 
         assert(nextIndex > startIndex);
-        auto numCharacters = nextIndex - startIndex;
-        auto scriptName = uscript_getShortName(scriptCode);
-        auto hbScript = hb_script_from_string(scriptName, -1);
+        const auto numCharacters = nextIndex - startIndex;
+        const auto scriptName = uscript_getShortName(scriptCode);
+        const auto hbScript = hb_script_from_string(scriptName, -1);
 
-        std::vector<hb_feature_t> hbFeatures;
-        auto addFeatures = [&hbFeatures](const FontFeatureList& features) {
-            for(const auto& feature : features) {
-                hb_feature_t hbFeature;
-                hbFeature.tag = feature.first.value();
-                hbFeature.value = feature.second;
-                hbFeature.start = 0;
-                hbFeature.end = static_cast<unsigned>(-1);
-                hbFeatures.push_back(hbFeature);
-            }
-        };
-
-        addFeatures(fontFeatures);
+        hbFeatures.resize(fontFeatures.size());
         addFeatures(fontData->features());
 
         hb_buffer_reset(hbBuffer);
@@ -181,8 +183,8 @@ RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direct
         hb_shape(fontData->hbFont(), hbBuffer, hbFeatures.data(), hbFeatures.size());
 
         unsigned numGlyphs = 0;
-        auto glyphInfos = hb_buffer_get_glyph_infos(hbBuffer, &numGlyphs);
-        auto glyphPositions = hb_buffer_get_glyph_positions(hbBuffer, &numGlyphs);
+        const auto glyphInfos = hb_buffer_get_glyph_infos(hbBuffer, &numGlyphs);
+        const auto glyphPositions = hb_buffer_get_glyph_positions(hbBuffer, &numGlyphs);
 
         float width = 0.f;
         TextShapeRunGlyphDataList glyphs(numGlyphs);

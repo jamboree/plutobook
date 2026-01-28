@@ -244,7 +244,7 @@ bool CssVariableData::resolve(const BoxStyle* style, CssTokenList& tokens, boost
 bool CssVariableData::resolve(CssTokenStream input, const BoxStyle* style, CssTokenList& tokens, boost::unordered_flat_set<CssVariableData*>& references) const
 {
     while(!input.empty()) {
-        if(input->type() == CssToken::Type::Function && input->data() == "var") {
+        if(input->type() == CssToken::Type::Function && iequals(input->data(), "var")) {
             auto block = input.consumeBlock();
             if(!resolveVar(block, style, tokens, references))
                 return false;
@@ -598,9 +598,7 @@ bool CssRuleData::matchNamespaceSelector(const Element* element, const CssSimple
 
 bool CssRuleData::matchTagSelector(const Element* element, const CssSimpleSelector& selector)
 {
-    if(element->isCaseSensitive())
-        return element->tagName() == selector.name();
-    return element->tagName() == selector.name();
+    return equals(element->tagName(), selector.name(), element->isCaseSensitive());
 }
 
 bool CssRuleData::matchIdSelector(const Element* element, const CssSimpleSelector& selector)

@@ -350,7 +350,7 @@ const Attribute* Element::findAttributePossiblyIgnoringCase(GlobalString name) c
     if(m_isCaseSensitive)
         return findAttribute(name);
     for(const auto& attribute : m_attributes) {
-        if(name == attribute.name()) {
+        if(iequals(name, attribute.name())) {
             return &attribute;
         }
     }

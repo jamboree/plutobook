@@ -418,10 +418,10 @@ void HtmlHrElement::collectAttributeStyle(AttributeStyle& style) const
         }
     }
     if (auto attr = findAttribute(alignAttr)) {
-        if (attr->value() == "left") {
+        if (iequals(attr->value(), "left")) {
             style.addProperty(CssPropertyID::MarginLeft, CssLengthValue::create(0));
             style.addProperty(CssPropertyID::MarginRight, CssValueID::Auto);
-        } else if (attr->value() == "right") {
+        } else if (iequals(attr->value(), "right")) {
             style.addProperty(CssPropertyID::MarginLeft, CssValueID::Auto);
             style.addProperty(CssPropertyID::MarginRight, CssLengthValue::create(0));
         } else {
@@ -692,6 +692,18 @@ void HtmlTableElement::collectAttributeStyle(AttributeStyle& style) const
     collectAdditionalAttributeStyle(style);
 }
 
+template<class T, unsigned N, unsigned K>
+static T matchKeyNoCaseOr(const IdentTable<T, N>& table, std::string_view key,
+                          T defaultValue, char (&buffer)[K]) {
+    if (key.size() <= K) {
+        const auto it = table.find(toLower(key, buffer));
+        if (it != table.end()) {
+            return it->second;
+        }
+    }
+    return defaultValue;
+}
+
 HtmlTableElement::Rules HtmlTableElement::parseRulesAttribute(std::string_view value)
 {
     static constexpr auto table =
@@ -700,8 +712,8 @@ HtmlTableElement::Rules HtmlTableElement::parseRulesAttribute(std::string_view v
                                {"rows", Rules::Rows},
                                {"cols", Rules::Cols},
                                {"all", Rules::All}});
-    const auto it = table.find(value);
-    return it == table.end() ? Rules::Unset : it->second;
+    char buffer[8];
+    return matchKeyNoCaseOr(table, value, Rules::Unset, buffer);
 }
 
 HtmlTableElement::Frame HtmlTableElement::parseFrameAttribute(std::string_view value)
@@ -717,8 +729,8 @@ HtmlTableElement::Frame HtmlTableElement::parseFrameAttribute(std::string_view v
         {"box", Frame::Box},
         {"border", Frame::Border},
     });
-    const auto it = table.find(value);
-    return it == table.end() ? Frame::Unset : it->second;
+    char buffer[8];
+    return matchKeyNoCaseOr(table, value, Frame::Unset, buffer);
 }
 
 HtmlTablePartElement::HtmlTablePartElement(Document* document, GlobalString tagName)
