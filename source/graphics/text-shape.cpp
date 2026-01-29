@@ -444,11 +444,6 @@ float TextShapeView::draw(GraphicsContext& context, const Point& origin, float e
 
         context.fillGlyphs(run->fontData()->font(), glyphBuffer.get(),
                            numGlyphs);
-#if 0
-        cairo_set_scaled_font(canvas, run->fontData()->font());
-        cairo_show_glyphs(canvas, glyphBuffer, numGlyphs);
-        cairo_glyph_free(glyphBuffer);
-#endif // 0
     }
 
     return offset.x - origin.x;

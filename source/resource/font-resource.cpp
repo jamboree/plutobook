@@ -46,17 +46,6 @@ RefPtr<FontResource> FontResource::create(Document* document, const Url& url)
         return nullptr;
     }
 
-#if 0
-    static cairo_user_data_key_t key;
-    auto face = cairo_ft_font_face_create_for_ft_face(fontData->face(), FT_LOAD_DEFAULT);
-    cairo_font_face_set_user_data(face, &key, fontData, FTFontDataDestroy);
-    if (auto status = cairo_font_face_status(face)) {
-        plutobook_set_error_message("Unable to load font '%s': %s", url.value().data(), cairo_status_to_string(status));
-        FTFontDataDestroy(fontData);
-        return nullptr;
-    }
-#endif // 0
-
     return adoptPtr(new FontResource(face));
 }
 
@@ -216,6 +205,36 @@ RefPtr<FontData> LocalFontFace::getFontData(FontDataCache* fontDataCache, const 
 #define FLT_TO_HB(v) static_cast<hb_position_t>(std::scalbnf(v, +8))
 #define HB_TO_FLT(v) std::scalbnf(v, -8)
 
+static std::vector<hb_variation_t>
+sortVariations(const FontDataDescription& description,
+               const FontVariationList& baseVariations) {
+    constexpr FontTag wghtTag = makeFontTag("wght");
+    constexpr FontTag wdthTag = makeFontTag("wdth");
+    constexpr FontTag slntTag = makeFontTag("slnt");
+
+    std::vector<hb_variation_t> variations;
+    variations.reserve(3 + description.variations.size() +
+                       baseVariations.size());
+
+    variations.push_back({wghtTag, description.request.weight});
+    variations.push_back({wdthTag, description.request.width});
+    variations.push_back({slntTag, description.request.slope});
+    for (const auto& [tag, value] : description.variations) {
+        variations.push_back({tag, value});
+    }
+    for (const auto& [tag, value] : baseVariations) {
+        variations.push_back({tag, value});
+    }
+    const auto byTag = [](const hb_variation_t& variation) {
+        return variation.tag;
+    };
+    std::ranges::stable_sort(variations, std::ranges::less{}, byTag);
+    const auto rng =
+        std::ranges::unique(variations, std::ranges::equal_to{}, byTag);
+    variations.erase(rng.begin(), rng.end());
+    return variations;
+}
+
 hb_font_t* createHBFont(hb_face_t* face,
                                const FontDataDescription& description,
                                const FontVariationList& baseVariations) {
@@ -224,34 +243,8 @@ hb_font_t* createHBFont(hb_face_t* face,
     hb_font_set_scale(font, FLT_TO_HB(description.size),
                       FLT_TO_HB(description.size));
 
-    constexpr FontTag wghtTag = makeFontTag("wght");
-    constexpr FontTag wdthTag = makeFontTag("wdth");
-    constexpr FontTag slntTag = makeFontTag("slnt");
-
-    std::unique_ptr<hb_variation_t[]> variations(
-        new hb_variation_t[3 + description.variations.size() +
-                           baseVariations.size()]);
-
-    auto out = variations.get();
-    *out++ = {wghtTag, description.request.weight};
-    *out++ = {wdthTag, description.request.width};
-    *out++ = {slntTag, description.request.slope};
-    for (const auto& [tag, value] : description.variations) {
-        *out++ = {tag, value};
-    }
-    for (const auto& [tag, value] : baseVariations) {
-        *out++ = {tag, value};
-    }
-    const auto byTag = [](const hb_variation_t& variation) {
-        return variation.tag;
-    };
-    std::ranges::stable_sort(variations.get(), out, std::ranges::less{}, byTag);
-    out = std::ranges::unique(variations.get(), out, std::ranges::equal_to{},
-                              byTag)
-              .begin();
-
-    hb_font_set_variations(font, variations.get(), out - variations.get());
-
+    const auto variations = sortVariations(description, baseVariations);
+    hb_font_set_variations(font, variations.data(), variations.size());
     hb_font_make_immutable(font);
 
     return font;
@@ -429,21 +422,13 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
         return nullptr;
     FcMatrix matrix;
     FcMatrixInit(&matrix);
-
-    int matchMatrixIndex = 0;
-    FcMatrix* matchMatrix = nullptr;
-    while(FcPatternGetMatrix(pattern, FC_MATRIX, matchMatrixIndex, &matchMatrix) == FcResultMatch) {
-        FcMatrixMultiply(&matrix, &matrix, matchMatrix);
-        ++matchMatrixIndex;
-    }
-
-    int matchCharSetIndex = 0;
-    FcCharSet* matchCharSet = nullptr;
-
-    auto charSet = FcCharSetCreate();
-    while(FcPatternGetCharSet(pattern, FC_CHARSET, matchCharSetIndex, &matchCharSet) == FcResultMatch) {
-        FcCharSetMerge(charSet, matchCharSet, nullptr);
-        ++matchCharSetIndex;
+    {
+        int matchMatrixIndex = 0;
+        FcMatrix* matchMatrix = nullptr;
+        while (FcPatternGetMatrix(pattern, FC_MATRIX, matchMatrixIndex, &matchMatrix) == FcResultMatch) {
+            FcMatrixMultiply(&matrix, &matrix, matchMatrix);
+            ++matchMatrixIndex;
+        }
     }
 
 #if 0
@@ -456,24 +441,27 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
 #endif // 0
 
     FontFeatureList featureSettings;
-    FontVariationList variationSettings;
-
-    int matchFeatureIndex = 0;
-    char* matchFeatureName = nullptr;
-    while(FcPatternGetString(pattern, FC_FONT_FEATURES, matchFeatureIndex, (FcChar8**)(&matchFeatureName)) == FcResultMatch) {
-        hb_feature_t feature;
-        if(hb_feature_from_string(matchFeatureName, -1, &feature))
-            featureSettings.emplace_back(FontTag(feature.tag), feature.value);
-        ++matchFeatureIndex;
+    {
+        int matchFeatureIndex = 0;
+        char* matchFeatureName = nullptr;
+        while (FcPatternGetString(pattern, FC_FONT_FEATURES, matchFeatureIndex, (FcChar8**)(&matchFeatureName)) == FcResultMatch) {
+            hb_feature_t feature;
+            if (hb_feature_from_string(matchFeatureName, -1, &feature))
+                featureSettings.emplace_back(FontTag(feature.tag), feature.value);
+            ++matchFeatureIndex;
+        }
     }
 
-    int matchVariationIndex = 0;
-    char* matchVariationName = nullptr;
-    while(FcPatternGetString(pattern, FC_FONT_VARIATIONS, matchVariationIndex, (FcChar8**)(&matchVariationName)) == FcResultMatch) {
-        hb_variation_t variation;
-        if(hb_variation_from_string(matchVariationName, -1, &variation))
-            variationSettings.emplace_back(FontTag(variation.tag), variation.value);
-        ++matchVariationIndex;
+    FontVariationList variationSettings;
+    {
+        int matchVariationIndex = 0;
+        char* matchVariationName = nullptr;
+        while (FcPatternGetString(pattern, FC_FONT_VARIATIONS, matchVariationIndex, (FcChar8**)(&matchVariationName)) == FcResultMatch) {
+            hb_variation_t variation;
+            if (hb_variation_from_string(matchVariationName, -1, &variation))
+                variationSettings.emplace_back(FontTag(variation.tag), variation.value);
+            ++matchVariationIndex;
+        }
     }
 
 #if 0
@@ -738,7 +726,18 @@ FaceHandle CairoGraphicsManager::createFaceFromResource(ResourceData resource) {
 }
 
 FaceHandle CairoGraphicsManager::createFaceForPattern(FcPattern* pattern) {
-    //return std::bit_cast<FaceHandle>(createHBFaceForPattern(pattern));
+    int matchCharSetIndex = 0;
+    FcCharSet* matchCharSet = nullptr;
+
+    auto charSet = FcCharSetCreate();
+    while (FcPatternGetCharSet(pattern, FC_CHARSET, matchCharSetIndex,
+                               &matchCharSet) == FcResultMatch) {
+        FcCharSetMerge(charSet, matchCharSet, nullptr);
+        ++matchCharSetIndex;
+    }
+
+    auto face = cairo_ft_font_face_create_for_pattern(pattern);
+    return std::bit_cast<FaceHandle>(new Face{face, charSet});
 }
 
 void CairoGraphicsManager::destroyFace(FaceHandle face) {
@@ -748,11 +747,64 @@ void CairoGraphicsManager::destroyFace(FaceHandle face) {
 struct CairoGraphicsManager::Font {
     cairo_scaled_font_t* m_font;
     hb_font_t* m_hbFont;
+    FcCharSet* m_charSet;
 
     ~Font() {
+        FcCharSetDestroy(m_charSet);
         hb_font_destroy(m_hbFont);
         cairo_scaled_font_destroy(m_font);
     }
+
+    static hb_bool_t nominal_glyph_func(hb_font_t*, void* context,
+                                        hb_codepoint_t unicode,
+                                        hb_codepoint_t* glyph, void*) {
+        auto font = static_cast<cairo_scaled_font_t*>(context);
+        if (auto face = cairo_ft_scaled_font_lock_face(font)) {
+            *glyph = FcFreeTypeCharIndex(face, unicode);
+            cairo_ft_scaled_font_unlock_face(font);
+            return !!*glyph;
+        }
+
+        return false;
+    };
+
+    static hb_bool_t variation_glyph_func(hb_font_t*, void* context,
+                                          hb_codepoint_t unicode,
+                                          hb_codepoint_t variation,
+                                          hb_codepoint_t* glyph, void*) {
+        auto font = static_cast<cairo_scaled_font_t*>(context);
+        if (auto face = cairo_ft_scaled_font_lock_face(font)) {
+            *glyph = FT_Face_GetCharVariantIndex(face, unicode, variation);
+            cairo_ft_scaled_font_unlock_face(font);
+            return !!*glyph;
+        }
+
+        return false;
+    };
+
+    static hb_position_t glyph_h_advance_func(hb_font_t*, void* context,
+                                              hb_codepoint_t index, void*) {
+        auto font = static_cast<cairo_scaled_font_t*>(context);
+        cairo_text_extents_t extents;
+        cairo_glyph_t glyph = {index, 0, 0};
+        cairo_scaled_font_glyph_extents(font, &glyph, 1, &extents);
+        return FLT_TO_HB(extents.x_advance);
+    };
+
+    static hb_bool_t glyph_extents_func(hb_font_t*, void* context,
+                                        hb_codepoint_t index,
+                                        hb_glyph_extents_t* extents, void*) {
+        auto font = static_cast<cairo_scaled_font_t*>(context);
+        cairo_text_extents_t glyph_extents;
+        cairo_glyph_t glyph = {index, 0, 0};
+        cairo_scaled_font_glyph_extents(font, &glyph, 1, &glyph_extents);
+
+        extents->x_bearing = FLT_TO_HB(glyph_extents.x_bearing);
+        extents->y_bearing = FLT_TO_HB(glyph_extents.y_bearing);
+        extents->width = FLT_TO_HB(glyph_extents.width);
+        extents->height = FLT_TO_HB(glyph_extents.height);
+        return true;
+    };
 };
 
 FontHandle
@@ -762,6 +814,7 @@ CairoGraphicsManager::createFont(FaceHandle face,
     const auto facePtr = std::bit_cast<Face*>(face);
     const auto slopeAngle =
         -std::tan(description.request.slope * std::numbers::pi / 180.0);
+    const auto variations = sortVariations(description, baseVariations);
 
     cairo_matrix_t ctm;
     cairo_matrix_init_identity(&ctm);
@@ -771,7 +824,6 @@ CairoGraphicsManager::createFont(FaceHandle face,
     cairo_matrix_scale(&ftm, description.size, description.size);
 
     auto options = cairo_font_options_create();
-    // auto variations = buildVariationSettings(description, baseVariations);
     // cairo_font_options_set_variations(options, variations.data());
     cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_OFF);
 
@@ -786,24 +838,47 @@ CairoGraphicsManager::createFont(FaceHandle face,
         cairo_scaled_font_destroy(font);
         return FontHandle::Invalid;
     }
-    auto hbFont = hb_ft_font_create_referenced(ftFace);//TODO
+    auto hbFont = hb_ft_font_create_referenced(ftFace);
+    hb_font_set_scale(hbFont, FLT_TO_HB(description.size),
+                      FLT_TO_HB(description.size));
 
-    return std::bit_cast<FontHandle>(new Font{font, hbFont});
+    hb_font_set_variations(hbFont, variations.data(), variations.size());
+    static hb_font_funcs_t* hbFunctions = [] {
+        auto hbFunctions = hb_font_funcs_create();
+        hb_font_funcs_set_nominal_glyph_func(
+            hbFunctions, Font::nominal_glyph_func, nullptr, nullptr);
+        hb_font_funcs_set_variation_glyph_func(
+            hbFunctions, Font::variation_glyph_func, nullptr, nullptr);
+        hb_font_funcs_set_glyph_h_advance_func(
+            hbFunctions, Font::glyph_h_advance_func, nullptr, nullptr);
+        hb_font_funcs_set_glyph_extents_func(
+            hbFunctions, Font::glyph_extents_func, nullptr, nullptr);
+        hb_font_funcs_make_immutable(hbFunctions);
+        return hbFunctions;
+    }();
+
+    hb_font_set_funcs(hbFont, hbFunctions, font, nullptr);
+    hb_font_make_immutable(hbFont);
+    cairo_ft_scaled_font_unlock_face(font);
+
+    return std::bit_cast<FontHandle>(new Font{font, hbFont, charSet});
 }
 
 hb_font_t* CairoGraphicsManager::getHBFont(FontHandle font) const {
-    return std::bit_cast<hb_font_t*>(font);
+    return std::bit_cast<Font*>(font)->m_hbFont;
 }
 
 bool CairoGraphicsManager::hasCodepoint(FontHandle font,
                                         uint32_t codepoint) const {
-    hb_codepoint_t glyph;
-    return hb_font_get_glyph(std::bit_cast<hb_font_t*>(font), codepoint, 0,
-                             &glyph);
+    return FcCharSetHasChar(std::bit_cast<Font*>(font)->m_charSet, codepoint);
 }
 
 void CairoGraphicsManager::destroyFont(FontHandle font) {
-    hb_font_destroy(std::bit_cast<hb_font_t*>(font));
+    delete std::bit_cast<Font*>(font);
+}
+
+cairo_scaled_font_t* CairoGraphicsManager::getScaledFont(FontHandle font) {
+    return std::bit_cast<Font*>(font)->m_font;
 }
 
 } // namespace plutobook

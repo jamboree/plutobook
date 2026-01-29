@@ -5,6 +5,7 @@
 typedef struct _FcConfig FcConfig;
 typedef struct _FcPattern FcPattern;
 typedef struct hb_font_t hb_font_t;
+typedef struct _cairo_scaled_font cairo_scaled_font_t;
 
 namespace plutobook {
     class Size;
@@ -56,5 +57,7 @@ namespace plutobook {
         hb_font_t* getHBFont(FontHandle font) const override;
         bool hasCodepoint(FontHandle font, uint32_t codepoint) const override;
         void destroyFont(FontHandle font) override;
+
+        static cairo_scaled_font_t* getScaledFont(FontHandle font);
     };
 } // namespace plutobook
