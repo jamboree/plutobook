@@ -15,11 +15,11 @@ CssFontFaceCache::CssFontFaceCache()
 {
 }
 
-RefPtr<FontData> CssFontFaceCache::get(GlobalString family, const FontDataDescription& description) const
+RefPtr<FontData> CssFontFaceCache::get(FontDataCache* fontDataCache, GlobalString family, const FontDataDescription& description) const
 {
     auto it = m_table.find(family);
     if(it == m_table.end())
-        return fontDataCache()->getFontData(family, description);
+        return fontDataCache->getFontData(family, description);
     FontSelectionAlgorithm algorithm(description.request);
     for(const auto& item : it->second) {
         algorithm.addCandidate(item.first);
@@ -32,7 +32,7 @@ RefPtr<FontData> CssFontFaceCache::get(GlobalString family, const FontDataDescri
         }
     }
 
-    return face->getFontData(description);
+    return face->getFontData(fontDataCache, description);
 }
 
 void CssFontFaceCache::add(GlobalString family, const FontSelectionDescription& description, RefPtr<FontFace> face)
@@ -323,7 +323,7 @@ FontVariationList FontDescriptionBuilder::variationSettings() const
 
     for(const auto& value : to<CssListValue>(*m_variationSettings)) {
         const auto& variation = to<CssFontVariationValue>(*value);
-        variationSettings.emplace_back(variation.tag(), variation.value());
+        variationSettings.emplace_back(makeFontTag(variation.tag()), variation.value());
     }
     const auto byTag = [](const FontVariation& variation) {
         return variation.first;
@@ -735,7 +735,7 @@ RefPtr<BoxStyle> CssStyleSheet::styleForPageMargin(GlobalString pageName, uint32
 
 RefPtr<FontData> CssStyleSheet::getFontData(GlobalString family, const FontDataDescription& description) const
 {
-    return m_fontFaceCache.get(family, description);
+    return m_fontFaceCache.get(m_document->fontDataCache(), family, description);
 }
 
 const CssCounterStyle& CssStyleSheet::getCounterStyle(GlobalString name)
@@ -1041,7 +1041,7 @@ FontFeatureList CssFontFaceBuilder::featureSettings() const
 
     for(const auto& value : to<CssListValue>(*m_featureSettings)) {
         const auto& feature = to<CssFontFeatureValue>(*value);
-        featureSettings.emplace_back(feature.tag(), feature.value());
+        featureSettings.emplace_back(makeFontTag(feature.tag()), feature.value());
     }
 
     return featureSettings;
@@ -1059,7 +1059,7 @@ FontVariationList CssFontFaceBuilder::variationSettings() const
 
     for(const auto& value : to<CssListValue>(*m_variationSettings)) {
         const auto& variation = to<CssFontVariationValue>(*value);
-        variationSettings.emplace_back(variation.tag(), variation.value());
+        variationSettings.emplace_back(makeFontTag(variation.tag()), variation.value());
     }
 
     return variationSettings;
@@ -1106,7 +1106,7 @@ RefPtr<FontFace> CssFontFaceBuilder::build(Document* document) const
         if(auto function = to<CssUnaryFunctionValue>(list[0])) {
             assert(function->id() == CssFunctionID::Local);
             const auto& family = to<CssCustomIdentValue>(*function->value());
-            if(!fontDataCache()->isFamilyAvailable(family.value()))
+            if(!document->fontDataCache()->isFamilyAvailable(family.value()))
                 continue;
             return LocalFontFace::create(family.value(), featureSettings(), variationSettings(), unicodeRanges());
         }

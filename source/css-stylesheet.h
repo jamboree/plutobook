@@ -58,6 +58,7 @@ namespace plutobook {
     class FontFace;
     class FontData;
     class SegmentedFontFace;
+    class FontDataCache;
 
     struct FontDataDescription;
     struct FontSelectionDescription;
@@ -66,7 +67,7 @@ namespace plutobook {
     public:
         explicit CssFontFaceCache();
 
-        RefPtr<FontData> get(GlobalString family,
+        RefPtr<FontData> get(FontDataCache* fontDataCache, GlobalString family,
                              const FontDataDescription& description) const;
         void add(GlobalString family,
                  const FontSelectionDescription& description,
@@ -96,8 +97,7 @@ namespace plutobook {
         RefPtr<BoxStyle>
         pseudoStyleForElement(Element* element, PseudoType pseudoType,
                               const BoxStyle* parentStyle) const;
-        RefPtr<BoxStyle> styleForPage(GlobalString pageName,
-                                      uint32_t pageIndex,
+        RefPtr<BoxStyle> styleForPage(GlobalString pageName, uint32_t pageIndex,
                                       PseudoType pseudoType) const;
         RefPtr<BoxStyle> styleForPageMargin(GlobalString pageName,
                                             uint32_t pageIndex,

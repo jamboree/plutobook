@@ -6,17 +6,19 @@
 #include "plutobook.hpp"
 
 #include <fontconfig/fontconfig.h>
-//#include <fontconfig/fcfreetype.h>
-
-//#include <cairo/cairo-ft.h>
 #include <harfbuzz/hb.h>
 
 #include <numbers>
 #include <cmath>
 
+// For CairoGraphicsManager
+#include <fontconfig/fcfreetype.h>
+#include <cairo/cairo-ft.h>
+#include <harfbuzz/hb-ft.h>
+
 namespace plutobook {
 
-static hb_face_t* createFaceFromResource(ResourceData resource)
+hb_face_t* createHBFaceFromResource(ResourceData resource)
 {
     auto blob = hb_blob_create_or_fail(
         resource.content(), resource.contentLength(),
@@ -38,8 +40,8 @@ RefPtr<FontResource> FontResource::create(Document* document, const Url& url)
     auto resource = ResourceLoader::loadUrl(url, document->customResourceFetcher());
     if(resource.isNull())
         return nullptr;
-    auto face = createFaceFromResource(std::move(resource));
-    if(face == nullptr) {
+    auto face = graphicsManager().createFaceFromResource(std::move(resource));
+    if(face == FaceHandle::Invalid) {
         plutobook_set_error_message("Unable to load font '%s': %s", url.value().data(), plutobook_get_error_message());
         return nullptr;
     }
@@ -79,7 +81,7 @@ bool FontResource::supportsFormat(const std::string_view& format)
 
 FontResource::~FontResource()
 {
-    hb_face_destroy(m_face);
+    graphicsManager().destroyFace(m_face);
 }
 
 FontSelectionAlgorithm::FontSelectionAlgorithm(const FontSelectionRequest& request)
@@ -206,15 +208,15 @@ bool FontSelectionAlgorithm::isCandidateBetter(const FontSelectionDescription& c
     return weightDistance(currentCandidate.weight) < weightDistance(previousCandidate.weight);
 }
 
-RefPtr<FontData> LocalFontFace::getFontData(const FontDataDescription& description)
+RefPtr<FontData> LocalFontFace::getFontData(FontDataCache* fontDataCache, const FontDataDescription& description)
 {
-    return fontDataCache()->getFontData(m_family, description);
+    return fontDataCache->getFontData(m_family, description);
 }
 
 #define FLT_TO_HB(v) static_cast<hb_position_t>(std::scalbnf(v, +8))
 #define HB_TO_FLT(v) std::scalbnf(v, -8)
 
-static hb_font_t* createHBFont(hb_face_t* face,
+hb_font_t* createHBFont(hb_face_t* face,
                                const FontDataDescription& description,
                                const FontVariationList& baseVariations) {
     const auto font = hb_font_create(face);
@@ -222,23 +224,23 @@ static hb_font_t* createHBFont(hb_face_t* face,
     hb_font_set_scale(font, FLT_TO_HB(description.size),
                       FLT_TO_HB(description.size));
 
-    constexpr FontTag wghtTag("wght");
-    constexpr FontTag wdthTag("wdth");
-    constexpr FontTag slntTag("slnt");
+    constexpr FontTag wghtTag = makeFontTag("wght");
+    constexpr FontTag wdthTag = makeFontTag("wdth");
+    constexpr FontTag slntTag = makeFontTag("slnt");
 
     std::unique_ptr<hb_variation_t[]> variations(
         new hb_variation_t[3 + description.variations.size() +
                            baseVariations.size()]);
 
     auto out = variations.get();
-    *out++ = {wghtTag.value(), description.request.weight};
-    *out++ = {wdthTag.value(), description.request.width};
-    *out++ = {slntTag.value(), description.request.slope};
+    *out++ = {wghtTag, description.request.weight};
+    *out++ = {wdthTag, description.request.width};
+    *out++ = {slntTag, description.request.slope};
     for (const auto& [tag, value] : description.variations) {
-        *out++ = {tag.value(), value};
+        *out++ = {tag, value};
     }
     for (const auto& [tag, value] : baseVariations) {
-        *out++ = {tag.value(), value};
+        *out++ = {tag, value};
     }
     const auto byTag = [](const hb_variation_t& variation) {
         return variation.tag;
@@ -255,41 +257,20 @@ static hb_font_t* createHBFont(hb_face_t* face,
     return font;
 }
 
-RefPtr<FontData> RemoteFontFace::getFontData(const FontDataDescription& description)
+RefPtr<FontData> RemoteFontFace::getFontData(FontDataCache* /*fontDataCache*/, const FontDataDescription& description)
 {
-    const auto slopeAngle = -std::tan(description.request.slope * std::numbers::pi / 180.0);
-#if 0
-    cairo_matrix_t ctm;
-    cairo_matrix_init_identity(&ctm);
-
-    cairo_matrix_t ftm;
-    cairo_matrix_init(&ftm, 1, 0, slopeAngle, 1, 0, 0);
-    cairo_matrix_scale(&ftm, description.size, description.size);
-
-    auto options = cairo_font_options_create();
-    auto variations = buildVariationSettings(description, m_variations);
-    cairo_font_options_set_variations(options, variations.data());
-    cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_OFF);
-
-    auto charSet = FcCharSetCopy(m_resource->charSet());
-    auto face = cairo_font_face_reference(m_resource->face());
-    auto font = cairo_scaled_font_create(face, &ftm, &ctm, options);
-
-    cairo_font_face_destroy(face);
-    cairo_font_options_destroy(options);
-#endif
-    const auto font = createHBFont(m_resource->face(), description, m_variations);
+    const auto font = graphicsManager().createFont(m_resource->face(), description, m_variations);
     return SimpleFontData::create(font, m_features);
 }
 
-RefPtr<FontData> SegmentedFontFace::getFontData(const FontDataDescription& description)
+RefPtr<FontData> SegmentedFontFace::getFontData(FontDataCache* fontDataCache, const FontDataDescription& description)
 {
     auto& fontData = m_table[description];
     if(fontData != nullptr)
         return fontData;
     FontDataRangeList fonts;
     for(const auto& face : m_faces) {
-        if(auto font = face->getFontData(description)) {
+        if(auto font = face->getFontData(fontDataCache, description)) {
             const auto& ranges = face->ranges();
             if(ranges.empty()) {
                 fonts.emplace_back(0, 0x10FFFF, std::move(font));
@@ -306,18 +287,19 @@ RefPtr<FontData> SegmentedFontFace::getFontData(const FontDataDescription& descr
     return fontData;
 }
 
-RefPtr<SimpleFontData> SimpleFontData::create(hb_font_t* font,
+RefPtr<SimpleFontData> SimpleFontData::create(FontHandle font,
     const FontFeatureList& features)
 {
-    const auto get_glyph = [font](hb_codepoint_t unicode) {
+    const auto hbFont = graphicsManager().getHBFont(font);
+    const auto get_glyph = [hbFont](hb_codepoint_t unicode) {
         hb_codepoint_t glyph;
-        return hb_font_get_glyph(font, unicode, 0, &glyph) ? glyph : ~hb_codepoint_t(0);
+        return hb_font_get_glyph(hbFont, unicode, 0, &glyph) ? glyph : ~hb_codepoint_t(0);
     };
 
-    const auto glyph_extents = [font](hb_codepoint_t glyph) {
+    const auto glyph_extents = [hbFont](hb_codepoint_t glyph) {
         hb_glyph_extents_t extents{};
         if (glyph != ~hb_codepoint_t(0)) {
-            hb_font_get_glyph_extents(font, glyph, &extents);
+            hb_font_get_glyph_extents(hbFont, glyph, &extents);
         }
         return extents;
     };
@@ -327,7 +309,7 @@ RefPtr<SimpleFontData> SimpleFontData::create(hb_font_t* font,
     auto xGlyph = get_glyph('x');
 
     hb_font_extents_t font_extents;
-    hb_font_get_extents_for_direction(font, HB_DIRECTION_LTR, &font_extents);
+    hb_font_get_extents_for_direction(hbFont, HB_DIRECTION_LTR, &font_extents);
 
     FontDataInfo info;
     info.ascent = HB_TO_FLT(font_extents.ascender);
@@ -348,13 +330,12 @@ const SimpleFontData* SimpleFontData::getFontData(uint32_t codepoint, bool prefe
 {
     if(preferColor && !m_info.hasColor)
         return nullptr;
-    hb_codepoint_t glyph;
-    return hb_font_get_glyph(m_hbFont, codepoint, 0, &glyph) ? this : nullptr;
+    return graphicsManager().hasCodepoint(m_hbFont, codepoint) ? this : nullptr;
 }
 
 SimpleFontData::~SimpleFontData()
 {
-    hb_font_destroy(m_hbFont);
+    graphicsManager().destroyFont(m_hbFont);
 }
 
 const SimpleFontData* FontDataRange::getFontData(uint32_t codepoint, bool preferColor) const
@@ -426,7 +407,7 @@ constexpr int fcSlant(FontSelectionValue slope)
     return FC_SLANT_OBLIQUE;
 }
 
-static hb_face_t* createFTFaceForPattern(FcPattern* pattern)
+hb_face_t* createHBFaceForPattern(FcPattern* pattern)
 {
     FcChar8* filename = nullptr;
     int id = 0;
@@ -482,7 +463,7 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
     while(FcPatternGetString(pattern, FC_FONT_FEATURES, matchFeatureIndex, (FcChar8**)(&matchFeatureName)) == FcResultMatch) {
         hb_feature_t feature;
         if(hb_feature_from_string(matchFeatureName, -1, &feature))
-            featureSettings.emplace_back(feature.tag, feature.value);
+            featureSettings.emplace_back(FontTag(feature.tag), feature.value);
         ++matchFeatureIndex;
     }
 
@@ -491,7 +472,7 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
     while(FcPatternGetString(pattern, FC_FONT_VARIATIONS, matchVariationIndex, (FcChar8**)(&matchVariationName)) == FcResultMatch) {
         hb_variation_t variation;
         if(hb_variation_from_string(matchVariationName, -1, &variation))
-            variationSettings.emplace_back(variation.tag, variation.value);
+            variationSettings.emplace_back(FontTag(variation.tag), variation.value);
         ++matchVariationIndex;
     }
 
@@ -507,13 +488,13 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
     cairo_font_face_destroy(face);
     cairo_font_options_destroy(options);
 #endif // 0
-    auto face = createFTFaceForPattern(pattern);
+    auto face = graphicsManager().createFaceForPattern(pattern);
     FcPatternDestroy(pattern);
-    if (face == nullptr) {
+    if (face == FaceHandle::Invalid) {
         return nullptr;
     }
-    const auto font = createHBFont(face, description, variationSettings);
-    hb_face_destroy(face);
+    const auto font = graphicsManager().createFont(face, description, variationSettings);
+    graphicsManager().destroyFace(face);
     return SimpleFontData::create(font, featureSettings);
 }
 
@@ -657,12 +638,6 @@ FontDataCache::FontDataCache()
 {
 }
 
-FontDataCache* fontDataCache()
-{
-    static FontDataCache fontCache;
-    return &fontCache;
-}
-
 RefPtr<Font> Font::create(Document* document, const FontDescription& description)
 {
     return adoptPtr(new Font(document, description));
@@ -679,7 +654,7 @@ const SimpleFontData* Font::getFontData(uint32_t codepoint, bool preferColor)
     if(preferColor) {
         if(m_emojiFont == nullptr) {
             static const auto emoji = GlobalString::get("emoji");
-            if(auto fontData = fontDataCache()->getFontData(emoji, m_description.data)) {
+            if(auto fontData = m_document->fontDataCache()->getFontData(emoji, m_description.data)) {
                 m_emojiFont = fontData.get();
                 m_fonts.push_back(std::move(fontData));
             }
@@ -688,7 +663,7 @@ const SimpleFontData* Font::getFontData(uint32_t codepoint, bool preferColor)
         return m_emojiFont;
     }
 
-    if(auto fontData = fontDataCache()->getFontData(codepoint, preferColor, m_description.data)) {
+    if(auto fontData = m_document->fontDataCache()->getFontData(codepoint, preferColor, m_description.data)) {
         m_fonts.push_back(fontData);
         return fontData.get();
     }
@@ -710,11 +685,125 @@ Font::Font(Document* document, const FontDescription& description)
 
     if(m_primaryFont == nullptr) {
         static const auto serif = GlobalString::get("serif");
-        if(auto fontData = fontDataCache()->getFontData(serif, description.data)) {
+        if(auto fontData = m_document->fontDataCache()->getFontData(serif, description.data)) {
             m_primaryFont = fontData.get();
             m_fonts.push_back(std::move(fontData));
         }
     }
+}
+
+struct CairoGraphicsManager::Face {
+    cairo_font_face_t* m_face;
+    FcCharSet* m_charSet;
+    static inline cairo_user_data_key_t key;
+
+    ~Face() {
+        FcCharSetDestroy(m_charSet);
+        cairo_font_face_destroy(m_face);
+    }
+};
+
+FaceHandle CairoGraphicsManager::createFaceFromResource(ResourceData resource) {
+    thread_local FT_Library ftLibrary;
+    if (ftLibrary == nullptr) {
+        if (auto error = FT_Init_FreeType(&ftLibrary)) {
+            plutobook_set_error_message("font decode error: %s",
+                                        FT_Error_String(error));
+            return FaceHandle::Invalid;
+        }
+    }
+
+    FT_Face ftFace = nullptr;
+    if (auto error =
+            FT_New_Memory_Face(ftLibrary, (FT_Byte*)(resource.content()),
+                               resource.contentLength(), 0, &ftFace)) {
+        plutobook_set_error_message("font decode error: %s",
+                                    FT_Error_String(error));
+        return FaceHandle::Invalid;
+    }
+
+    auto face = cairo_ft_font_face_create_for_ft_face(ftFace, FT_LOAD_DEFAULT);
+    cairo_font_face_set_user_data(
+        face, &Face::key, resource.get(), [](void* p) {
+            plutobook_resource_data_destroy(
+                static_cast<plutobook_resource_data_t*>(p));
+        });
+    if (auto status = cairo_font_face_status(face)) {
+        FT_Done_Face(ftFace);
+        return FaceHandle::Invalid;
+    }
+    resource.release();
+    return std::bit_cast<FaceHandle>(
+        new Face{face, FcFreeTypeCharSet(ftFace, nullptr)});
+}
+
+FaceHandle CairoGraphicsManager::createFaceForPattern(FcPattern* pattern) {
+    //return std::bit_cast<FaceHandle>(createHBFaceForPattern(pattern));
+}
+
+void CairoGraphicsManager::destroyFace(FaceHandle face) {
+    delete std::bit_cast<Face*>(face);
+}
+
+struct CairoGraphicsManager::Font {
+    cairo_scaled_font_t* m_font;
+    hb_font_t* m_hbFont;
+
+    ~Font() {
+        hb_font_destroy(m_hbFont);
+        cairo_scaled_font_destroy(m_font);
+    }
+};
+
+FontHandle
+CairoGraphicsManager::createFont(FaceHandle face,
+                                 const FontDataDescription& description,
+                                 const FontVariationList& baseVariations) {
+    const auto facePtr = std::bit_cast<Face*>(face);
+    const auto slopeAngle =
+        -std::tan(description.request.slope * std::numbers::pi / 180.0);
+
+    cairo_matrix_t ctm;
+    cairo_matrix_init_identity(&ctm);
+
+    cairo_matrix_t ftm;
+    cairo_matrix_init(&ftm, 1, 0, slopeAngle, 1, 0, 0);
+    cairo_matrix_scale(&ftm, description.size, description.size);
+
+    auto options = cairo_font_options_create();
+    // auto variations = buildVariationSettings(description, baseVariations);
+    // cairo_font_options_set_variations(options, variations.data());
+    cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_OFF);
+
+    auto charSet = FcCharSetCopy(facePtr->m_charSet);
+    auto font = cairo_scaled_font_create(facePtr->m_face, &ftm, &ctm, options);
+
+    cairo_font_options_destroy(options);
+
+    ///
+    auto ftFace = cairo_ft_scaled_font_lock_face(font);
+    if (ftFace == nullptr) {
+        cairo_scaled_font_destroy(font);
+        return FontHandle::Invalid;
+    }
+    auto hbFont = hb_ft_font_create_referenced(ftFace);//TODO
+
+    return std::bit_cast<FontHandle>(new Font{font, hbFont});
+}
+
+hb_font_t* CairoGraphicsManager::getHBFont(FontHandle font) const {
+    return std::bit_cast<hb_font_t*>(font);
+}
+
+bool CairoGraphicsManager::hasCodepoint(FontHandle font,
+                                        uint32_t codepoint) const {
+    hb_codepoint_t glyph;
+    return hb_font_get_glyph(std::bit_cast<hb_font_t*>(font), codepoint, 0,
+                             &glyph);
+}
+
+void CairoGraphicsManager::destroyFont(FontHandle font) {
+    hb_font_destroy(std::bit_cast<hb_font_t*>(font));
 }
 
 } // namespace plutobook

@@ -26,8 +26,13 @@
 #include <cstddef>
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "plutobook.h"
+
+typedef struct hb_face_t hb_face_t;
+typedef struct hb_font_t hb_font_t;
+typedef struct _FcPattern FcPattern;
 
 namespace plutobook {
     class GraphicsContext;
@@ -1513,4 +1518,16 @@ namespace plutobook {
 
     PLUTOBOOK_API int getWidth(const Document* doc);
     PLUTOBOOK_API int getHeight(const Document* doc);
+
+    enum FontTag : uint32_t;
+    struct FontDataDescription;
+
+    using FontVariation = std::pair<FontTag, float>;
+    using FontVariationList = std::vector<FontVariation>;
+
+    PLUTOBOOK_API hb_face_t* createHBFaceFromResource(ResourceData resource);
+    PLUTOBOOK_API hb_face_t* createHBFaceForPattern(FcPattern* pattern);
+    PLUTOBOOK_API hb_font_t*
+        createHBFont(hb_face_t* face, const FontDataDescription& description,
+            const FontVariationList& baseVariations);
 } // namespace plutobook

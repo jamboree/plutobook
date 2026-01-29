@@ -3,6 +3,7 @@
 #include "pointer.h"
 #include "heap-string.h"
 #include "color.h"
+#include "graphics-manager.h"
 #include "css-property-id.h"
 
 #include "optional.h"
@@ -467,7 +468,6 @@ namespace plutobook {
     class Rect;
     class Transform;
     class GlobalString;
-    class FontTag;
     class Font;
     class Image;
     class Node;
@@ -477,10 +477,6 @@ namespace plutobook {
     enum class CssValueID : uint16_t;
     enum class CssPropertyID : uint16_t;
 
-    using FontFeature = std::pair<FontTag, int>;
-    using FontVariation = std::pair<FontTag, float>;
-    using FontFeatureList = std::vector<FontFeature>;
-    using FontVariationList = std::vector<FontVariation>;
     using FontFamilyList = std::vector<GlobalString>;
 
     class CssValue;

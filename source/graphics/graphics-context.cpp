@@ -2,6 +2,7 @@
 #include "plutobook.hpp"
 
 #include <cairo/cairo.h>
+#include <harfbuzz/hb.h>
 #ifdef PLUTOBOOK_HAS_WEBP
 #include <webp/decode.h>
 #endif
@@ -308,34 +309,31 @@ static cairo_surface_t* decodeBitmapImage(const char* data, size_t size)
     return surface;
 }
 
-class CairoGraphicsManager : public GraphicsManager {
-public:
-    ImageHandle createImage(const void* data, size_t size) override {
-        const auto surface =
-            decodeBitmapImage(static_cast<const char*>(data), size);
-        if (surface == nullptr)
-            return ImageHandle::Invalid;
-        if (auto status = cairo_surface_status(surface)) {
-            plutobook_set_error_message("image decode error: %s",
-                                        cairo_status_to_string(status));
-            return ImageHandle::Invalid;
-        }
-        return std::bit_cast<ImageHandle>(surface);
+ImageHandle CairoGraphicsManager::createImage(const void* data, size_t size) {
+    const auto surface =
+        decodeBitmapImage(static_cast<const char*>(data), size);
+    if (surface == nullptr)
+        return ImageHandle::Invalid;
+    if (auto status = cairo_surface_status(surface)) {
+        plutobook_set_error_message("image decode error: %s",
+                                    cairo_status_to_string(status));
+        return ImageHandle::Invalid;
     }
+    return std::bit_cast<ImageHandle>(surface);
+}
 
-    void destroyImage(ImageHandle handle) override {
-        const auto surface = std::bit_cast<cairo_surface_t*>(handle);
-        cairo_surface_destroy(surface);
-    }
+void CairoGraphicsManager::destroyImage(ImageHandle handle) {
+    const auto surface = std::bit_cast<cairo_surface_t*>(handle);
+    cairo_surface_destroy(surface);
+}
 
-    Size getImageSize(ImageHandle handle) const override {
-        const auto surface = std::bit_cast<cairo_surface_t*>(handle);
-        Size size;
-        size.w = cairo_image_surface_get_width(surface);
-        size.h = cairo_image_surface_get_height(surface);
-        return size;
-    }
-};
+Size CairoGraphicsManager::getImageSize(ImageHandle handle) const {
+    const auto surface = std::bit_cast<cairo_surface_t*>(handle);
+    Size size;
+    size.w = cairo_image_surface_get_width(surface);
+    size.h = cairo_image_surface_get_height(surface);
+    return size;
+}
 
 //DefaultGraphicsManager defaultGraphicsManager;
 CairoGraphicsManager defaultGraphicsManager;
@@ -464,7 +462,7 @@ void CairoGraphicsContext::fillPath(const Path& path, FillRule fillRule)
     cairo_fill(m_canvas);
 }
 
-void CairoGraphicsContext::fillGlyphs(hb_font_t* font, const GlyphRef glyphs[], unsigned glyphCount)
+void CairoGraphicsContext::fillGlyphs(FontHandle font, const GlyphRef glyphs[], unsigned glyphCount)
 {
     //TODO
 }

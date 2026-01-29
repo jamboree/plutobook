@@ -3,6 +3,7 @@
 #include "graphics-context.h"
 #include "geometry.h"
 #include "text-break-iterator.h"
+#include "plutobook.hpp"
 
 #include <algorithm>
 
@@ -133,7 +134,7 @@ RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direct
         hbFeatures.reserve(hbFeatures.size() + features.size());
         for (const auto& feature : features) {
             hb_feature_t hbFeature;
-            hbFeature.tag = feature.first.value();
+            hbFeature.tag = feature.first;
             hbFeature.value = feature.second;
             hbFeature.start = 0;
             hbFeature.end = static_cast<unsigned>(-1);
@@ -180,7 +181,7 @@ RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direct
         hb_buffer_add_utf16(hbBuffer, textBuffer + startIndex, numCharacters, 0, numCharacters);
         hb_buffer_set_direction(hbBuffer, hbDirection);
         hb_buffer_set_script(hbBuffer, hbScript);
-        hb_shape(fontData->hbFont(), hbBuffer, hbFeatures.data(), hbFeatures.size());
+        hb_shape(graphicsManager().getHBFont(fontData->font()), hbBuffer, hbFeatures.data(), hbFeatures.size());
 
         unsigned numGlyphs = 0;
         const auto glyphInfos = hb_buffer_get_glyph_infos(hbBuffer, &numGlyphs);
@@ -441,7 +442,7 @@ float TextShapeView::draw(GraphicsContext& context, const Point& origin, float e
             }
         }
 
-        context.fillGlyphs(run->fontData()->hbFont(), glyphBuffer.get(),
+        context.fillGlyphs(run->fontData()->font(), glyphBuffer.get(),
                            numGlyphs);
 #if 0
         cairo_set_scaled_font(canvas, run->fontData()->font());

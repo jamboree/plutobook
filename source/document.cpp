@@ -555,6 +555,7 @@ Document::Document(ClassKind type, Book* book, ResourceFetcher* fetcher, Url bas
     , m_customResourceFetcher(fetcher)
     , m_baseUrl(std::move(baseUrl))
     , m_styleSheet(this)
+    , m_fontDataCache(new FontDataCache)
 {
 }
 

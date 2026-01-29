@@ -16,6 +16,7 @@ namespace plutobook {
     class ContainerNode;
     class Box;
     class AttributeStyle;
+    class FontDataCache;
 
     enum class NodeType {
         Text,
@@ -391,6 +392,8 @@ namespace plutobook {
 
         CssStyleSheet& styleSheet() { return m_styleSheet; }
 
+        FontDataCache* fontDataCache() { return m_fontDataCache.get(); }
+
         RefPtr<Font> createFont(const FontDescription& description);
 
         RefPtr<TextResource> fetchTextResource(const Url& url);
@@ -442,6 +445,7 @@ namespace plutobook {
         DocumentCounterMap m_counterCache;
         DocumentRunningStyleMap m_runningStyles;
         CssStyleSheet m_styleSheet;
+        std::unique_ptr<FontDataCache> m_fontDataCache;
 
         float m_containerWidth{0};
         float m_containerHeight{0};

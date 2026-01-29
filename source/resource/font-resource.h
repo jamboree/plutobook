@@ -2,14 +2,11 @@
 
 #include "resource.h"
 #include "global-string.h"
+#include "graphics-manager.h"
 
 #include <vector>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <mutex>
-
-struct hb_face_t;
-struct hb_font_t;
-typedef struct _FcConfig FcConfig;
 
 namespace plutobook {
     class Document;
@@ -20,15 +17,15 @@ namespace plutobook {
 
         static RefPtr<FontResource> create(Document* document, const Url& url);
         static bool supportsFormat(const std::string_view& format);
-        hb_face_t* face() const { return m_face; }
+        FaceHandle face() const { return m_face; }
 
         ~FontResource() final;
 
     private:
-        explicit FontResource(hb_face_t* face)
+        explicit FontResource(FaceHandle face)
             : Resource(classKind), m_face(face) {}
 
-        hb_face_t* m_face;
+        FaceHandle m_face;
     };
 
     using FontSelectionValue = float;
@@ -156,27 +153,11 @@ namespace plutobook {
         FontSelectionRange m_slope;
     };
 
-    class FontTag {
-    public:
-        constexpr explicit FontTag(uint32_t value) : m_value(value) {}
-        constexpr explicit FontTag(const std::string_view& tag)
-            : m_value((tag[0] << 24) | (tag[1] << 16) | (tag[2] << 8) |
-                      (tag[3])) {
-            assert(tag.length() == 4);
-        }
-
-        constexpr uint32_t value() const { return m_value; }
-
-        bool operator==(const FontTag& other) const = default;
-        auto operator<=>(const FontTag& other) const = default;
-
-        friend std::size_t hash_value(FontTag self) {
-            return boost::hash<uint32_t>{}(self.m_value);
-        }
-
-    private:
-        uint32_t m_value;
-    };
+    constexpr FontTag makeFontTag(const std::string_view& tag) {
+        assert(tag.length() == 4);
+        return FontTag((tag[0] << 24) | (tag[1] << 16) | (tag[2] << 8) |
+                       (tag[3]));
+    }
 
     using FontFeature = std::pair<FontTag, int>;
     using FontVariation = std::pair<FontTag, float>;
@@ -224,12 +205,14 @@ namespace plutobook {
     using UnicodeRangeList = std::vector<UnicodeRange>;
 
     class FontData;
+    class FontDataCache;
 
     class FontFace : public RefCounted<FontFace> {
     public:
         virtual ~FontFace() = default;
         virtual RefPtr<FontData>
-        getFontData(const FontDataDescription& description) = 0;
+        getFontData(FontDataCache* fontDataCache,
+                    const FontDataDescription& description) = 0;
 
         const FontFeatureList& features() const { return m_features; }
         const FontVariationList& variations() const { return m_variations; }
@@ -255,7 +238,8 @@ namespace plutobook {
                                             UnicodeRangeList ranges);
 
         RefPtr<FontData>
-        getFontData(const FontDataDescription& description) final;
+        getFontData(FontDataCache* fontDataCache,
+                    const FontDataDescription& description) final;
 
     private:
         LocalFontFace(GlobalString family, FontFeatureList features,
@@ -284,7 +268,8 @@ namespace plutobook {
                                              RefPtr<FontResource> resource);
 
         RefPtr<FontData>
-        getFontData(const FontDataDescription& description) final;
+        getFontData(FontDataCache* fontDataCache,
+                    const FontDataDescription& description) final;
 
     private:
         RemoteFontFace(FontFeatureList features, FontVariationList variations,
@@ -314,7 +299,7 @@ namespace plutobook {
         const FontSelectionDescription& description() const {
             return m_description;
         }
-        RefPtr<FontData> getFontData(const FontDataDescription& description);
+        RefPtr<FontData> getFontData(FontDataCache* fontDataCache, const FontDataDescription& description);
         void add(RefPtr<FontFace> face) { m_faces.push_back(std::move(face)); }
 
     private:
@@ -360,10 +345,10 @@ namespace plutobook {
 
     class SimpleFontData final : public FontData {
     public:
-        static RefPtr<SimpleFontData> create(hb_font_t* font,
+        static RefPtr<SimpleFontData> create(FontHandle font,
                                              const FontFeatureList& features);
 
-        hb_font_t* hbFont() const { return m_hbFont; }
+        FontHandle font() const { return m_hbFont; }
         const FontDataInfo& info() const { return m_info; }
         const FontFeatureList& features() const { return m_features; }
 
@@ -386,11 +371,11 @@ namespace plutobook {
         ~SimpleFontData() final;
 
     private:
-        SimpleFontData(hb_font_t* hbFont, const FontDataInfo& info,
+        SimpleFontData(FontHandle font, const FontDataInfo& info,
                        const FontFeatureList& features)
-            : m_hbFont(hbFont), m_info(info), m_features(features) {}
+            : m_hbFont(font), m_info(info), m_features(features) {}
 
-        hb_font_t* m_hbFont;
+        FontHandle m_hbFont;
         FontDataInfo m_info;
         FontFeatureList m_features;
     };
@@ -440,19 +425,16 @@ namespace plutobook {
 
         bool isFamilyAvailable(GlobalString family);
 
+        FontDataCache();
         ~FontDataCache();
 
     private:
         using FontDataKey = std::pair<GlobalString, FontDataDescription>;
 
-        FontDataCache();
         FcConfig* m_config;
         std::mutex m_mutex;
         boost::unordered_flat_map<FontDataKey, RefPtr<SimpleFontData>> m_table;
-        friend FontDataCache* fontDataCache();
     };
-
-    FontDataCache* fontDataCache();
 
     class Font : public RefCounted<Font> {
     public:

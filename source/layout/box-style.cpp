@@ -1902,7 +1902,7 @@ void FontFeaturesBuilder::buildKerning(FontFeatureList& features) const
 {
     if(m_kerning == nullptr)
         return;
-    constexpr FontTag kernTag("kern");
+    constexpr FontTag kernTag = makeFontTag("kern");
     const auto& ident = to<CssIdentValue>(*m_kerning);
     switch(ident.value()) {
     case CssValueID::Auto:
@@ -1922,11 +1922,11 @@ void FontFeaturesBuilder::buildVariantLigatures(FontFeatureList& features) const
 {
     if(m_variantLigatures == nullptr)
         return;
-    constexpr FontTag ligaTag("liga");
-    constexpr FontTag cligTag("clig");
-    constexpr FontTag hligTag("hlig");
-    constexpr FontTag dligTag("dlig");
-    constexpr FontTag caltTag("calt");
+    constexpr FontTag ligaTag = makeFontTag("liga");
+    constexpr FontTag cligTag = makeFontTag("clig");
+    constexpr FontTag hligTag = makeFontTag("hlig");
+    constexpr FontTag dligTag = makeFontTag("dlig");
+    constexpr FontTag caltTag = makeFontTag("calt");
     if(auto ident = to<CssIdentValue>(m_variantLigatures)) {
         if(ident->value() == CssValueID::Normal)
             return;
@@ -1978,8 +1978,8 @@ void FontFeaturesBuilder::buildVariantPosition(FontFeatureList& features) const
 {
     if(m_variantPosition == nullptr)
         return;
-    constexpr FontTag subsTag("subs");
-    constexpr FontTag supsTag("sups");
+    constexpr FontTag subsTag = makeFontTag("subs");
+    constexpr FontTag supsTag = makeFontTag("sups");
     const auto& ident = to<CssIdentValue>(*m_variantPosition);
     switch(ident.value()) {
     case CssValueID::Normal:
@@ -1999,12 +1999,12 @@ void FontFeaturesBuilder::buildVariantCaps(FontFeatureList& features) const
 {
     if(m_variantCaps == nullptr)
         return;
-    constexpr FontTag smcpTag("smcp");
-    constexpr FontTag c2scTag("c2sc");
-    constexpr FontTag pcapTag("pcap");
-    constexpr FontTag c2pcTag("c2pc");
-    constexpr FontTag unicTag("unic");
-    constexpr FontTag titlTag("titl");
+    constexpr FontTag smcpTag = makeFontTag("smcp");
+    constexpr FontTag c2scTag = makeFontTag("c2sc");
+    constexpr FontTag pcapTag = makeFontTag("pcap");
+    constexpr FontTag c2pcTag = makeFontTag("c2pc");
+    constexpr FontTag unicTag = makeFontTag("unic");
+    constexpr FontTag titlTag = makeFontTag("titl");
     const auto& ident = to<CssIdentValue>(*m_variantCaps);
     switch(ident.value()) {
     case CssValueID::Normal:
@@ -2043,14 +2043,14 @@ void FontFeaturesBuilder::buildVariantNumeric(FontFeatureList& features) const
         return;
     }
 
-    constexpr FontTag lnumTag("lnum");
-    constexpr FontTag onumTag("onum");
-    constexpr FontTag pnumTag("pnum");
-    constexpr FontTag tnumTag("tnum");
-    constexpr FontTag fracTag("frac");
-    constexpr FontTag afrcTag("afrc");
-    constexpr FontTag ordnTag("ordn");
-    constexpr FontTag zeroTag("zero");
+    constexpr FontTag lnumTag = makeFontTag("lnum");
+    constexpr FontTag onumTag = makeFontTag("onum");
+    constexpr FontTag pnumTag = makeFontTag("pnum");
+    constexpr FontTag tnumTag = makeFontTag("tnum");
+    constexpr FontTag fracTag = makeFontTag("frac");
+    constexpr FontTag afrcTag = makeFontTag("afrc");
+    constexpr FontTag ordnTag = makeFontTag("ordn");
+    constexpr FontTag zeroTag = makeFontTag("zero");
     for(const auto& value : to<CssListValue>(*m_variantNumeric)) {
         const auto& ident = to<CssIdentValue>(*value);
         switch(ident.value()) {
@@ -2093,15 +2093,15 @@ void FontFeaturesBuilder::buildVariantEastAsian(FontFeatureList& features) const
         return;
     }
 
-    constexpr FontTag jp78Tag("jp78");
-    constexpr FontTag jp83Tag("jp83");
-    constexpr FontTag jp90Tag("jp90");
-    constexpr FontTag jp04Tag("jp04");
-    constexpr FontTag smplTag("smpl");
-    constexpr FontTag tradTag("trad");
-    constexpr FontTag fwidTag("fwid");
-    constexpr FontTag pwidTag("pwid");
-    constexpr FontTag rubyTag("ruby");
+    constexpr FontTag jp78Tag = makeFontTag("jp78");
+    constexpr FontTag jp83Tag = makeFontTag("jp83");
+    constexpr FontTag jp90Tag = makeFontTag("jp90");
+    constexpr FontTag jp04Tag = makeFontTag("jp04");
+    constexpr FontTag smplTag = makeFontTag("smpl");
+    constexpr FontTag tradTag = makeFontTag("trad");
+    constexpr FontTag fwidTag = makeFontTag("fwid");
+    constexpr FontTag pwidTag = makeFontTag("pwid");
+    constexpr FontTag rubyTag = makeFontTag("ruby");
     for(const auto& value : to<CssListValue>(*m_variantEastAsian)) {
         const auto& ident = to<CssIdentValue>(*value);
         switch(ident.value()) {
@@ -2149,7 +2149,7 @@ void FontFeaturesBuilder::buildFeatureSettings(FontFeatureList& features) const
 
     for(const auto& value : to<CssListValue>(*m_featureSettings)) {
         const auto& feature = to<CssFontFeatureValue>(*value);
-        features.emplace_back(feature.tag(), feature.value());
+        features.emplace_back(makeFontTag(feature.tag()), feature.value());
     }
 }
 

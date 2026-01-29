@@ -2,7 +2,7 @@
 
 #include "resource.h"
 #include "geometry.h"
-#include "graphics-handle.h"
+#include "graphics-manager.h"
 
 #include <memory>
 

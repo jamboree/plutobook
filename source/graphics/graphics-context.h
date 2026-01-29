@@ -2,7 +2,7 @@
 
 #include "box-style.h"
 #include "geometry.h"
-#include "graphics-handle.h"
+#include "graphics-manager.h"
 
 #include <memory>
 
@@ -73,13 +73,6 @@ namespace plutobook {
         Point position;
     };
 
-    class GraphicsManager {
-    public:
-        virtual ImageHandle createImage(const void* data, size_t size) = 0;
-        virtual void destroyImage(ImageHandle handle) = 0;
-        virtual Size getImageSize(ImageHandle handle) const = 0;
-    };
-
     struct GradientInfo {
         GradientStops stops;
         Transform transform;
@@ -115,7 +108,7 @@ namespace plutobook {
         virtual void fillRoundedRect(const RoundedRect& rrect) = 0;
         virtual void fillPath(const Path& path,
                               FillRule fillRule = FillRule::NonZero) = 0;
-        virtual void fillGlyphs(hb_font_t* font, const GlyphRef glyphs[],
+        virtual void fillGlyphs(FontHandle font, const GlyphRef glyphs[],
                                 unsigned glyphCount) = 0;
         virtual void fillImage(ImageHandle image, const Rect& dstRect,
                                const Rect& srcRect) = 0;
@@ -180,7 +173,7 @@ namespace plutobook {
         void fillRoundedRect(const RoundedRect& rrect) override;
         void fillPath(const Path& path,
                       FillRule fillRule = FillRule::NonZero) override;
-        void fillGlyphs(hb_font_t* font, const GlyphRef glyphs[],
+        void fillGlyphs(FontHandle font, const GlyphRef glyphs[],
                         unsigned glyphCount) override;
         void fillImage(ImageHandle image, const Rect& dstRect,
                        const Rect& srcRect) override;
