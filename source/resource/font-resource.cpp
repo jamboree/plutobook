@@ -235,9 +235,47 @@ sortVariations(const FontDataDescription& description,
     return variations;
 }
 
-hb_font_t* createHBFont(hb_face_t* face,
-                               const FontDataDescription& description,
-                               const FontVariationList& baseVariations) {
+static FontDataInfo getHBFontDataInfo(hb_font_t* font) {
+    const auto get_glyph = [font](hb_codepoint_t unicode) {
+        hb_codepoint_t glyph;
+        return hb_font_get_glyph(font, unicode, 0, &glyph)
+                   ? glyph
+                   : ~hb_codepoint_t(0);
+    };
+
+    const auto glyph_extents = [font](hb_codepoint_t glyph) {
+        hb_glyph_extents_t extents{};
+        if (glyph != ~hb_codepoint_t(0)) {
+            hb_font_get_glyph_extents(font, glyph, &extents);
+        }
+        return extents;
+    };
+
+    auto zeroGlyph = get_glyph('0');
+    auto spaceGlyph = get_glyph(' ');
+    auto xGlyph = get_glyph('x');
+
+    hb_font_extents_t font_extents;
+    hb_font_get_extents_for_direction(font, HB_DIRECTION_LTR, &font_extents);
+
+    FontDataInfo info;
+    info.ascent = HB_TO_FLT(font_extents.ascender);
+    info.descent = HB_TO_FLT(-font_extents.descender);
+    info.lineGap = HB_TO_FLT(font_extents.line_gap);
+    info.xHeight = HB_TO_FLT(-glyph_extents(xGlyph).height);
+    info.spaceWidth = HB_TO_FLT(glyph_extents(spaceGlyph).width);
+    info.zeroWidth = HB_TO_FLT(glyph_extents(zeroGlyph).width);
+    info.zeroGlyph = zeroGlyph;
+    info.spaceGlyph = spaceGlyph;
+    // info.hasColor = FT_HAS_COLOR(face);
+    info.hasColor = false;
+
+    return info;
+}
+
+hb_font_t* createHBFont(hb_face_t* face, const FontDataDescription& description,
+                        const FontVariationList& baseVariations,
+                        FontDataInfo* info) {
     const auto font = hb_font_create(face);
 
     hb_font_set_scale(font, FLT_TO_HB(description.size),
@@ -247,13 +285,18 @@ hb_font_t* createHBFont(hb_face_t* face,
     hb_font_set_variations(font, variations.data(), variations.size());
     hb_font_make_immutable(font);
 
+    if (info != nullptr) {
+        *info = getHBFontDataInfo(font);
+    }
+
     return font;
 }
 
 RefPtr<FontData> RemoteFontFace::getFontData(FontDataCache* /*fontDataCache*/, const FontDataDescription& description)
 {
-    const auto font = graphicsManager().createFont(m_resource->face(), description, m_variations);
-    return SimpleFontData::create(font, m_features);
+    FontDataInfo info;
+    const auto font = graphicsManager().createFont(m_resource->face(), description, m_variations, &info);
+    return SimpleFontData::create(font, info, m_features);
 }
 
 RefPtr<FontData> SegmentedFontFace::getFontData(FontDataCache* fontDataCache, const FontDataDescription& description)
@@ -278,45 +321,6 @@ RefPtr<FontData> SegmentedFontFace::getFontData(FontDataCache* fontDataCache, co
     if(!fonts.empty())
         fontData = SegmentedFontData::create(std::move(fonts));
     return fontData;
-}
-
-RefPtr<SimpleFontData> SimpleFontData::create(FontHandle font,
-    const FontFeatureList& features)
-{
-    const auto hbFont = graphicsManager().getHBFont(font);
-    const auto get_glyph = [hbFont](hb_codepoint_t unicode) {
-        hb_codepoint_t glyph;
-        return hb_font_get_glyph(hbFont, unicode, 0, &glyph) ? glyph : ~hb_codepoint_t(0);
-    };
-
-    const auto glyph_extents = [hbFont](hb_codepoint_t glyph) {
-        hb_glyph_extents_t extents{};
-        if (glyph != ~hb_codepoint_t(0)) {
-            hb_font_get_glyph_extents(hbFont, glyph, &extents);
-        }
-        return extents;
-    };
-
-    auto zeroGlyph = get_glyph('0');
-    auto spaceGlyph = get_glyph(' ');
-    auto xGlyph = get_glyph('x');
-
-    hb_font_extents_t font_extents;
-    hb_font_get_extents_for_direction(hbFont, HB_DIRECTION_LTR, &font_extents);
-
-    FontDataInfo info;
-    info.ascent = HB_TO_FLT(font_extents.ascender);
-    info.descent = HB_TO_FLT(-font_extents.descender);
-    info.lineGap = HB_TO_FLT(font_extents.line_gap);
-    info.xHeight = HB_TO_FLT(-glyph_extents(xGlyph).height);
-    info.spaceWidth = HB_TO_FLT(glyph_extents(spaceGlyph).width);
-    info.zeroWidth = HB_TO_FLT(glyph_extents(zeroGlyph).width);
-    info.zeroGlyph = zeroGlyph;
-    info.spaceGlyph = spaceGlyph;
-    //info.hasColor = FT_HAS_COLOR(face);
-    info.hasColor = false;
-
-    return adoptPtr(new SimpleFontData(font, info, features));
 }
 
 const SimpleFontData* SimpleFontData::getFontData(uint32_t codepoint, bool preferColor) const
@@ -420,6 +424,7 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
 {
     if(pattern == nullptr)
         return nullptr;
+#if 0
     FcMatrix matrix;
     FcMatrixInit(&matrix);
     {
@@ -431,7 +436,6 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
         }
     }
 
-#if 0
     cairo_matrix_t ctm;
     cairo_matrix_init_identity(&ctm);
 
@@ -464,26 +468,15 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
         }
     }
 
-#if 0
-    auto options = cairo_font_options_create();
-    auto variations = buildVariationSettings(description, variationSettings);
-    cairo_font_options_set_variations(options, variations.data());
-    cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_OFF);
-
-    auto face = cairo_ft_font_face_create_for_pattern(pattern);
-    auto font = cairo_scaled_font_create(face, &ftm, &ctm, options);
-
-    cairo_font_face_destroy(face);
-    cairo_font_options_destroy(options);
-#endif // 0
     auto face = graphicsManager().createFaceForPattern(pattern);
     FcPatternDestroy(pattern);
     if (face == FaceHandle::Invalid) {
         return nullptr;
     }
-    const auto font = graphicsManager().createFont(face, description, variationSettings);
+    FontDataInfo info;
+    const auto font = graphicsManager().createFont(face, description, variationSettings, &info);
     graphicsManager().destroyFace(face);
-    return SimpleFontData::create(font, featureSettings);
+    return SimpleFontData::create(font, info, featureSettings);
 }
 
 static bool isGenericFamilyName(const std::string_view& familyName)
@@ -807,15 +800,12 @@ struct CairoGraphicsManager::Font {
     };
 };
 
-FontHandle
-CairoGraphicsManager::createFont(FaceHandle face,
-                                 const FontDataDescription& description,
-                                 const FontVariationList& baseVariations) {
-    const auto facePtr = std::bit_cast<Face*>(face);
+static cairo_scaled_font_t*
+createScaledFont(cairo_font_face_t* face,
+                 const FontDataDescription& description,
+                 const std::vector<hb_variation_t>& variations) {
     const auto slopeAngle =
         -std::tan(description.request.slope * std::numbers::pi / 180.0);
-    const auto variations = sortVariations(description, baseVariations);
-
     cairo_matrix_t ctm;
     cairo_matrix_init_identity(&ctm);
 
@@ -824,21 +814,74 @@ CairoGraphicsManager::createFont(FaceHandle face,
     cairo_matrix_scale(&ftm, description.size, description.size);
 
     auto options = cairo_font_options_create();
-    // cairo_font_options_set_variations(options, variations.data());
+    std::string vars;
+    for (const auto& [tag, value] : variations) {
+        const char name[4] = {HB_UNTAG(tag)};
+        if (!vars.empty())
+            vars += ',';
+        vars.append(name, 4);
+        vars += '=';
+        vars += toString(value);
+    }
+    cairo_font_options_set_variations(options, vars.c_str());
     cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_OFF);
 
-    auto charSet = FcCharSetCopy(facePtr->m_charSet);
-    auto font = cairo_scaled_font_create(facePtr->m_face, &ftm, &ctm, options);
-
+    auto font = cairo_scaled_font_create(face, &ftm, &ctm, options);
     cairo_font_options_destroy(options);
+    return font;
+}
 
-    ///
-    auto ftFace = cairo_ft_scaled_font_lock_face(font);
+static FontDataInfo getScaledFontDataInfo(cairo_scaled_font_t* font,
+                                          FT_Face ftFace) {
+    auto zeroGlyph = FcFreeTypeCharIndex(ftFace, '0');
+    auto spaceGlyph = FcFreeTypeCharIndex(ftFace, ' ');
+    auto xGlyph = FcFreeTypeCharIndex(ftFace, 'x');
+    auto glyph_extents = [font](unsigned long index) {
+        cairo_glyph_t glyph = {index, 0, 0};
+        cairo_text_extents_t extents;
+        cairo_scaled_font_glyph_extents(font, &glyph, 1, &extents);
+        return extents;
+    };
+
+    cairo_font_extents_t font_extents;
+    cairo_scaled_font_extents(font, &font_extents);
+
+    FontDataInfo info;
+    info.ascent = font_extents.ascent;
+    info.descent = font_extents.descent;
+    info.lineGap =
+        font_extents.height - font_extents.ascent - font_extents.descent;
+    info.xHeight = glyph_extents(xGlyph).height;
+    info.spaceWidth = glyph_extents(spaceGlyph).x_advance;
+    info.zeroWidth = glyph_extents(zeroGlyph).x_advance;
+    info.zeroGlyph = zeroGlyph;
+    info.spaceGlyph = spaceGlyph;
+    info.hasColor = FT_HAS_COLOR(ftFace);
+
+    return info;
+}
+
+FontHandle
+CairoGraphicsManager::createFont(FaceHandle face,
+                                 const FontDataDescription& description,
+                                 const FontVariationList& baseVariations,
+    FontDataInfo* info) {
+    const auto facePtr = std::bit_cast<Face*>(face);
+    const auto variations = sortVariations(description, baseVariations);
+    const auto font =
+        createScaledFont(facePtr->m_face, description, variations);
+
+    const auto ftFace = cairo_ft_scaled_font_lock_face(font);
     if (ftFace == nullptr) {
         cairo_scaled_font_destroy(font);
         return FontHandle::Invalid;
     }
-    auto hbFont = hb_ft_font_create_referenced(ftFace);
+
+    if (info != nullptr) {
+        *info = getScaledFontDataInfo(font, ftFace);
+    }
+
+    const auto hbFont = hb_ft_font_create_referenced(ftFace);
     hb_font_set_scale(hbFont, FLT_TO_HB(description.size),
                       FLT_TO_HB(description.size));
 
@@ -861,6 +904,7 @@ CairoGraphicsManager::createFont(FaceHandle face,
     hb_font_make_immutable(hbFont);
     cairo_ft_scaled_font_unlock_face(font);
 
+    const auto charSet = FcCharSetCopy(facePtr->m_charSet);
     return std::bit_cast<FontHandle>(new Font{font, hbFont, charSet});
 }
 

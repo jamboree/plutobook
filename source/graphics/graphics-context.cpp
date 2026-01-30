@@ -462,14 +462,16 @@ void CairoGraphicsContext::fillPath(const Path& path, FillRule fillRule)
     cairo_fill(m_canvas);
 }
 
-void CairoGraphicsContext::fillGlyphs(FontHandle font, const GlyphRef glyphs[], unsigned glyphCount)
-{
+void CairoGraphicsContext::fillGlyphs(FontHandle font, const GlyphRef glyphs[],
+                                      unsigned glyphCount) {
     cairo_set_scaled_font(m_canvas, CairoGraphicsManager::getScaledFont(font));
     const auto glyphBuffer = cairo_glyph_allocate(glyphCount);
     for (unsigned i = 0; i != glyphCount; ++i) {
-        glyphBuffer[i].index = glyphs[i].index;
-        glyphBuffer[i].x = glyphs[i].position.x;
-        glyphBuffer[i].y = glyphs[i].position.y;
+        const auto& glyphIn = glyphs[i];
+        auto& glyphOut = glyphBuffer[i];
+        glyphOut.index = glyphIn.index;
+        glyphOut.x = glyphIn.position.x;
+        glyphOut.y = glyphIn.position.y;
     }
     cairo_show_glyphs(m_canvas, glyphBuffer, glyphCount);
     cairo_glyph_free(glyphBuffer);

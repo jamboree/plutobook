@@ -299,7 +299,8 @@ namespace plutobook {
         const FontSelectionDescription& description() const {
             return m_description;
         }
-        RefPtr<FontData> getFontData(FontDataCache* fontDataCache, const FontDataDescription& description);
+        RefPtr<FontData> getFontData(FontDataCache* fontDataCache,
+                                     const FontDataDescription& description);
         void add(RefPtr<FontFace> face) { m_faces.push_back(std::move(face)); }
 
     private:
@@ -346,7 +347,10 @@ namespace plutobook {
     class SimpleFontData final : public FontData {
     public:
         static RefPtr<SimpleFontData> create(FontHandle font,
-                                             const FontFeatureList& features);
+                                             const FontDataInfo& info,
+                                             const FontFeatureList& features) {
+            return adoptPtr(new SimpleFontData(font, info, features));
+        }
 
         FontHandle font() const { return m_hbFont; }
         const FontDataInfo& info() const { return m_info; }

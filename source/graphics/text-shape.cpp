@@ -411,16 +411,16 @@ float TextShapeView::draw(GraphicsContext& context, const Point& origin, float e
     if(m_startOffset == m_endOffset)
         return 0.f;
 
-    auto direction = m_shape->direction();
+    const auto direction = m_shape->direction();
     auto offset = origin;
     const auto& text = m_shape->text();
+    std::vector<GlyphRef> glyphBuffer;
     for(const auto& run : m_shape->runs()) {
         const auto& glyphs = run->glyphs();
-        std::unique_ptr<GlyphRef[]> glyphBuffer(new GlyphRef[glyphs.size()]);
-        uint32_t numGlyphs = 0;
+        glyphBuffer.reserve(glyphs.size());
         for(uint32_t glyphIndex = 0; glyphIndex < glyphs.size(); ++glyphIndex) {
             const auto& glyph = glyphs[glyphIndex];
-            auto characterIndex = glyph.characterIndex + run->offset();
+            const auto characterIndex = glyph.characterIndex + run->offset();
             if((direction == Direction::Ltr && characterIndex >= m_endOffset)
                 || (direction == Direction::Rtl && characterIndex < m_startOffset)) {
                 break;
@@ -428,11 +428,13 @@ float TextShapeView::draw(GraphicsContext& context, const Point& origin, float e
 
             if((direction == Direction::Ltr && characterIndex >= m_startOffset)
                 || (direction == Direction::Rtl && characterIndex < m_endOffset)) {
-                auto character = text.charAt(characterIndex);
+                const auto character = text.charAt(characterIndex);
                 if (!treatAsZeroWidthSpace(character)) {
-                    glyphBuffer[numGlyphs].index = glyph.glyphIndex;
-                    glyphBuffer[numGlyphs].position = offset + Point(glyph.xOffset, glyph.yOffset);
-                    ++numGlyphs;
+                    GlyphRef glyphRef;
+                    glyphRef.index = glyph.glyphIndex;
+                    glyphRef.position =
+                        offset + Point(glyph.xOffset, glyph.yOffset);
+                    glyphBuffer.push_back(glyphRef);
                 }
 
                 offset.x += glyph.advance;
@@ -442,8 +444,11 @@ float TextShapeView::draw(GraphicsContext& context, const Point& origin, float e
             }
         }
 
-        context.fillGlyphs(run->fontData()->font(), glyphBuffer.get(),
-                           numGlyphs);
+        if (const auto glyphCount = glyphBuffer.size()) {
+            context.fillGlyphs(run->fontData()->font(), glyphBuffer.data(),
+                               glyphCount);
+            glyphBuffer.clear();
+        }
     }
 
     return offset.x - origin.x;

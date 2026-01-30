@@ -1521,6 +1521,7 @@ namespace plutobook {
 
     enum FontTag : uint32_t;
     struct FontDataDescription;
+    struct FontDataInfo;
 
     using FontVariation = std::pair<FontTag, float>;
     using FontVariationList = std::vector<FontVariation>;
@@ -1528,6 +1529,6 @@ namespace plutobook {
     PLUTOBOOK_API hb_face_t* createHBFaceFromResource(ResourceData resource);
     PLUTOBOOK_API hb_face_t* createHBFaceForPattern(FcPattern* pattern);
     PLUTOBOOK_API hb_font_t*
-        createHBFont(hb_face_t* face, const FontDataDescription& description,
-            const FontVariationList& baseVariations);
+    createHBFont(hb_face_t* face, const FontDataDescription& description,
+                 const FontVariationList& baseVariations, FontDataInfo* info);
 } // namespace plutobook
