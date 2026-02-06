@@ -375,46 +375,54 @@ void BorderPainter::paintSides(GraphicsContext& context, BorderEdgeFlags visible
     }
 
     const auto& innerRadii = m_inner.radii();
-    for(auto side : { TopEdge, BottomEdge, LeftEdge, RightEdge }) {
+    auto side = TopEdge;
+    if (m_edges[side].isRenderable() && includesEdge(visibleEdgeSet, side)) {
         const auto& edge = m_edges[side];
-        if(!edge.isRenderable() || !includesEdge(visibleEdgeSet, side))
-            continue;
-        auto color = edge.color();
-        if(commonColor) {
-            color = *commonColor;
-        }
-
+        const auto color = commonColor ? *commonColor : edge.color();
         Rect sideRect(m_outer.rect());
-        if(side == TopEdge) {
-            if(m_isRounded && (borderStyleHasInnerDetail(edge.style()) || borderWillArcInnerEdge(innerRadii.tl, innerRadii.tr))) {
-                paintSide(context, side, LeftEdge, RightEdge, color, path);
-            } else {
-                sideRect.h = edge.width();
-                paintSide(context, side, LeftEdge, RightEdge, color, sideRect);
-            }
-        } else if(side == BottomEdge) {
-            if(m_isRounded && (borderStyleHasInnerDetail(edge.style()) || borderWillArcInnerEdge(innerRadii.bl, innerRadii.br))) {
-                paintSide(context, side, LeftEdge, RightEdge, color, path);
-            } else {
-                sideRect.y = sideRect.bottom() - edge.width();
-                sideRect.h = edge.width();
-                paintSide(context, side, LeftEdge, RightEdge, color, sideRect);
-            }
-        } else if(side == LeftEdge) {
-            if(m_isRounded && (borderStyleHasInnerDetail(edge.style()) || borderWillArcInnerEdge(innerRadii.bl, innerRadii.tl))) {
-                paintSide(context, side, TopEdge, BottomEdge, color, path);
-            } else {
-                sideRect.w = edge.width();
-                paintSide(context, side, TopEdge, BottomEdge, color, sideRect);
-            }
-        } else if(side == RightEdge) {
-            if(m_isRounded && (borderStyleHasInnerDetail(edge.style()) || borderWillArcInnerEdge(innerRadii.br, innerRadii.tr))) {
-                paintSide(context, side, TopEdge, BottomEdge, color, path);
-            } else {
-                sideRect.x = sideRect.right() - edge.width();
-                sideRect.w = edge.width();
-                paintSide(context, side, TopEdge, BottomEdge, color, sideRect);
-            }
+        if (m_isRounded && (borderStyleHasInnerDetail(edge.style()) || borderWillArcInnerEdge(innerRadii.tl, innerRadii.tr))) {
+            paintSide(context, side, LeftEdge, RightEdge, color, path);
+        } else {
+            sideRect.h = edge.width();
+            paintSide(context, side, LeftEdge, RightEdge, color, sideRect);
+        }
+    }
+    side = BottomEdge;
+    if (m_edges[side].isRenderable() && includesEdge(visibleEdgeSet, side)) {
+        const auto& edge = m_edges[side];
+        const auto color = commonColor ? *commonColor : edge.color();
+        Rect sideRect(m_outer.rect());
+        if (m_isRounded && (borderStyleHasInnerDetail(edge.style()) || borderWillArcInnerEdge(innerRadii.bl, innerRadii.br))) {
+            paintSide(context, side, LeftEdge, RightEdge, color, path);
+        } else {
+            sideRect.y = sideRect.bottom() - edge.width();
+            sideRect.h = edge.width();
+            paintSide(context, side, LeftEdge, RightEdge, color, sideRect);
+        }
+    }
+    side = LeftEdge;
+    if (m_edges[side].isRenderable() && includesEdge(visibleEdgeSet, side)) {
+        const auto& edge = m_edges[side];
+        const auto color = commonColor ? *commonColor : edge.color();
+        Rect sideRect(m_outer.rect());
+        if (m_isRounded && (borderStyleHasInnerDetail(edge.style()) || borderWillArcInnerEdge(innerRadii.bl, innerRadii.tl))) {
+            paintSide(context, side, TopEdge, BottomEdge, color, path);
+        } else {
+            sideRect.w = edge.width();
+            paintSide(context, side, TopEdge, BottomEdge, color, sideRect);
+        }
+    }
+    side = RightEdge;
+    if (m_edges[side].isRenderable() && includesEdge(visibleEdgeSet, side)) {
+        const auto& edge = m_edges[side];
+        const auto color = commonColor ? *commonColor : edge.color();
+        Rect sideRect(m_outer.rect());
+        if (m_isRounded && (borderStyleHasInnerDetail(edge.style()) || borderWillArcInnerEdge(innerRadii.br, innerRadii.tr))) {
+            paintSide(context, side, TopEdge, BottomEdge, color, path);
+        } else {
+            sideRect.x = sideRect.right() - edge.width();
+            sideRect.w = edge.width();
+            paintSide(context, side, TopEdge, BottomEdge, color, sideRect);
         }
     }
 }
