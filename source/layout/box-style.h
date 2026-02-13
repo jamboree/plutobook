@@ -836,7 +836,7 @@ namespace plutobook {
 
         const HeapString& getQuote(bool open, size_t depth) const;
 
-        CssVariableData* getCustom(const std::string_view& name) const;
+        CssVariableData* getCustom(std::string_view name) const;
         void setCustom(GlobalString name, RefPtr<CssVariableData> value);
 
         CssValuePtr get(CssPropertyID id) const;

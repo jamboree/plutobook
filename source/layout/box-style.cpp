@@ -1538,7 +1538,7 @@ const HeapString& BoxStyle::getQuote(bool open, size_t depth) const
     return to<CssStringValue>(*quote).value();
 }
 
-CssVariableData* BoxStyle::getCustom(const std::string_view& name) const
+CssVariableData* BoxStyle::getCustom(std::string_view name) const
 {
     auto it = m_customProperties.find(name);
     if(it == m_customProperties.end())

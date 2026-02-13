@@ -49,9 +49,9 @@ namespace plutobook {
         CssToken(Type type, uint32_t delim) : m_type(type), m_delim(delim) {}
         CssToken(Type type, uint32_t from, uint32_t to)
             : m_type(type), m_from(from), m_to(to) {}
-        CssToken(Type type, const std::string_view& data)
+        CssToken(Type type, std::string_view data)
             : m_type(type), m_data(data) {}
-        CssToken(Type type, HashType hashType, const std::string_view& data)
+        CssToken(Type type, HashType hashType, std::string_view data)
             : m_type(type), m_hashType(hashType), m_data(data) {}
 
         CssToken(Type type, NumberType numberType, NumberSign numberSign,
@@ -60,7 +60,7 @@ namespace plutobook {
               m_number(number) {}
 
         CssToken(Type type, NumberType numberType, NumberSign numberSign,
-                 float number, const std::string_view& unit)
+                 float number, std::string_view unit)
             : m_type(type), m_numberType(numberType), m_numberSign(numberSign),
               m_number(number), m_data(unit) {}
 
@@ -73,7 +73,7 @@ namespace plutobook {
         int integer() const { return static_cast<int>(m_number); }
         uint32_t from() const { return m_from; }
         uint32_t to() const { return m_to; }
-        const std::string_view& data() const { return m_data; }
+        std::string_view data() const { return m_data; }
 
         static Type closeType(Type type) {
             switch (type) {
@@ -182,7 +182,7 @@ namespace plutobook {
     public:
         CssTokenizerInputStream() = default;
 
-        explicit CssTokenizerInputStream(const std::string_view& input) noexcept
+        explicit CssTokenizerInputStream(std::string_view input) noexcept
             : m_data(input.data()), m_length(input.length()) {}
 
         char peek(size_t count = 0) const {
@@ -232,11 +232,11 @@ namespace plutobook {
     public:
         CssTokenizer() = default;
 
-        explicit CssTokenizer(const std::string_view& input);
+        explicit CssTokenizer(std::string_view input);
 
         CssTokenStream tokenize();
 
-        void reset(const std::string_view& input) noexcept {
+        void reset(std::string_view input) noexcept {
             m_input = CssTokenizerInputStream(input);
             m_tokenList.clear();
             m_stringList.clear();

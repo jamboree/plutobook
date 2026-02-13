@@ -6,11 +6,16 @@
 #include <cstdint>
 
 namespace plutobook {
-    constexpr auto kDefaultEpsilon = 1e-5f;
+    constexpr auto kLayoutEpsilon = 1e-3f;
 
-    inline bool isNearlyZero(float v) { return std::abs(v) <= kDefaultEpsilon; }
+    inline bool isNearlyZero(float v, float epsilon = kLayoutEpsilon) {
+        return std::abs(v) <= epsilon;
+    }
 
-    inline bool isNearlyEqual(float a, float b) { return isNearlyZero(a - b); }
+    inline bool isNearlyEqual(float a, float b,
+                              float epsilon = kLayoutEpsilon) {
+        return isNearlyZero(a - b, epsilon);
+    }
 
     constexpr auto kPi = 3.14159265358979323846f;
     constexpr auto kTwoPi = 6.28318530717958647693f;

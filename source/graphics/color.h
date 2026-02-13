@@ -34,7 +34,7 @@ namespace plutobook {
         static const Color Black;
         static const Color White;
 
-        static Optional<Color> named(const std::string_view& name);
+        static Optional<Color> named(std::string_view name);
 
         bool operator==(const Color&) const = default;
         auto operator<=>(const Color&) const = default;

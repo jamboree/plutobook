@@ -11,38 +11,6 @@
 
 namespace plutobook {
 
-CssFontFaceCache::CssFontFaceCache()
-{
-}
-
-RefPtr<FontData> CssFontFaceCache::get(FontDataCache* fontDataCache, GlobalString family, const FontDataDescription& description) const
-{
-    auto it = m_table.find(family);
-    if(it == m_table.end())
-        return fontDataCache->getFontData(family, description);
-    FontSelectionAlgorithm algorithm(description.request);
-    for(const auto& item : it->second) {
-        algorithm.addCandidate(item.first);
-    }
-
-    RefPtr<SegmentedFontFace> face;
-    for(const auto& item : it->second) {
-        if(face == nullptr || algorithm.isCandidateBetter(item.first, face->description())) {
-            face = item.second;
-        }
-    }
-
-    return face->getFontData(fontDataCache, description);
-}
-
-void CssFontFaceCache::add(GlobalString family, const FontSelectionDescription& description, RefPtr<FontFace> face)
-{
-    auto& fontFace = m_table[family][description];
-    if(fontFace == nullptr)
-        fontFace = SegmentedFontFace::create(description);
-    fontFace->add(std::move(face));
-}
-
 class CssPropertyData : public CssProperty {
 public:
     CssPropertyData(uint32_t specificity, uint32_t position, const CssProperty& property)
@@ -347,7 +315,7 @@ FontDescription FontDescriptionBuilder::build() const
 }
 
 class StyleBuilder {
-protected:
+public:
     StyleBuilder(const BoxStyle* parentStyle, PseudoType pseudoType)
         : m_parentStyle(parentStyle), m_pseudoType(pseudoType)
     {}
@@ -367,6 +335,7 @@ protected:
     void merge(uint32_t specificity, uint32_t position, const CssPropertyList& properties);
     void buildStyle(BoxStyle* newStyle);
 
+protected:
     CssPropertyDataList m_allProperties; // normal + custom
     const BoxStyle* m_parentStyle;
     unsigned m_propertyCount = 0;
@@ -463,14 +432,15 @@ void StyleBuilder::buildStyle(BoxStyle* newStyle)
 
 class ElementStyleBuilder final : public StyleBuilder {
 public:
-    ElementStyleBuilder(Element* element, PseudoType pseudoType, const BoxStyle* parentStyle)
+    ElementStyleBuilder(Element* element, PseudoType pseudoType, const SelectorFilter& selectorFilter, const BoxStyle* parentStyle)
         : StyleBuilder(parentStyle, pseudoType)
         , m_element(element)
+        , m_selectorFilter(selectorFilter)
     {}
 
     void add(const CssRuleDataList& rules) {
         for (const auto& rule : rules) {
-            if (rule.match(m_element, m_pseudoType)) {
+            if (rule.match(m_element, m_pseudoType, m_selectorFilter)) {
                 merge(rule.specificity(), rule.position(), rule.properties());
             }
         }
@@ -480,6 +450,7 @@ public:
 
 private:
     Element* m_element;
+    const SelectorFilter& m_selectorFilter;
 };
 
 RefPtr<BoxStyle> ElementStyleBuilder::build()
@@ -692,9 +663,9 @@ CssStyleSheet::CssStyleSheet(Document* document)
     }
 }
 
-RefPtr<BoxStyle> CssStyleSheet::styleForElement(Element* element, const BoxStyle* parentStyle) const
+RefPtr<BoxStyle> CssStyleSheet::styleForElement(Element* element, const SelectorFilter& selectorFilter, const BoxStyle* parentStyle) const
 {
-    ElementStyleBuilder builder(element, PseudoType::None, parentStyle);
+    ElementStyleBuilder builder(element, PseudoType::None, selectorFilter, parentStyle);
     for (const auto& className : element->classNames()) {
         if (const auto rules = m_classRules.get(className))
             builder.add(*rules);
@@ -711,9 +682,9 @@ RefPtr<BoxStyle> CssStyleSheet::styleForElement(Element* element, const BoxStyle
     return builder.build();
 }
 
-RefPtr<BoxStyle> CssStyleSheet::pseudoStyleForElement(Element* element, PseudoType pseudoType, const BoxStyle* parentStyle) const
+RefPtr<BoxStyle> CssStyleSheet::pseudoStyleForElement(Element* element, PseudoType pseudoType, const SelectorFilter& selectorFilter, const BoxStyle* parentStyle) const
 {
-    ElementStyleBuilder builder(element, pseudoType, parentStyle);
+    ElementStyleBuilder builder(element, pseudoType, selectorFilter, parentStyle);
     if (const auto rules = m_pseudoRules.get(pseudoType))
         builder.add(*rules);
     return builder.build();
@@ -735,7 +706,22 @@ RefPtr<BoxStyle> CssStyleSheet::styleForPageMargin(GlobalString pageName, uint32
 
 RefPtr<FontData> CssStyleSheet::getFontData(GlobalString family, const FontDataDescription& description) const
 {
-    return m_fontFaceCache.get(m_document->fontDataCache(), family, description);
+    auto it = m_fontFaces.find(family);
+    if (it == m_fontFaces.end())
+        return m_document->fontDataCache()->getFontData(family, description);
+    FontSelectionAlgorithm algorithm(description.request);
+    for (const auto& item : it->second) {
+        algorithm.addCandidate(item.first);
+    }
+
+    RefPtr<SegmentedFontFace> face;
+    for (const auto& item : it->second) {
+        if (face == nullptr || algorithm.isCandidateBetter(item.first, face->description())) {
+            face = item.second;
+        }
+    }
+
+    return face->getFontData(m_document, description);
 }
 
 const CssCounterStyle& CssStyleSheet::getCounterStyle(GlobalString name)
@@ -766,7 +752,7 @@ std::string CssStyleSheet::getMarkerText(int value, GlobalString listType)
     return representation;
 }
 
-void CssStyleSheet::parseStyle(const std::string_view& content, CssStyleOrigin origin, Url baseUrl)
+void CssStyleSheet::parseStyle(std::string_view content, CssStyleOrigin origin, Url baseUrl)
 {
     CssParserContext context(m_document, origin, std::move(baseUrl));
     CssParser parser(context);
@@ -928,7 +914,7 @@ public:
     GlobalString family() const;
     FontSelectionDescription description() const;
 
-    RefPtr<FontFace> build(Document* document) const;
+    RefPtr<SimpleFontFace> build(Document* document) const;
 
 private:
     CssValuePtr m_src;
@@ -1097,43 +1083,53 @@ static const HeapString& convertStringOrCustomIdent(const CssValue& value)
     return to<CssCustomIdentValue>(value).value();
 }
 
-RefPtr<FontFace> CssFontFaceBuilder::build(Document* document) const
+RefPtr<SimpleFontFace> CssFontFaceBuilder::build(Document* document) const
 {
-    if(m_src == nullptr)
+    if (m_src == nullptr) {
         return nullptr;
-    for(const auto& value : to<CssListValue>(*m_src)) {
+    }
+
+    FontFaceSourceList sources;
+    for (const auto& value : to<CssListValue>(*m_src)) {
         const auto& list = to<CssListValue>(*value);
-        if(auto function = to<CssUnaryFunctionValue>(list[0])) {
+        if (auto function = to<CssUnaryFunctionValue>(list[0])) {
             assert(function->id() == CssFunctionID::Local);
             const auto& family = to<CssCustomIdentValue>(*function->value());
-            if(!document->fontDataCache()->isFamilyAvailable(family.value()))
-                continue;
-            return LocalFontFace::create(family.value(), featureSettings(), variationSettings(), unicodeRanges());
-        }
-
-        const auto& url = to<CssUrlValue>(*list[0]);
-        if(list.size() == 2) {
-            const auto& function = to<CssUnaryFunctionValue>(*list[1]);
-            assert(function.id() == CssFunctionID::Format);
-            const auto& format = convertStringOrCustomIdent(*function.value());
-            if(!FontResource::supportsFormat(format)) {
-                continue;
+            if (document->fontDataCache()->isFamilyAvailable(family.value())) {
+                sources.emplace_back(family.value());
+                break;
             }
         }
+        else {
+            const auto& url = to<CssUrlValue>(*list[0]);
+            if (list.size() == 2) {
+                const auto& function = to<CssUnaryFunctionValue>(*list[1]);
+                assert(function.id() == CssFunctionID::Format);
+                const auto& format = convertStringOrCustomIdent(*function.value());
+                if (!FontResource::supportsFormat(format.value())) {
+                    continue;
+                }
+            }
 
-        if(auto fontResource = document->fetchFontResource(url.value())) {
-            return RemoteFontFace::create(featureSettings(), variationSettings(), unicodeRanges(), std::move(fontResource));
+            sources.emplace_back(url.value());
         }
     }
 
-    return nullptr;
+    if (sources.empty())
+        return nullptr;
+    return SimpleFontFace::create(featureSettings(), variationSettings(), unicodeRanges(), std::move(sources));
 }
 
 void CssStyleSheet::addFontFaceRule(const RefPtr<CssFontFaceRule>& rule)
 {
     CssFontFaceBuilder builder(rule->properties());
     if(auto face = builder.build(m_document)) {
-        m_fontFaceCache.add(builder.family(), builder.description(), std::move(face));
+        const auto family = builder.family();
+        const auto description = builder.description();
+        auto& fontFace = m_fontFaces[family][description];
+        if (fontFace == nullptr)
+            fontFace = SegmentedFontFace::create(description);
+        fontFace->add(std::move(face));
     }
 }
 

@@ -282,7 +282,7 @@ constexpr bool isIPv6Char(uint8_t cc) { return characterClassTable[cc] & IPv6Cha
 constexpr bool isPathSegmentEndChar(uint8_t cc) { return characterClassTable[cc] & PathSegmentEndChar; }
 constexpr bool isBadChar(uint8_t cc) { return characterClassTable[cc] & BadChar; }
 
-Url::Url(const std::string_view& input)
+Url::Url(std::string_view input)
 {
     if(input.empty() || !isSchemeFirstChar(input.front()))
         return;
@@ -550,7 +550,7 @@ Url::Url(const std::string_view& input)
     m_fragmentEnd = m_value.length();
 }
 
-constexpr bool isAbsoluteFilename(const std::string_view& input)
+constexpr bool isAbsoluteFilename(std::string_view input)
 {
     if (!input.empty()) {
         if (input.front() == '/' || input.front() == '\\')
@@ -618,7 +618,7 @@ Url Url::complete(std::string_view input) const
     return Url(value + relative);
 }
 
-bool Url::protocolIs(const std::string_view& protocol) const
+bool Url::protocolIs(std::string_view protocol) const
 {
     return iequals(std::string_view(m_value.data(), m_schemeEnd), protocol);
 }

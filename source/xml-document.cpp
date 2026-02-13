@@ -8,7 +8,7 @@ std::unique_ptr<XmlDocument> XmlDocument::create(Book* book, ResourceFetcher* fe
     return std::unique_ptr<XmlDocument>(new XmlDocument(ClassKind::XmlDocument, book, fetcher, std::move(baseUrl)));
 }
 
-bool XmlDocument::parse(const std::string_view& content)
+bool XmlDocument::parse(std::string_view content)
 {
     return XmlParser(this).parse(content);
 }

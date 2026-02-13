@@ -79,7 +79,8 @@ namespace plutobook {
 
         virtual Node* cloneNode(bool deep) = 0;
         virtual Box* createBox(const RefPtr<BoxStyle>& style) = 0;
-        virtual void buildBox(Counters& counters, Box* parent) = 0;
+        virtual void buildBox(Counters& counters,
+                              SelectorFilter& selectorFilter, Box* parent) = 0;
         virtual void finishParsingDocument() {}
 
     protected:
@@ -102,13 +103,14 @@ namespace plutobook {
 
         const HeapString& data() const { return m_data; }
         void setData(const HeapString& data) { m_data = data; }
-        void appendData(const std::string_view& data);
+        void appendData(std::string_view data);
 
         bool isHidden(const Box* parent) const;
 
         Node* cloneNode(bool deep) final;
         Box* createBox(const RefPtr<BoxStyle>& style) final;
-        void buildBox(Counters& counters, Box* parent) final;
+        void buildBox(Counters& counters, SelectorFilter& selectorFilter,
+                      Box* parent) final;
 
     private:
         HeapString m_data;
@@ -134,7 +136,8 @@ namespace plutobook {
 
         std::string textFromChildren() const;
 
-        void buildChildrenBox(Counters& counters, Box* parent);
+        void buildChildrenBox(Counters& counters,
+                              SelectorFilter& selectorFilter, Box* parent);
         void finishParsingDocument() override;
 
     private:
@@ -226,6 +229,9 @@ namespace plutobook {
         Element* previousSiblingElement() const;
         Element* nextSiblingElement() const;
 
+        bool hasID() const { return !m_id.empty(); }
+        bool hasClass() const { return !m_classNames.empty(); }
+
         void setIsCaseSensitive(bool value) { m_isCaseSensitive = value; }
         bool isCaseSensitive() const { return m_isCaseSensitive; }
 
@@ -235,9 +241,15 @@ namespace plutobook {
         void setIsLinkSource(bool value) { m_isLinkSource = value; }
         bool isLinkSource() const { return m_isLinkSource; }
 
+        void setHasElementChildren(bool value) { m_hasElementChildren = value; }
+        bool hasElementChildren() const { return m_hasElementChildren; }
+
         Node* cloneNode(bool deep) override;
         Box* createBox(const RefPtr<BoxStyle>& style) override;
-        void buildBox(Counters& counters, Box* parent) override;
+        void buildElementChildrenBox(Counters& counters,
+                                     SelectorFilter& selectorFilter, Box* box);
+        void buildBox(Counters& counters, SelectorFilter& selectorFilter,
+                      Box* parent) override;
         void finishParsingDocument() override;
 
     private:
@@ -250,6 +262,7 @@ namespace plutobook {
         bool m_isCaseSensitive{false};
         bool m_isLinkDestination{false};
         bool m_isLinkSource{false};
+        bool m_hasElementChildren{false};
     };
 
     extern template bool is<Element>(const Node& value);
@@ -335,7 +348,7 @@ namespace plutobook {
 
         const Url& baseUrl() const { return m_baseUrl; }
         void setBaseUrl(Url baseUrl) { m_baseUrl = std::move(baseUrl); }
-        Url completeUrl(const std::string_view& value) const {
+        Url completeUrl(std::string_view value) const {
             return m_baseUrl.complete(value);
         }
 
@@ -351,7 +364,7 @@ namespace plutobook {
 
         bool setContainerSize(float containerWidth, float containerHeight);
 
-        TextNode* createTextNode(const std::string_view& value);
+        TextNode* createTextNode(std::string_view value);
         Element* createElement(GlobalString namespaceURI, GlobalString tagName);
 
         Element* rootElement() const { return m_rootElement; }
@@ -360,7 +373,7 @@ namespace plutobook {
         BoxStyle* rootStyle() const;
         BoxStyle* bodyStyle() const;
 
-        Element* getElementById(const std::string_view& id) const;
+        Element* getElementById(std::string_view id) const;
         void addElementById(const HeapString& id, Element* element);
         void removeElementById(const HeapString& id, Element* element);
 
@@ -370,25 +383,24 @@ namespace plutobook {
         void addTargetCounters(const HeapString& id,
                                const CounterMap& counters);
 
-        HeapString getTargetCounterText(const std::string_view& fragment,
+        HeapString getTargetCounterText(std::string_view fragment,
                                         GlobalString name,
                                         GlobalString listStyle,
-                                        const std::string_view& separator);
+                                        std::string_view separator);
         HeapString getCountersText(const CounterMap& counters,
                                    GlobalString name, GlobalString listStyle,
-                                   const std::string_view& separator);
+                                   std::string_view separator);
 
-        void runJavaScript(const std::string_view& script);
+        void runJavaScript(std::string_view script);
 
-        void addAuthorStyleSheet(const std::string_view& content, Url baseUrl);
-        void addUserStyleSheet(const std::string_view& content);
+        void addAuthorStyleSheet(std::string_view content, Url baseUrl);
+        void addUserStyleSheet(std::string_view content);
 
         bool supportsMediaFeature(const CssMediaFeature& feature) const;
         bool supportsMediaFeatures(const CssMediaFeatureList& features) const;
         bool supportsMediaQuery(const CssMediaQuery& query) const;
         bool supportsMediaQueries(const CssMediaQueryList& queries) const;
-        bool supportsMedia(const std::string_view& type,
-                           const std::string_view& media) const;
+        bool supportsMedia(std::string_view type, std::string_view media) const;
 
         CssStyleSheet& styleSheet() { return m_styleSheet; }
 
@@ -400,11 +412,12 @@ namespace plutobook {
         RefPtr<ImageResource> fetchImageResource(const Url& url);
         RefPtr<FontResource> fetchFontResource(const Url& url);
 
-        virtual bool parse(const std::string_view& content) = 0;
+        virtual bool parse(std::string_view content) = 0;
 
         Node* cloneNode(bool deep) override;
         Box* createBox(const RefPtr<BoxStyle>& style) override;
-        void buildBox(Counters& counters, Box* parent) override;
+        void buildBox(Counters& counters, SelectorFilter& selectorFilter,
+                      Box* parent) override;
         void finishParsingDocument() override;
 
         void serialize(OutputStream& o) const;

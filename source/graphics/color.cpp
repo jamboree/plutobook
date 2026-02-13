@@ -52,7 +52,7 @@ Color Color::darken() const
     return Color(red, green, blue, alpha());
 }
 
-Optional<Color> Color::named(const std::string_view& name)
+Optional<Color> Color::named(std::string_view name)
 {
     static constexpr auto table = makeIdentTable<uint32_t>({
         {"aliceblue", 0xF0F8FF},

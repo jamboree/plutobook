@@ -449,8 +449,87 @@ uint32_t CssSimpleSelector::specificity() const
     }
 }
 
-bool CssRuleData::match(const Element* element, PseudoType pseudoType) const
+
+SelectorFilter::SelectorFilter()
+    : m_table(new uint8_t[1 << keyBits]())
 {
+}
+
+static unsigned hashString(std::string_view value)
+{
+    return std::hash<std::string_view>()(value);
+}
+
+void SelectorFilter::push(const Element* element)
+{
+    HashVector hashes;
+    do {
+        if (element->hasID())
+            hashes.push_back(hashString(element->id()));
+        hashes.push_back(hashString(element->foldTagNameCase()));
+        for (const auto& className : element->classNames()) {
+            hashes.push_back(hashString(className));
+        }
+
+        element = element->parentElement();
+    } while (element && m_stack.empty());
+    for (auto hash : hashes)
+        add(hash);
+    m_stack.push_back(std::move(hashes));
+}
+
+void SelectorFilter::pop()
+{
+    for (auto hash : m_stack.back())
+        remove(hash);
+    m_stack.pop_back();
+}
+
+CssRuleData::CssRuleData(const RefPtr<CssStyleRule>& rule, const CssSelector& selector, uint32_t specificity, uint32_t position)
+    : m_rule(rule), m_selector(&selector), m_specificity(specificity), m_position(position)
+{
+    assert(!selector.empty());
+    auto it = selector.begin();
+    auto end = selector.end();
+
+    unsigned index = 0;
+    do {
+        auto combinator = it->combinator();
+        ++it;
+        if (combinator == CssComplexSelector::Combinator::Child
+            || combinator == CssComplexSelector::Combinator::Descendant) {
+            for (const auto& sel : it->compoundSelector()) {
+                if (index == maxHashCount)
+                    return;
+                switch (sel.matchType()) {
+                case CssSimpleSelector::MatchType::Tag:
+                    m_hashes[index++] = hashString(sel.name());
+                    break;
+                case CssSimpleSelector::MatchType::Id:
+                case CssSimpleSelector::MatchType::Class:
+                    m_hashes[index++] = hashString(sel.value());
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    } while (it != end);
+    if (index < maxHashCount) {
+        m_hashes[index] = 0;
+    }
+}
+
+bool CssRuleData::match(const Element* element, PseudoType pseudoType, const SelectorFilter& selectorFilter) const
+{
+    for (auto hash : m_hashes) {
+        if (hash == 0)
+            break;
+        if (!selectorFilter.contains(hash)) {
+            return false;
+        }
+    }
+
     return matchSelector(element, pseudoType, *m_selector);
 }
 
@@ -698,7 +777,7 @@ bool CssRuleData::matchPseudoClassHasSelector(const Element* element, const CssS
                 if(matchSelector(descendant, PseudoType::None, subSelector))
                     return true;
                 if((combinator == CssComplexSelector::Combinator::Descendant || depth < maxDepth - 1)
-                    && descendant->firstChildElement()) {
+                    && descendant->hasElementChildren()) {
                     descendant = descendant->firstChildElement();
                     ++depth;
                     continue;
@@ -1065,7 +1144,7 @@ std::string CssCounterStyle::generateFallbackRepresentation(int value) const
     return representation;
 }
 
-static size_t counterStyleSymbolLength(const std::string_view& value)
+static size_t counterStyleSymbolLength(std::string_view value)
 {
     UCharIterator it;
     uiter_setUTF8(&it, value.data(), value.length());

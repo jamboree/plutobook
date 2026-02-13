@@ -49,7 +49,7 @@ RefPtr<FontResource> FontResource::create(Document* document, const Url& url)
     return adoptPtr(new FontResource(face));
 }
 
-bool FontResource::supportsFormat(const std::string_view& format)
+bool FontResource::supportsFormat(std::string_view format)
 {
     char buffer[32];
     return format.length() <= sizeof(buffer) &&
@@ -197,11 +197,6 @@ bool FontSelectionAlgorithm::isCandidateBetter(const FontSelectionDescription& c
     return weightDistance(currentCandidate.weight) < weightDistance(previousCandidate.weight);
 }
 
-RefPtr<FontData> LocalFontFace::getFontData(FontDataCache* fontDataCache, const FontDataDescription& description)
-{
-    return fontDataCache->getFontData(m_family, description);
-}
-
 #define FLT_TO_HB(v) static_cast<hb_position_t>(std::scalbnf(v, +8))
 #define HB_TO_FLT(v) std::scalbnf(v, -8)
 
@@ -292,33 +287,57 @@ hb_font_t* createHBFont(hb_face_t* face, const FontDataDescription& description,
     return font;
 }
 
-RefPtr<FontData> RemoteFontFace::getFontData(FontDataCache* /*fontDataCache*/, const FontDataDescription& description)
+RefPtr<FontData> SimpleFontFace::getFontData(Document* document, const FontDataDescription& description, bool syntheticOblique)
 {
+    while (m_resource == nullptr && !m_sources.empty()) {
+        const auto& source = m_sources.front();
+        if (auto family = std::get_if<GlobalString>(&source)) {
+            return document->fontDataCache()->getFontData(*family, description);
+        }
+
+        const auto& url = std::get<Url>(source);
+        m_resource = document->fetchFontResource(url);
+        m_sources.pop_back();
+    }
+
+    if (m_resource == nullptr) {
+        return nullptr;
+    }
+
     FontDataInfo info;
-    const auto font = graphicsManager().createFont(m_resource->face(), description, m_variations, &info);
+    const auto font = graphicsManager().createFont(m_resource->face(), description, m_variations, syntheticOblique, &info);
     return SimpleFontData::create(font, info, m_features);
 }
 
-RefPtr<FontData> SegmentedFontFace::getFontData(FontDataCache* fontDataCache, const FontDataDescription& description)
-{
+RefPtr<FontData>
+SegmentedFontFace::getFontData(Document* document,
+                               const FontDataDescription& description) {
     auto& fontData = m_table[description];
-    if(fontData != nullptr)
+    if (fontData != nullptr) {
         return fontData;
+    }
+
+    const auto syntheticOblique =
+        !m_description.slope ||
+        description.request.slope < m_description.slope.maximum ||
+        description.request.slope > m_description.slope.maximum;
+
     FontDataRangeList fonts;
-    for(const auto& face : m_faces) {
-        if(auto font = face->getFontData(fontDataCache, description)) {
+    for (const auto& face : m_faces) {
+        if (auto font =
+                face->getFontData(document, description, syntheticOblique)) {
             const auto& ranges = face->ranges();
-            if(ranges.empty()) {
+            if (ranges.empty()) {
                 fonts.emplace_back(0, 0x10FFFF, std::move(font));
             } else {
-                for(const auto& range : ranges) {
+                for (const auto& range : ranges) {
                     fonts.emplace_back(range.first, range.second, font);
                 }
             }
         }
     }
 
-    if(!fonts.empty())
+    if (!fonts.empty())
         fontData = SegmentedFontData::create(std::move(fonts));
     return fontData;
 }
@@ -474,12 +493,12 @@ static RefPtr<SimpleFontData> createFontDataFromPattern(FcPattern* pattern, cons
         return nullptr;
     }
     FontDataInfo info;
-    const auto font = graphicsManager().createFont(face, description, variationSettings, &info);
+    const auto font = graphicsManager().createFont(face, description, variationSettings, false, &info);
     graphicsManager().destroyFace(face);
     return SimpleFontData::create(font, info, featureSettings);
 }
 
-static bool isGenericFamilyName(const std::string_view& familyName)
+static bool isGenericFamilyName(std::string_view familyName)
 {
     char buffer[16];
     return familyName.length() <= sizeof(buffer) &&
@@ -800,12 +819,13 @@ struct CairoGraphicsManager::Font {
     };
 };
 
-static cairo_scaled_font_t*
-createScaledFont(cairo_font_face_t* face,
-                 const FontDataDescription& description,
-                 const std::vector<hb_variation_t>& variations) {
+static cairo_scaled_font_t* createScaledFont(
+    cairo_font_face_t* face, const FontDataDescription& description,
+    const std::vector<hb_variation_t>& variations, bool syntheticOblique) {
     const auto slopeAngle =
-        -std::tan(description.request.slope * std::numbers::pi / 180.0);
+        syntheticOblique
+            ? -std::tan(description.request.slope * std::numbers::pi / 180.0)
+            : 0.0;
     cairo_matrix_t ctm;
     cairo_matrix_init_identity(&ctm);
 
@@ -865,11 +885,11 @@ FontHandle
 CairoGraphicsManager::createFont(FaceHandle face,
                                  const FontDataDescription& description,
                                  const FontVariationList& baseVariations,
-    FontDataInfo* info) {
+                                 bool syntheticOblique, FontDataInfo* info) {
     const auto facePtr = std::bit_cast<Face*>(face);
     const auto variations = sortVariations(description, baseVariations);
-    const auto font =
-        createScaledFont(facePtr->m_face, description, variations);
+    const auto font = createScaledFont(facePtr->m_face, description, variations,
+                                       syntheticOblique);
 
     const auto ftFace = cairo_ft_scaled_font_lock_face(font);
     if (ftFace == nullptr) {

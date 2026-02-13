@@ -2,6 +2,7 @@
 
 #include "pointer.h"
 #include "heap-string.h"
+#include "url.h"
 
 namespace plutobook {
     class Resource : public RefCounted<Resource> {
@@ -19,7 +20,6 @@ namespace plutobook {
         ClassKind m_type;
     };
 
-    class Url;
     class ResourceData;
     class ResourceFetcher;
 
@@ -27,7 +27,7 @@ namespace plutobook {
     public:
         static ResourceData loadUrl(const Url& url,
                                     ResourceFetcher* customFetcher = nullptr);
-        static Url completeUrl(const std::string_view& value);
+        static Url completeUrl(std::string_view value);
         static Url baseUrl();
     };
 } // namespace plutobook

@@ -35,6 +35,7 @@ namespace plutobook {
         virtual FontHandle createFont(FaceHandle face,
                                       const FontDataDescription& description,
                                       const FontVariationList& baseVariations,
+                                      bool syntheticOblique,
                                       FontDataInfo* info) = 0;
         virtual hb_font_t* getHBFont(FontHandle font) const = 0;
         virtual bool hasCodepoint(FontHandle font,
@@ -56,6 +57,7 @@ namespace plutobook {
         FontHandle createFont(FaceHandle face,
                               const FontDataDescription& description,
                               const FontVariationList& baseVariations,
+                              bool syntheticOblique,
                               FontDataInfo* info) override;
         hb_font_t* getHBFont(FontHandle font) const override;
         bool hasCodepoint(FontHandle font, uint32_t codepoint) const override;

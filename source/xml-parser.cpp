@@ -34,7 +34,7 @@ static void characterDataCallback(void* userData, const XML_Char* data, int leng
 
 constexpr XML_Char kXmlNamespaceSep = '|';
 
-bool XmlParser::parse(const std::string_view& content)
+bool XmlParser::parse(std::string_view content)
 {
     auto parser = XML_ParserCreateNS(NULL, kXmlNamespaceSep);
     XML_SetUserData(parser, this);
@@ -64,14 +64,14 @@ public:
     GlobalString namespaceURI() const { return m_namespaceURI; }
     GlobalString localName() const { return m_localName; }
 
-    static QualifiedName parse(const std::string_view& name);
+    static QualifiedName parse(std::string_view name);
 
 private:
     GlobalString m_namespaceURI;
     GlobalString m_localName;
 };
 
-QualifiedName QualifiedName::parse(const std::string_view& name)
+QualifiedName QualifiedName::parse(std::string_view name)
 {
     auto index = name.rfind(kXmlNamespaceSep);
     if(index == std::string_view::npos)

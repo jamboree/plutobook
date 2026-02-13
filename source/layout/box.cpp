@@ -770,7 +770,7 @@ void BoxModel::paintLayer(GraphicsContext& context, const Rect& rect)
 
 void BoxModel::updateLayerPosition()
 {
-    m_layer->updatePosition();
+    m_layer->updateLayerPosition();
 }
 
 float BoxModel::relativePositionOffsetX() const

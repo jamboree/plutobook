@@ -102,12 +102,14 @@ void ContentBoxBuilder::addElement(const CssValue& value)
     auto style = m_style->document()->getRunningStyle(name);
     if(style == nullptr)
         return;
-    auto& element = to<HtmlElement>(*style->node());
-    auto newBox = element.createBox(style);
+    auto element = to<HtmlElement>(style->node());
+    auto newBox = element->createBox(style);
     if(newBox == nullptr)
         return;
     m_box->addChild(newBox);
-    element.buildElementBox(m_counters, newBox);
+
+    SelectorFilter selectorFilter;
+    element->buildElementBox(m_counters, selectorFilter, newBox);
     newBox->setIsRunning(true);
     m_lastTextBox = nullptr;
 }

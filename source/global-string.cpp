@@ -48,7 +48,7 @@ struct GlobalStringTable {
         }
     }
 
-    unsigned add(const std::string_view& value) {
+    unsigned add(std::string_view value) {
         const auto it = m_foldSet.find(value);
         if (it != m_foldSet.end()) {
             return *it;
@@ -73,7 +73,7 @@ static GlobalStringTable* globalStringTable()
     return &table;
 }
 
-GlobalString GlobalString::get(const std::string_view& value)
+GlobalString GlobalString::get(std::string_view value)
 {
     return GlobalString(globalStringTable()->add(value));
 }

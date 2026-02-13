@@ -109,7 +109,7 @@ Size SvgElement::currentViewportSize() const
     return parent->currentViewportSize();
 }
 
-SvgResourceContainerBox* SvgElement::getResourceById(const std::string_view& id) const
+SvgResourceContainerBox* SvgElement::getResourceById(std::string_view id) const
 {
     if(id.empty() || id.front() != '#')
         return nullptr;
@@ -119,12 +119,12 @@ SvgResourceContainerBox* SvgElement::getResourceById(const std::string_view& id)
     return to<SvgResourceContainerBox>(element->box());
 }
 
-SvgResourceClipperBox* SvgElement::getClipper(const std::string_view& id) const
+SvgResourceClipperBox* SvgElement::getClipper(std::string_view id) const
 {
     return to<SvgResourceClipperBox>(getResourceById(id));
 }
 
-SvgResourceMaskerBox* SvgElement::getMasker(const std::string_view& id) const
+SvgResourceMaskerBox* SvgElement::getMasker(std::string_view id) const
 {
     return to<SvgResourceMaskerBox>(getResourceById(id));
 }
@@ -140,7 +140,7 @@ SvgPropertyPtr SvgGraphicsElement::getProperty(GlobalString name)
     return SvgElement::getProperty(name);
 }
 
-SvgResourcePaintServerBox* SvgGraphicsElement::getPainter(const std::string_view& id) const
+SvgResourcePaintServerBox* SvgGraphicsElement::getPainter(std::string_view id) const
 {
     return to<SvgResourcePaintServerBox>(getResourceById(id));
 }
@@ -466,7 +466,7 @@ SvgGeometryElement::SvgGeometryElement(Document* document, GlobalString tagName)
 {
 }
 
-SvgResourceMarkerBox* SvgGeometryElement::getMarker(const std::string_view& id) const
+SvgResourceMarkerBox* SvgGeometryElement::getMarker(std::string_view id) const
 {
     return to<SvgResourceMarkerBox>(getResourceById(id));
 }

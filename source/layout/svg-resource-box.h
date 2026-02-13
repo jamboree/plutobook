@@ -77,7 +77,7 @@ namespace plutobook {
         SvgResourcePaintServerBox(ClassKind type, SvgElement* element,
                                   const RefPtr<BoxStyle>& style);
 
-        virtual void applyPaint(const SvgRenderState& state,
+        virtual bool applyPaint(const SvgRenderState& state,
                                 float opacity) const = 0;
 
         const char* name() const override {
@@ -95,7 +95,7 @@ namespace plutobook {
                               const RefPtr<BoxStyle>& style);
 
         SvgPatternElement* element() const;
-        void applyPaint(const SvgRenderState& state, float opacity) const final;
+        bool applyPaint(const SvgRenderState& state, float opacity) const final;
         void build() final;
 
         const char* name() const final { return "SvgResourcePatternBox"; }
@@ -149,7 +149,7 @@ namespace plutobook {
                                      const RefPtr<BoxStyle>& style);
 
         SvgLinearGradientElement* element() const;
-        void applyPaint(const SvgRenderState& state, float opacity) const final;
+        bool applyPaint(const SvgRenderState& state, float opacity) const final;
         void build() final;
 
         const char* name() const final {
@@ -174,7 +174,7 @@ namespace plutobook {
                                      const RefPtr<BoxStyle>& style);
 
         SvgRadialGradientElement* element() const;
-        void applyPaint(const SvgRenderState& state, float opacity) const final;
+        bool applyPaint(const SvgRenderState& state, float opacity) const final;
         void build() final;
 
         const char* name() const final {

@@ -24,10 +24,9 @@ namespace plutobook {
         }
         Size currentViewportSize() const;
 
-        SvgResourceContainerBox*
-        getResourceById(const std::string_view& id) const;
-        SvgResourceClipperBox* getClipper(const std::string_view& id) const;
-        SvgResourceMaskerBox* getMasker(const std::string_view& id) const;
+        SvgResourceContainerBox* getResourceById(std::string_view id) const;
+        SvgResourceClipperBox* getClipper(std::string_view id) const;
+        SvgResourceMaskerBox* getMasker(std::string_view id) const;
         Box* createBox(const RefPtr<BoxStyle>& style) override {
             return nullptr;
         }
@@ -77,7 +76,7 @@ namespace plutobook {
         SvgPropertyPtr getProperty(GlobalString name) override;
 
         const Transform& transform() const { return m_transform.value(); }
-        SvgResourcePaintServerBox* getPainter(const std::string_view& id) const;
+        SvgResourcePaintServerBox* getPainter(std::string_view id) const;
         SvgPaintServer getPaintServer(const Paint& paint, float opacity) const;
         StrokeData getStrokeData(const BoxStyle* style) const;
 
@@ -199,7 +198,7 @@ namespace plutobook {
     public:
         SvgGeometryElement(Document* document, GlobalString tagName);
 
-        SvgResourceMarkerBox* getMarker(const std::string_view& id) const;
+        SvgResourceMarkerBox* getMarker(std::string_view id) const;
     };
 
     class SvgPathElement final : public SvgGeometryElement {

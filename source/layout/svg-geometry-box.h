@@ -24,6 +24,28 @@ namespace plutobook {
 
     using SvgMarkerPositionList = std::vector<SvgMarkerPosition>;
 
+    class SvgGeometryBox;
+
+    class SvgMarker {
+    public:
+        static std::unique_ptr<SvgMarker> create(const SvgGeometryBox* box);
+
+        const SvgMarkerPositionList& positions() { return m_positions; }
+        void updatePositions(const Path& path);
+
+    private:
+        SvgMarker(const SvgResourceMarkerBox* start,
+                  const SvgResourceMarkerBox* mid,
+                  const SvgResourceMarkerBox* end)
+            : m_start(start), m_mid(mid), m_end(end) {}
+
+        SvgMarkerPositionList m_positions;
+
+        const SvgResourceMarkerBox* m_start;
+        const SvgResourceMarkerBox* m_mid;
+        const SvgResourceMarkerBox* m_end;
+    };
+
     class SvgGeometryBox : public SvgBoxModel {
     public:
         SvgGeometryBox(ClassKind type, SvgGeometryElement* element,
@@ -45,15 +67,10 @@ namespace plutobook {
         const char* name() const override { return "SvgGeometryBox"; }
 
     protected:
-        void updateMarkerPositions();
-
         SvgPaintServer m_fill;
         SvgPaintServer m_stroke;
-        SvgMarkerPositionList m_markerPositions;
 
-        const SvgResourceMarkerBox* m_markerStart = nullptr;
-        const SvgResourceMarkerBox* m_markerMid = nullptr;
-        const SvgResourceMarkerBox* m_markerEnd = nullptr;
+        std::unique_ptr<SvgMarker> m_marker;
 
         mutable Rect m_fillBoundingBox = Rect::Invalid;
         mutable Rect m_strokeBoundingBox = Rect::Invalid;

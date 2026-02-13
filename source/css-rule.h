@@ -1664,13 +1664,68 @@ namespace plutobook {
 
     class Element;
 
+    class SelectorFilter {
+    public:
+        SelectorFilter();
+
+        void push(const Element* element);
+        void pop();
+
+    private:
+        bool contains(unsigned hash) const {
+            return isSet(hash) && isSet(hash >> 16);
+        }
+
+        void add(unsigned hash);
+        void remove(unsigned hash);
+
+        bool isSet(unsigned key) const { return m_table[key & keyMask]; }
+
+        void set(unsigned key);
+        void unset(unsigned key);
+
+        static const unsigned keyBits = 12;
+        static const unsigned keyMask = (1 << keyBits) - 1;
+        static const unsigned maxCount = (1 << 8) - 1;
+
+        using HashVector = std::vector<unsigned>;
+
+        std::unique_ptr<uint8_t[]> m_table;
+        std::vector<HashVector> m_stack;
+
+        friend class CssRuleData;
+    };
+
+    inline void SelectorFilter::add(unsigned hash) {
+        set(hash);
+        set(hash >> 16);
+    }
+
+    inline void SelectorFilter::remove(unsigned hash) {
+        unset(hash);
+        unset(hash >> 16);
+    }
+
+    inline void SelectorFilter::set(unsigned key) {
+        auto& value = m_table[key & keyMask];
+        if (value < maxCount) {
+            value++;
+        }
+    }
+
+    inline void SelectorFilter::unset(unsigned key) {
+        auto& value = m_table[key & keyMask];
+        assert(value > 0);
+        if (value < maxCount) {
+            value--;
+        }
+    }
+
     class CssRuleData {
     public:
         CssRuleData(const RefPtr<CssStyleRule>& rule,
                     const CssSelector& selector, uint32_t specificity,
-                    uint32_t position)
-            : m_rule(rule), m_selector(&selector), m_specificity(specificity),
-              m_position(position) {}
+                    uint32_t position);
 
         const RefPtr<CssStyleRule>& rule() const { return m_rule; }
         const CssSelector* selector() const { return m_selector; }
@@ -1680,7 +1735,8 @@ namespace plutobook {
         const uint32_t specificity() const { return m_specificity; }
         const uint32_t position() const { return m_position; }
 
-        bool match(const Element* element, PseudoType pseudoType) const;
+        bool match(const Element* element, PseudoType pseudoType,
+                   const SelectorFilter& selectorFilter) const;
 
     private:
         static bool matchSelector(const Element* element, PseudoType pseudoType,
@@ -1791,10 +1847,13 @@ namespace plutobook {
         static bool matchPseudoClassNthLastOfTypeSelector(
             const Element* element, const CssSimpleSelector& selector);
 
+        static const unsigned maxHashCount = 4;
+
         RefPtr<CssStyleRule> m_rule;
         const CssSelector* m_selector;
         uint32_t m_specificity;
         uint32_t m_position;
+        unsigned m_hashes[maxHashCount];
     };
 
     class CssPageRuleData {

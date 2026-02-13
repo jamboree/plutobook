@@ -8,7 +8,7 @@ namespace plutobook {
         static std::unique_ptr<XmlDocument>
         create(Book* book, ResourceFetcher* fetcher, Url baseUrl);
 
-        bool parse(const std::string_view& content) override;
+        bool parse(std::string_view content) override;
 
     protected:
         XmlDocument(ClassKind type, Book* book, ResourceFetcher* fetcher,

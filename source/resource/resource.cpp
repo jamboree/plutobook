@@ -1,6 +1,5 @@
 #include "resource.h"
 #include "string-utils.h"
-#include "url.h"
 #include "ident-table.h"
 
 #include "plutobook.hpp"
@@ -76,7 +75,7 @@ static const char base64DecMap[128] = {
     0x31, 0x32, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static bool base64Decode(const std::string_view& input, ByteArray& output)
+static bool base64Decode(std::string_view input, ByteArray& output)
 {
     output.resize(input.length());
     size_t equalsSignCount = 0;
@@ -189,7 +188,7 @@ static ResourceData loadDataUrl(std::string_view input)
     return ResourceData(content->data(), content->size(), mimeType, textEncoding, ByteArrayDestroy, content);
 }
 
-static bool mimeTypeFromPath(std::string& mimeType, const std::string_view& path)
+static bool mimeTypeFromPath(std::string& mimeType, std::string_view path)
 {
     auto index = path.rfind('.');
     if(index == std::string_view::npos)
@@ -378,7 +377,7 @@ Url ResourceLoader::baseUrl()
     return Url("file://" + path + "/");
 }
 
-Url ResourceLoader::completeUrl(const std::string_view& value)
+Url ResourceLoader::completeUrl(std::string_view value)
 {
     return baseUrl().complete(value);
 }

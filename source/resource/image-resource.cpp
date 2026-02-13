@@ -26,14 +26,14 @@ RefPtr<ImageResource> ImageResource::create(Document* document, const Url& url)
     return adoptPtr(new ImageResource(std::move(image)));
 }
 
-RefPtr<Image> ImageResource::decode(const char* data, size_t size, const std::string_view& mimeType, const std::string_view& textEncoding, const std::string_view& baseUrl, ResourceFetcher* fetcher)
+RefPtr<Image> ImageResource::decode(const char* data, size_t size, std::string_view mimeType, std::string_view textEncoding, std::string_view baseUrl, ResourceFetcher* fetcher)
 {
     if(iequals(mimeType, "image/svg+xml"))
         return SvgImage::create(TextResource::decode(data, size, mimeType, textEncoding), baseUrl, fetcher);
     return BitmapImage::create(data, size);
 }
 
-bool ImageResource::supportsMimeType(const std::string_view& mimeType)
+bool ImageResource::supportsMimeType(std::string_view mimeType)
 {
     char buffer[16];
     if (mimeType.length() > sizeof(buffer))
@@ -127,7 +127,7 @@ BitmapImage::BitmapImage(ImageHandle image)
 {
 }
 
-RefPtr<SvgImage> SvgImage::create(const std::string_view& content, const std::string_view& baseUrl, ResourceFetcher* fetcher)
+RefPtr<SvgImage> SvgImage::create(std::string_view content, std::string_view baseUrl, ResourceFetcher* fetcher)
 {
     auto document = SvgDocument::create(nullptr, fetcher, ResourceLoader::completeUrl(baseUrl));
     if(!document->parse(content))
@@ -247,6 +247,8 @@ Size SvgImage::size() const
 {
     return m_containerSize;
 }
+
+SvgImage::~SvgImage() = default;
 
 SvgImage::SvgImage(std::unique_ptr<SvgDocument> document)
     : Image(classKind), m_document(std::move(document))

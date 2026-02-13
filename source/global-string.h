@@ -23,7 +23,7 @@ namespace plutobook {
         GlobalString() = default;
         constexpr GlobalString(GlobalStringId id) : m_index(unsigned(id)) {}
 
-        static GlobalString get(const std::string_view& value);
+        static GlobalString get(std::string_view value);
 
         const HeapString& value() const;
 

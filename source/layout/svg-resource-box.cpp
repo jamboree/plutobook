@@ -268,13 +268,13 @@ void SvgResourcePatternBox::build()
     SvgResourcePaintServerBox::build();
 }
 
-void SvgResourcePatternBox::applyPaint(const SvgRenderState& state, float opacity) const
+bool SvgResourcePatternBox::applyPaint(const SvgRenderState& state, float opacity) const
 {
     if(state.hasCycleReference(this))
-        return;
+        return false;
     auto patternContentBox = to<SvgResourcePatternBox>(m_attributes.patternContentElement()->box());
     if(patternContentBox == nullptr)
-        return;
+        return false;
     SvgLengthContext lengthContext(element(), m_attributes.patternUnits());
     Rect patternRect = {
         lengthContext.valueForLength(m_attributes.x()),
@@ -314,6 +314,7 @@ void SvgResourcePatternBox::applyPaint(const SvgRenderState& state, float opacit
 
     cairo_destroy(canvas);
     cairo_surface_destroy(surface);
+    return true;
 }
 
 SvgGradientStopBox::SvgGradientStopBox(SvgStopElement* element, const RefPtr<BoxStyle>& style)
@@ -369,13 +370,13 @@ void SvgResourceLinearGradientBox::build()
     SvgResourceGradientBox::build();
 }
 
-void SvgResourceLinearGradientBox::applyPaint(const SvgRenderState& state, float opacity) const
+bool SvgResourceLinearGradientBox::applyPaint(const SvgRenderState& state, float opacity) const
 {
     GradientInfo info;
     info.stops = buildGradientStops(m_attributes.gradientContentElement());
     if(info.stops.empty()) {
         state.context().setColor(Color::Transparent);
-        return;
+        return false;
     }
 
     SvgLengthContext lengthContext(element(), m_attributes.gradientUnits());
@@ -389,7 +390,7 @@ void SvgResourceLinearGradientBox::applyPaint(const SvgRenderState& state, float
     if((info.stops.size() == 1 || (values.x1 == values.x2 && values.y1 == values.y2))) {
         const auto& lastStop = info.stops.back();
         state.context().setColor(lastStop.second.colorWithAlpha(opacity));
-        return;
+        return true;
     }
 
     info.method = toSpreadMethod(m_attributes.spreadMethod());
@@ -402,6 +403,7 @@ void SvgResourceLinearGradientBox::applyPaint(const SvgRenderState& state, float
     info.opacity = opacity;
 
     state.context().setLinearGradient(values, info);
+    return true;
 }
 
 SvgResourceRadialGradientBox::SvgResourceRadialGradientBox(SvgRadialGradientElement* element, const RefPtr<BoxStyle>& style)
@@ -415,13 +417,13 @@ void SvgResourceRadialGradientBox::build()
     SvgResourceGradientBox::build();
 }
 
-void SvgResourceRadialGradientBox::applyPaint(const SvgRenderState& state, float opacity) const
+bool SvgResourceRadialGradientBox::applyPaint(const SvgRenderState& state, float opacity) const
 {
     GradientInfo info;
     info.stops = buildGradientStops(m_attributes.gradientContentElement());
     if(info.stops.empty()) {
         state.context().setColor(Color::Transparent);
-        return;
+        return false;
     }
 
     SvgLengthContext lengthContext(element(), m_attributes.gradientUnits());
@@ -436,7 +438,7 @@ void SvgResourceRadialGradientBox::applyPaint(const SvgRenderState& state, float
     if(values.r == 0.f || info.stops.size() == 1) {
         const auto& lastStop = info.stops.back();
         state.context().setColor(lastStop.second.colorWithAlpha(opacity));
-        return;
+        return true;
     }
 
     info.method = toSpreadMethod(m_attributes.spreadMethod());
@@ -449,6 +451,7 @@ void SvgResourceRadialGradientBox::applyPaint(const SvgRenderState& state, float
     info.opacity = opacity;
 
     state.context().setRadialGradient(values, info);
+    return true;
 }
 
 } // namespace plutobook

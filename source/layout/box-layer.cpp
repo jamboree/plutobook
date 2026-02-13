@@ -1,5 +1,6 @@
 #include "box-layer.h"
 #include "inline-box.h"
+#include "page-box.h"
 #include "multi-column-box.h"
 #include "graphics-context.h"
 
@@ -26,7 +27,7 @@ BoxLayer* BoxLayer::containingLayer() const
     return parentLayer;
 }
 
-void BoxLayer::updatePosition()
+void BoxLayer::updateLayerPosition()
 {
     m_borderRect = m_box->borderBoundingBox();
     if(m_box->isPositioned()) {
@@ -57,7 +58,7 @@ void BoxLayer::updatePosition()
     std::stable_sort(m_children.begin(), m_children.end(), compare_func);
     m_overflowRect = m_box->visualOverflowRect();
     for(auto child : m_children) {
-        child->updatePosition();
+        child->updateLayerPosition();
         if(!m_box->isOverflowHidden() && !child->box()->isFixedPositioned()
             && !child->box()->isMultiColumnFlowBox()) {
             auto overflowRect = child->transform().mapRect(child->overflowRect());
@@ -92,13 +93,15 @@ void BoxLayer::paintLayer(BoxLayer* rootLayer, GraphicsContext& context, const R
         location.y += std::max(0.f, rect.y);
     }
 
-    if(!m_box->hasTransform()) {
+    if(!m_box->hasTransform() && !m_box->isPageMarginBox()) {
         paintLayerContents(rootLayer, context, rect, location);
         return;
     }
 
     Transform transform(m_transform);
     transform.postTranslate(location.x, location.y);
+    if (auto marginBox = to<PageMarginBox>(m_box))
+        transform.postScale(marginBox->pageScale(), marginBox->pageScale());
     Rect rectangle = transform.inverted().mapRect(rect);
 
     context.save();

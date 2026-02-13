@@ -17,7 +17,7 @@ CssParser::CssParser(const CssParserContext& context)
 {
 }
 
-CssRuleList CssParser::parseSheet(const std::string_view& content)
+CssRuleList CssParser::parseSheet(std::string_view content)
 {
     CssRuleList rules;
     CssTokenizer tokenizer(content);
@@ -26,7 +26,7 @@ CssRuleList CssParser::parseSheet(const std::string_view& content)
     return rules;
 }
 
-CssPropertyList CssParser::parseStyle(const std::string_view& content)
+CssPropertyList CssParser::parseStyle(std::string_view content)
 {
     CssPropertyList properties;
     CssTokenizer tokenizer(content);
@@ -35,7 +35,7 @@ CssPropertyList CssParser::parseStyle(const std::string_view& content)
     return properties;
 }
 
-CssMediaQueryList CssParser::parseMediaQueries(const std::string_view& content)
+CssMediaQueryList CssParser::parseMediaQueries(std::string_view content)
 {
     CssMediaQueryList queries;
     CssTokenizer tokenizer(content);
@@ -45,7 +45,7 @@ CssMediaQueryList CssParser::parseMediaQueries(const std::string_view& content)
 }
 
 template<typename T, unsigned int N>
-static Optional<T> matchIdent(const IdentTable<T, N>& table, const std::string_view& ident)
+static Optional<T> matchIdent(const IdentTable<T, N>& table, std::string_view ident)
 {
     const auto it = table.find(ident);
     if (it != table.end())
@@ -1129,7 +1129,7 @@ constexpr bool isCustomPropertyName(std::string_view name)
     return name.length() > 2 && name.starts_with("--");
 }
 
-CssPropertyID csspropertyid(const std::string_view& name)
+CssPropertyID csspropertyid(std::string_view name)
 {
     if(isCustomPropertyName(name))
         return CssPropertyID::Custom;

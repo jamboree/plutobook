@@ -67,11 +67,11 @@ static size_t firstLetterTextLength(const HeapString& text)
     return textLength;
 }
 
-void HtmlElement::buildFirstLetterPseudoBox(Box* parent)
+void HtmlElement::buildFirstLetterPseudoBox(SelectorFilter& selectorFilter, Box* parent)
 {
     if(!parent->isBlockFlowBox())
         return;
-    auto style = document()->styleSheet().pseudoStyleForElement(this, PseudoType::FirstLetter, parent->style());
+    auto style = document()->styleSheet().pseudoStyleForElement(this, PseudoType::FirstLetter, selectorFilter, parent->style());
     if(style == nullptr || style->display() == Display::None)
         return;
     auto child = parent->firstChild();
@@ -117,11 +117,11 @@ void HtmlElement::buildFirstLetterPseudoBox(Box* parent)
     }
 }
 
-void HtmlElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pseudoType)
+void HtmlElement::buildPseudoBox(Counters& counters, SelectorFilter& selectorFilter, Box* parent, PseudoType pseudoType)
 {
     if(pseudoType == PseudoType::Marker && !parent->isListItemBox())
         return;
-    auto style = document()->styleSheet().pseudoStyleForElement(this, pseudoType, parent->style());
+    auto style = document()->styleSheet().pseudoStyleForElement(this, pseudoType, selectorFilter, parent->style());
     if (style == nullptr || style->display() == Display::None) {
         return;
     }
@@ -137,27 +137,27 @@ void HtmlElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
     parent->addChild(box);
     if(pseudoType == PseudoType::Before || pseudoType == PseudoType::After) {
         counters.update(box);
-        buildPseudoBox(counters, box, PseudoType::Marker);
+        buildPseudoBox(counters, selectorFilter, box, PseudoType::Marker);
     }
 
     ContentBoxBuilder(counters, this, box).build(*content);
 }
 
-void HtmlElement::buildElementBox(Counters& counters, Box* box)
+void HtmlElement::buildElementBox(Counters& counters, SelectorFilter& selectorFilter, Box* box)
 {
     counters.update(box);
     counters.push();
-    buildPseudoBox(counters, box, PseudoType::Marker);
-    buildPseudoBox(counters, box, PseudoType::Before);
-    buildChildrenBox(counters, box);
-    buildPseudoBox(counters, box, PseudoType::After);
-    buildFirstLetterPseudoBox(box);
+    buildPseudoBox(counters, selectorFilter, box, PseudoType::Marker);
+    buildPseudoBox(counters, selectorFilter, box, PseudoType::Before);
+    buildElementChildrenBox(counters, selectorFilter, box);
+    buildPseudoBox(counters, selectorFilter, box, PseudoType::After);
+    buildFirstLetterPseudoBox(selectorFilter, box);
     counters.pop();
 }
 
-void HtmlElement::buildBox(Counters& counters, Box* parent)
+void HtmlElement::buildBox(Counters& counters, SelectorFilter& selectorFilter, Box* parent)
 {
-    auto style = document()->styleSheet().styleForElement(this, parent->style());
+    auto style = document()->styleSheet().styleForElement(this, selectorFilter, parent->style());
     if(style == nullptr || style->display() == Display::None)
         return;
     if(style->position() == Position::Running) {
@@ -170,7 +170,7 @@ void HtmlElement::buildBox(Counters& counters, Box* parent)
     }
     if (auto box = createBox(style)) {
         parent->addChild(box);
-        buildElementBox(counters, box);
+        buildElementBox(counters, selectorFilter, box);
     }
 }
 
@@ -231,7 +231,7 @@ static void addHtmlLengthAttributeStyle(AttributeStyle& style, CssPropertyID id,
     }
 }
 
-static void addHtmlUrlAttributeStyle(std::string& output, const std::string_view& name, const std::string_view& value)
+static void addHtmlUrlAttributeStyle(std::string& output, std::string_view name, std::string_view value)
 {
     if(value.empty())
         return;
@@ -472,7 +472,7 @@ Optional<int> HtmlLiElement::value() const
     return parseIntegerAttribute<int>(valueAttr);
 }
 
-static std::string_view listTypeAttributeToStyleName(const std::string_view& value)
+static std::string_view listTypeAttributeToStyleName(std::string_view value)
 {
     if(value == "a")
         return "lower-alpha";
@@ -1001,7 +1001,7 @@ std::unique_ptr<HtmlDocument> HtmlDocument::create(Book* book, ResourceFetcher* 
     return std::unique_ptr<HtmlDocument>(new HtmlDocument(book, fetcher, std::move(baseUrl)));
 }
 
-bool HtmlDocument::parse(const std::string_view& content)
+bool HtmlDocument::parse(std::string_view content)
 {
     return HtmlParser(this, content).parse();
 }

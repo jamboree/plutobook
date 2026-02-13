@@ -13,11 +13,14 @@ namespace plutobook {
 
         HtmlElement(Document* document, GlobalString tagName);
 
-        void buildFirstLetterPseudoBox(Box* parent);
-        void buildPseudoBox(Counters& counters, Box* parent,
-                            PseudoType pseudoType);
-        void buildElementBox(Counters& counters, Box* box);
-        void buildBox(Counters& counters, Box* parent) override;
+        void buildFirstLetterPseudoBox(SelectorFilter& selectorFilter,
+                                       Box* parent);
+        void buildPseudoBox(Counters& counters, SelectorFilter& selectorFilter,
+                            Box* parent, PseudoType pseudoType);
+        void buildElementBox(Counters& counters, SelectorFilter& selectorFilter,
+                             Box* box);
+        void buildBox(Counters& counters, SelectorFilter& selectorFilter,
+                      Box* parent) override;
 
         void collectAttributeStyle(AttributeStyle& style) const override;
 
@@ -101,8 +104,10 @@ namespace plutobook {
         void parseAttribute(GlobalString name, const HeapString& value) final;
 
         void collectAdditionalCellAttributeStyle(AttributeStyle& style) const;
-        void collectAdditionalRowGroupAttributeStyle(AttributeStyle& style) const;
-        void collectAdditionalColGroupAttributeStyle(AttributeStyle& style) const;
+        void
+        collectAdditionalRowGroupAttributeStyle(AttributeStyle& style) const;
+        void
+        collectAdditionalColGroupAttributeStyle(AttributeStyle& style) const;
         void collectAdditionalAttributeStyle(AttributeStyle& style) const;
 
         void collectAttributeStyle(AttributeStyle& style) const final;
@@ -245,7 +250,7 @@ namespace plutobook {
         static std::unique_ptr<HtmlDocument>
         create(Book* book, ResourceFetcher* fetcher, Url baseUrl);
 
-        bool parse(const std::string_view& content) final;
+        bool parse(std::string_view content) final;
 
     private:
         HtmlDocument(Book* book, ResourceFetcher* fetcher, Url baseUrl);

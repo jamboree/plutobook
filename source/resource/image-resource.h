@@ -18,11 +18,11 @@ namespace plutobook {
 
         static RefPtr<ImageResource> create(Document* document, const Url& url);
         static RefPtr<Image> decode(const char* data, size_t size,
-                                    const std::string_view& mimeType,
-                                    const std::string_view& textEncoding,
-                                    const std::string_view& baseUrl,
+                                    std::string_view mimeType,
+                                    std::string_view textEncoding,
+                                    std::string_view baseUrl,
                                     ResourceFetcher* fetcher);
-        static bool supportsMimeType(const std::string_view& mimeType);
+        static bool supportsMimeType(std::string_view mimeType);
         const RefPtr<Image>& image() const { return m_image; }
 
     private:
@@ -101,8 +101,8 @@ namespace plutobook {
     public:
         static constexpr ClassKind classKind = ClassKind::Svg;
 
-        static RefPtr<SvgImage> create(const std::string_view& content,
-                                       const std::string_view& baseUrl,
+        static RefPtr<SvgImage> create(std::string_view content,
+                                       std::string_view baseUrl,
                                        ResourceFetcher* fetcher);
 
         void draw(GraphicsContext& context, const Rect& dstRect,
@@ -117,6 +117,8 @@ namespace plutobook {
         void setContainerSize(const Size& size) final;
         Size intrinsicSize() const final;
         Size size() const final;
+
+        ~SvgImage() final;
 
     private:
         explicit SvgImage(std::unique_ptr<SvgDocument> document);

@@ -10,7 +10,7 @@ namespace plutobook {
     public:
         explicit XmlParser(XmlDocument* document);
 
-        bool parse(const std::string_view& content);
+        bool parse(std::string_view content);
 
         void handleStartNamespace(const char* prefix, const char* uri);
         void handleEndNamespace(const char* prefix);

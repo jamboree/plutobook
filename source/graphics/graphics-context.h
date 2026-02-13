@@ -139,10 +139,10 @@ namespace plutobook {
                               BlendMode blendMode = BlendMode::Normal) = 0;
         virtual void applyMask(const ImageBuffer& maskImage) = 0;
 
-        virtual void addLinkAnnotation(const std::string_view& dest,
-                                       const std::string_view& uri,
+        virtual void addLinkAnnotation(std::string_view dest,
+                                       std::string_view uri,
                                        const Rect& rect) = 0;
-        virtual void addLinkDestination(const std::string_view& name,
+        virtual void addLinkDestination(std::string_view name,
                                         const Point& location) = 0;
     };
 
@@ -204,10 +204,9 @@ namespace plutobook {
                       BlendMode blendMode = BlendMode::Normal) override;
         void applyMask(const ImageBuffer& maskImage) override;
 
-        void addLinkAnnotation(const std::string_view& dest,
-                               const std::string_view& uri,
+        void addLinkAnnotation(std::string_view dest, std::string_view uri,
                                const Rect& rect) override;
-        void addLinkDestination(const std::string_view& name,
+        void addLinkDestination(std::string_view name,
                                 const Point& location) override;
 
         cairo_t* canvas() const { return m_canvas; }

@@ -352,7 +352,7 @@ PageSize Book::pageSizeAt(uint32_t pageIndex) const
     return m_pageSize;
 }
 
-bool Book::loadUrl(const std::string_view& url, const std::string_view& userStyle, const std::string_view& userScript)
+bool Book::loadUrl(std::string_view url, std::string_view userStyle, std::string_view userScript)
 {
     auto completeUrl = ResourceLoader::completeUrl(url);
     auto resource = ResourceLoader::loadUrl(completeUrl, m_customResourceFetcher);
@@ -366,7 +366,7 @@ bool Book::loadUrl(const std::string_view& url, const std::string_view& userStyl
     return false;
 }
 
-bool Book::loadData(const char* data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding, const std::string_view& userStyle, const std::string_view& userScript, const std::string_view& baseUrl)
+bool Book::loadData(const char* data, size_t length, std::string_view mimeType, std::string_view textEncoding, std::string_view userStyle, std::string_view userScript, std::string_view baseUrl)
 {
     if(TextResource::isXmlMimeType(mimeType))
         return loadXml(TextResource::decode(data, length, mimeType, textEncoding), userStyle, userScript, baseUrl);
@@ -375,7 +375,7 @@ bool Book::loadData(const char* data, size_t length, const std::string_view& mim
     return loadHtml(TextResource::decode(data, length, mimeType, textEncoding), userStyle, userScript, baseUrl);
 }
 
-bool Book::loadImage(const char* data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding, const std::string_view& userStyle, const std::string_view& userScript, const std::string_view& baseUrl)
+bool Book::loadImage(const char* data, size_t length, std::string_view mimeType, std::string_view textEncoding, std::string_view userStyle, std::string_view userScript, std::string_view baseUrl)
 {
     auto image = ImageResource::decode(data, length, mimeType, textEncoding, baseUrl, m_customResourceFetcher);
     if(image == nullptr) {
@@ -406,7 +406,7 @@ bool Book::loadImage(const char* data, size_t length, const std::string_view& mi
     return true;
 }
 
-bool Book::loadXml(const std::string_view& content, const std::string_view& userStyle, const std::string_view& userScript, const std::string_view& baseUrl)
+bool Book::loadXml(std::string_view content, std::string_view userStyle, std::string_view userScript, std::string_view baseUrl)
 {
     clearContent();
     m_document = XmlDocument::create(this, m_customResourceFetcher, ResourceLoader::completeUrl(baseUrl));
@@ -420,7 +420,7 @@ bool Book::loadXml(const std::string_view& content, const std::string_view& user
     return true;
 }
 
-bool Book::loadHtml(const std::string_view& content, const std::string_view& userStyle, const std::string_view& userScript, const std::string_view& baseUrl)
+bool Book::loadHtml(std::string_view content, std::string_view userStyle, std::string_view userScript, std::string_view baseUrl)
 {
     clearContent();
     m_document = HtmlDocument::create(this, m_customResourceFetcher, ResourceLoader::completeUrl(baseUrl));

@@ -38,7 +38,7 @@ namespace plutobook {
                 asHeap()->release();
         }
 
-        static HeapString create(const std::string_view& value) {
+        static HeapString create(std::string_view value) {
             const auto size = value.size();
             if (!size) [[unlikely]]
                 return HeapString();
@@ -52,8 +52,7 @@ namespace plutobook {
             }
         }
 
-        static HeapString concatenate(const std::string_view& a,
-                                      const std::string_view& b) {
+        static HeapString concatenate(std::string_view a, std::string_view b) {
             const auto size = a.size() + b.size();
             if (!size) [[unlikely]]
                 return HeapString();
@@ -82,11 +81,11 @@ namespace plutobook {
             return value() <=> other.value();
         }
 
-        bool operator==(const std::string_view& other) const noexcept {
+        bool operator==(std::string_view other) const noexcept {
             return value() == other;
         }
 
-        auto operator<=>(const std::string_view& other) const noexcept {
+        auto operator<=>(std::string_view other) const noexcept {
             return value() <=> other;
         }
 
@@ -204,8 +203,8 @@ namespace plutobook {
             }
         }
 
-        static void copy2(char* p, const std::string_view& a,
-                          const std::string_view& b) noexcept {
+        static void copy2(char* p, std::string_view a,
+                          std::string_view b) noexcept {
             std::memcpy(p, a.data(), a.size());
             std::memcpy(p + a.size(), b.data(), b.size());
         }
@@ -215,12 +214,12 @@ namespace plutobook {
         unsigned m_size = 0;
     };
 
-    inline HeapString createString(const std::string_view& value) {
+    inline HeapString createString(std::string_view value) {
         return HeapString::create(value);
     }
 
-    inline HeapString concatenateString(const std::string_view& a,
-                                        const std::string_view& b) {
+    inline HeapString concatenateString(std::string_view a,
+                                        std::string_view b) {
         return HeapString::concatenate(a, b);
     }
 } // namespace plutobook

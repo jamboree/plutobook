@@ -229,15 +229,11 @@ namespace plutobook {
         bool forceQuirks() const { return m_forceQuirks; }
         bool hasPublicIdentifier() const { return m_hasPublicIdentifier; }
         bool hasSystemIdentifier() const { return m_hasSystemIdentifier; }
-        const std::string_view& publicIdentifier() const {
-            return m_publicIdentifier;
-        }
-        const std::string_view& systemIdentifier() const {
-            return m_systemIdentifier;
-        }
+        std::string_view publicIdentifier() const { return m_publicIdentifier; }
+        std::string_view systemIdentifier() const { return m_systemIdentifier; }
         GlobalString tagName() const { return m_tagName; }
         const std::span<Attribute>& attributes() const { return m_attributes; }
-        const std::string_view& data() const { return m_data; }
+        std::string_view data() const { return m_data; }
 
         bool hasCamelCase() const { return m_hasCamelCase; }
         void setHasCamelCase(bool value) { m_hasCamelCase = value; }
@@ -368,8 +364,7 @@ namespace plutobook {
             CDATASectionDoubleRightSquareBracket //
         };
 
-        explicit HtmlTokenizer(const std::string_view& content)
-            : m_input(content) {}
+        explicit HtmlTokenizer(std::string_view content) : m_input(content) {}
 
         HtmlTokenView nextToken();
 
@@ -466,7 +461,7 @@ namespace plutobook {
         bool isAppropriateEndTag() const {
             return m_appropriateEndTagName == m_endTagNameBuffer;
         }
-        bool temporaryBufferIs(const std::string_view& value) const {
+        bool temporaryBufferIs(std::string_view value) const {
             return m_temporaryBuffer == value;
         }
 
@@ -475,7 +470,7 @@ namespace plutobook {
 
         bool consumeCharacterReference(std::string& output,
                                        bool inAttributeValue);
-        bool consumeString(const std::string_view& value, bool caseSensitive);
+        bool consumeString(std::string_view value, bool caseSensitive);
 
         std::string_view m_input;
         std::string m_entityBuffer;

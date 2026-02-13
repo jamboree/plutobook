@@ -7,9 +7,9 @@ namespace plutobook {
     public:
         explicit CssParser(const CssParserContext& context);
 
-        CssRuleList parseSheet(const std::string_view& content);
-        CssPropertyList parseStyle(const std::string_view& content);
-        CssMediaQueryList parseMediaQueries(const std::string_view& content);
+        CssRuleList parseSheet(std::string_view content);
+        CssPropertyList parseStyle(std::string_view content);
+        CssMediaQueryList parseMediaQueries(std::string_view content);
 
         bool parsePropertyValue(CssTokenStream input,
                                 CssPropertyList& properties, CssPropertyID id,

@@ -9,11 +9,11 @@ namespace plutobook {
     class Url {
     public:
         Url() = default;
-        explicit Url(const std::string_view& input);
+        explicit Url(std::string_view input);
 
         Url complete(std::string_view input) const;
 
-        bool protocolIs(const std::string_view& protocol) const;
+        bool protocolIs(std::string_view protocol) const;
         bool isHierarchical() const {
             return m_schemeEnd < m_userBegin && m_value[m_schemeEnd + 1] == '/';
         }

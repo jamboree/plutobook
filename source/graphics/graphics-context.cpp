@@ -649,7 +649,7 @@ void CairoGraphicsContext::applyMask(const ImageBuffer& maskImage)
     cairo_set_matrix(m_canvas, &matrix);
 }
 
-static void append_attribute(OutputStream& output, const std::string_view& name, const std::string_view& value)
+static void append_attribute(OutputStream& output, std::string_view name, std::string_view value)
 {
     output << name << "='";
     for(auto cc : value) {
@@ -661,7 +661,7 @@ static void append_attribute(OutputStream& output, const std::string_view& name,
     output << '\'';
 }
 
-void CairoGraphicsContext::addLinkAnnotation(const std::string_view& dest, const std::string_view& uri, const Rect& rect)
+void CairoGraphicsContext::addLinkAnnotation(std::string_view dest, std::string_view uri, const Rect& rect)
 {
     if(dest.empty() && uri.empty())
         return;
@@ -682,7 +682,7 @@ void CairoGraphicsContext::addLinkAnnotation(const std::string_view& dest, const
     cairo_tag_end(m_canvas, CAIRO_TAG_LINK);
 }
 
-void CairoGraphicsContext::addLinkDestination(const std::string_view& name, const Point& location)
+void CairoGraphicsContext::addLinkDestination(std::string_view name, const Point& location)
 {
     if(name.empty())
         return;

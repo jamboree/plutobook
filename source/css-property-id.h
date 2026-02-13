@@ -227,5 +227,5 @@ namespace plutobook {
         Custom
     };
 
-    CssPropertyID csspropertyid(const std::string_view& name);
+    CssPropertyID csspropertyid(std::string_view name);
 } // namespace plutobook

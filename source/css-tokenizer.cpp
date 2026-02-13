@@ -45,7 +45,7 @@ CssTokenStream CssTokenStream::consumeBlock() {
     return CssTokenStream(blockBegin, blockEnd);
 }
 
-CssTokenizer::CssTokenizer(const std::string_view& input)
+CssTokenizer::CssTokenizer(std::string_view input)
     : m_input(input)
 {
     m_tokenList.reserve(input.length() / 3);

@@ -55,7 +55,6 @@ namespace plutobook {
     class HeapString;
     class GlobalString;
 
-    class FontFace;
     class FontData;
     class SegmentedFontFace;
     class FontDataCache;
@@ -63,22 +62,9 @@ namespace plutobook {
     struct FontDataDescription;
     struct FontSelectionDescription;
 
-    class CssFontFaceCache {
-    public:
-        explicit CssFontFaceCache();
-
-        RefPtr<FontData> get(FontDataCache* fontDataCache, GlobalString family,
-                             const FontDataDescription& description) const;
-        void add(GlobalString family,
-                 const FontSelectionDescription& description,
-                 RefPtr<FontFace> face);
-
-    private:
-        boost::unordered_flat_map<
-            GlobalString, boost::unordered_flat_map<FontSelectionDescription,
-                                                    RefPtr<SegmentedFontFace>>>
-            m_table;
-    };
+    using CssFontFaceMap = boost::unordered_flat_map<
+        GlobalString, boost::unordered_flat_map<FontSelectionDescription,
+                                                RefPtr<SegmentedFontFace>>>;
 
     class BoxStyle;
     class Document;
@@ -88,21 +74,27 @@ namespace plutobook {
     enum class PseudoType : uint8_t;
     enum class PageMarginType : uint8_t;
 
+    class SelectorFilter;
+
     class CssStyleSheet {
     public:
         explicit CssStyleSheet(Document* document);
 
         RefPtr<BoxStyle> styleForElement(Element* element,
+                                         const SelectorFilter& selectorFilter,
                                          const BoxStyle* parentStyle) const;
         RefPtr<BoxStyle>
         pseudoStyleForElement(Element* element, PseudoType pseudoType,
+                              const SelectorFilter& selectorFilter,
                               const BoxStyle* parentStyle) const;
+
         RefPtr<BoxStyle> styleForPage(GlobalString pageName, uint32_t pageIndex,
                                       PseudoType pseudoType) const;
         RefPtr<BoxStyle> styleForPageMargin(GlobalString pageName,
                                             uint32_t pageIndex,
                                             PageMarginType marginType,
                                             const BoxStyle* pageStyle) const;
+
         RefPtr<FontData>
         getFontData(GlobalString family,
                     const FontDataDescription& description) const;
@@ -111,7 +103,7 @@ namespace plutobook {
         std::string getCounterText(int value, GlobalString listType);
         std::string getMarkerText(int value, GlobalString listType);
 
-        void parseStyle(const std::string_view& content, CssStyleOrigin origin,
+        void parseStyle(std::string_view content, CssStyleOrigin origin,
                         Url baseUrl);
 
     private:
@@ -136,7 +128,7 @@ namespace plutobook {
         CssRuleDataList m_universalRules;
         CssPageRuleDataList m_pageRules;
         CssRuleList m_counterStyleRules;
-        CssFontFaceCache m_fontFaceCache;
+        CssFontFaceMap m_fontFaces;
         std::unique_ptr<CssCounterStyleMap> m_counterStyleMap;
     };
 } // namespace plutobook

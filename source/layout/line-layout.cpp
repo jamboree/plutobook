@@ -701,7 +701,7 @@ const LineInfo& LineBreaker::nextLine()
         }
     }
 
-    auto remainingWidth = m_availableWidth - m_currentWidth;
+    auto remainingWidth = remainingAvailableWidth();
     if(m_hasLeaderText && remainingWidth > 0.f && !m_line.isEmptyLine()) {
         uint32_t leaderCount = 0;
         for(const auto& run : m_line.runs()) {
@@ -862,10 +862,11 @@ void LineBreaker::handleInlineStart(const LineItem& item)
         m_line.setIsEmptyLine(false);
     }
 
-    if(m_state == LineBreakState::Trailing
-        && run.width < 0.f && m_currentWidth > m_availableWidth
-        && m_currentWidth + run.width <= m_availableWidth) {
-        m_state = LineBreakState::Continue;
+    if (m_state == LineBreakState::Trailing && run.width < 0.f) {
+        const auto availableWidth = availableWidthToFit();
+        if (m_currentWidth > availableWidth && m_currentWidth + run.width <= availableWidth) {
+            m_state = LineBreakState::Continue;
+        }
     }
 
     auto wasAutoWrap = m_autoWrap;
@@ -1096,7 +1097,7 @@ void LineBreaker::handleText(const LineItem& item, const RefPtr<TextShape>& shap
         return;
     }
 
-    breakText(run, item, shape, m_availableWidth - m_currentWidth);
+    breakText(run, item, shape, remainingAvailableWidth());
     moveToNextOf(run);
     m_currentWidth += run.width;
     if(!canFitOnLine()) {
@@ -1235,8 +1236,10 @@ void LineBreaker::rewindOverflow(uint32_t newSize)
 
 void LineBreaker::handleOverflow()
 {
+    const auto availableWidth = availableWidthToFit();
+
     auto& runs = m_line.runs();
-    auto widthToRewind = m_currentWidth - m_availableWidth;
+    auto widthToRewind = m_currentWidth - availableWidth;
     auto breakBefore = 0u;
     auto index = runs.size();
     while(index > 0) {
@@ -1266,7 +1269,7 @@ void LineBreaker::handleOverflow()
                     return;
                 }
 
-                m_currentWidth = m_availableWidth + widthToRewind + run.width;
+                m_currentWidth = availableWidth + widthToRewind + run.width;
                 m_textOffset = run.endOffset;
                 m_itemIndex = run.itemIndex;
                 handleTrailingSpaces(*run, shape);
@@ -1281,7 +1284,7 @@ void LineBreaker::handleOverflow()
             m_hasUnpositionedFloats = false;
         }
 
-        float newLineWidth = m_availableWidth;
+        float newLineWidth = availableWidth;
         float lastFloatBottom = m_block->height();
         float floatBottom = 0.f;
         while(true) {
@@ -1295,7 +1298,7 @@ void LineBreaker::handleOverflow()
             }
         }
 
-        if(newLineWidth > m_availableWidth) {
+        if(newLineWidth > availableWidth) {
             m_block->setHeight(lastFloatBottom);
             m_availableWidth = newLineWidth;
             return;

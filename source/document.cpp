@@ -130,7 +130,7 @@ TextNode::TextNode(Document* document, const HeapString& data)
 {
 }
 
-void TextNode::appendData(const std::string_view& data)
+void TextNode::appendData(std::string_view data)
 {
     m_data = concatenateString(m_data, data);
 }
@@ -172,7 +172,7 @@ Box* TextNode::createBox(const RefPtr<BoxStyle>& style)
     return box;
 }
 
-void TextNode::buildBox(Counters& counters, Box* parent)
+void TextNode::buildBox(Counters& counters, SelectorFilter& selectorFilter, Box* parent)
 {
     if(isHidden(parent))
         return;
@@ -295,11 +295,11 @@ std::string ContainerNode::textFromChildren() const
     return content;
 }
 
-void ContainerNode::buildChildrenBox(Counters& counters, Box* parent)
+void ContainerNode::buildChildrenBox(Counters& counters, SelectorFilter& selectorFilter, Box* parent)
 {
     auto child = m_firstChild;
     while(child) {
-        child->buildBox(counters, parent);
+        child->buildBox(counters, selectorFilter, parent);
         child = child->nextSibling();
     }
 }
@@ -518,15 +518,26 @@ Box* Element::createBox(const RefPtr<BoxStyle>& style)
     return Box::create(this, style);
 }
 
-void Element::buildBox(Counters& counters, Box* parent)
+void Element::buildElementChildrenBox(Counters& counters, SelectorFilter& selectorFilter, Box* box)
 {
-    auto style = document()->styleSheet().styleForElement(this, parent->style());
-    if(style == nullptr || style->display() == Display::None)
-        return;
-    if (auto box = createBox(style)) {
-        parent->addChild(box);
-        buildChildrenBox(counters, box);
+    if (m_hasElementChildren)
+        selectorFilter.push(this);
+    buildChildrenBox(counters, selectorFilter, box);
+    if (m_hasElementChildren) {
+        selectorFilter.pop();
     }
+}
+
+void Element::buildBox(Counters& counters, SelectorFilter& selectorFilter, Box* parent)
+{
+    auto style = document()->styleSheet().styleForElement(this, selectorFilter, parent->style());
+    if (style == nullptr || style->display() == Display::None)
+        return;
+    auto box = createBox(style);
+    if (box == nullptr)
+        return;
+    parent->addChild(box);
+    buildElementChildrenBox(counters, selectorFilter, box);
 }
 
 void Element::finishParsingDocument()
@@ -543,6 +554,13 @@ void Element::finishParsingDocument()
             }
         } else {
             setIsLinkSource(!completeUrl.isEmpty());
+        }
+    }
+
+    for (auto child = firstChild(); child; child = child->nextSibling()) {
+        if (child->isElementNode()) {
+            setHasElementChildren(true);
+            break;
         }
     }
 
@@ -601,7 +619,7 @@ bool Document::setContainerSize(float containerWidth, float containerHeight)
     return true;
 }
 
-TextNode* Document::createTextNode(const std::string_view& value)
+TextNode* Document::createTextNode(std::string_view value)
 {
     return new TextNode(this, createString(value));
 }
@@ -750,7 +768,7 @@ BoxStyle* Document::bodyStyle() const
     return nullptr;
 }
 
-Element* Document::getElementById(const std::string_view& id) const
+Element* Document::getElementById(std::string_view id) const
 {
     auto it = m_idCache.find(id);
     if(it == m_idCache.end())
@@ -797,7 +815,7 @@ void Document::addTargetCounters(const HeapString& id, const CounterMap& counter
     m_counterCache.emplace(id, counters);
 }
 
-HeapString Document::getTargetCounterText(const std::string_view& fragment, GlobalString name, GlobalString listStyle, const std::string_view& separator)
+HeapString Document::getTargetCounterText(std::string_view fragment, GlobalString name, GlobalString listStyle, std::string_view separator)
 {
     if(fragment.empty() || fragment.front() != '#')
         return emptyGlo;
@@ -807,7 +825,7 @@ HeapString Document::getTargetCounterText(const std::string_view& fragment, Glob
     return getCountersText(it->second, name, listStyle, separator);
 }
 
-HeapString Document::getCountersText(const CounterMap& counters, GlobalString name, GlobalString listStyle, const std::string_view& separator)
+HeapString Document::getCountersText(const CounterMap& counters, GlobalString name, GlobalString listStyle, std::string_view separator)
 {
     auto it = counters.find(name);
     if(it == counters.end())
@@ -829,16 +847,16 @@ HeapString Document::getCountersText(const CounterMap& counters, GlobalString na
     return createString(text);
 }
 
-void Document::runJavaScript(const std::string_view& script)
+void Document::runJavaScript(std::string_view script)
 {
 }
 
-void Document::addAuthorStyleSheet(const std::string_view& content, Url baseUrl)
+void Document::addAuthorStyleSheet(std::string_view content, Url baseUrl)
 {
     m_styleSheet.parseStyle(content, CssStyleOrigin::Author, std::move(baseUrl));
 }
 
-void Document::addUserStyleSheet(const std::string_view& content)
+void Document::addUserStyleSheet(std::string_view content)
 {
     m_styleSheet.parseStyle(content, CssStyleOrigin::User, m_baseUrl);
 }
@@ -905,7 +923,7 @@ bool Document::supportsMediaQueries(const CssMediaQueryList& queries) const
     return false;
 }
 
-bool Document::supportsMedia(const std::string_view& type, const std::string_view& media) const
+bool Document::supportsMedia(std::string_view type, std::string_view media) const
 {
     if(m_book == nullptr || media.empty())
         return true;
@@ -971,7 +989,7 @@ void Document::serialize(OutputStream& o) const
     box()->serialize(o, 0);
 }
 
-void Document::buildBox(Counters& counters, Box* parent)
+void Document::buildBox(Counters& counters, SelectorFilter& selectorFilter, Box* parent)
 {
     auto rootStyle = BoxStyle::create(this, PseudoType::None, Display::Block);
     rootStyle->setPosition(Position::Absolute);
@@ -979,7 +997,7 @@ void Document::buildBox(Counters& counters, Box* parent)
 
     auto rootBox = createBox(rootStyle);
     counters.push();
-    buildChildrenBox(counters, rootBox);
+    buildChildrenBox(counters, selectorFilter, rootBox);
     counters.pop();
     rootBox->build();
 }
@@ -987,7 +1005,8 @@ void Document::buildBox(Counters& counters, Box* parent)
 void Document::build()
 {
     Counters counters(this, 0);
-    buildBox(counters, nullptr);
+    SelectorFilter selectorFilter;
+    buildBox(counters, selectorFilter, nullptr);
 }
 
 void Document::layout()
