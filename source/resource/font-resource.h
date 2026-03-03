@@ -285,8 +285,8 @@ namespace plutobook {
     class FontData : public RefCounted<FontData> {
     public:
         virtual ~FontData() = default;
-        virtual const SimpleFontData* getFontData(uint32_t codepoint,
-                                                  bool preferColor) const = 0;
+        virtual const SimpleFontData*
+        getFontData(uint32_t codepoint, uint32_t variationSelector) const = 0;
 
     protected:
         FontData() = default;
@@ -318,8 +318,8 @@ namespace plutobook {
         const FontDataInfo& info() const { return m_info; }
         const FontFeatureList& features() const { return m_features; }
 
-        const SimpleFontData* getFontData(uint32_t codepoint,
-                                          bool preferColor) const final;
+        const SimpleFontData*
+        getFontData(uint32_t codepoint, uint32_t variationSelector) const final;
 
         float ascent() const { return m_info.ascent; }
         float descent() const { return m_info.descent; }
@@ -352,7 +352,7 @@ namespace plutobook {
             : m_from(from), m_to(to), m_data(std::move(data)) {}
 
         const SimpleFontData* getFontData(uint32_t codepoint,
-                                          bool preferColor) const;
+                                          uint32_t variationSelector) const;
 
     private:
         uint32_t m_from;
@@ -366,8 +366,8 @@ namespace plutobook {
     public:
         static RefPtr<SegmentedFontData> create(FontDataRangeList fonts);
 
-        const SimpleFontData* getFontData(uint32_t codepoint,
-                                          bool preferColor) const final;
+        const SimpleFontData*
+        getFontData(uint32_t codepoint, uint32_t variationSelector) const final;
 
     private:
         SegmentedFontData(FontDataRangeList fonts)
@@ -386,7 +386,7 @@ namespace plutobook {
         getFontData(GlobalString family,
                     const FontDataDescription& description);
         RefPtr<SimpleFontData>
-        getFontData(uint32_t codepoint, bool preferColor,
+        getFontData(uint32_t codepoint, uint32_t variationSelector,
                     const FontDataDescription& description);
 
         bool isFamilyAvailable(GlobalString family);
@@ -422,7 +422,8 @@ namespace plutobook {
             return m_description.data.variations;
         }
 
-        const SimpleFontData* getFontData(uint32_t codepoint, bool preferColor);
+        const SimpleFontData* getFontData(uint32_t codepoint,
+                                          uint32_t variationSelector);
 
     private:
         Font(Document* document, const FontDescription& description);

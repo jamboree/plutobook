@@ -319,7 +319,7 @@ SegmentedFontFace::getFontData(Document* document,
 
     const auto syntheticOblique =
         !m_description.slope ||
-        description.request.slope < m_description.slope.maximum ||
+        description.request.slope < m_description.slope.minimum ||
         description.request.slope > m_description.slope.maximum;
 
     FontDataRangeList fonts;
@@ -342,10 +342,15 @@ SegmentedFontFace::getFontData(Document* document,
     return fontData;
 }
 
-const SimpleFontData* SimpleFontData::getFontData(uint32_t codepoint, bool preferColor) const
+constexpr uint32_t kTextVariationSelector = 0xFE0E;
+constexpr uint32_t kEmojiVariationSelector = 0xFE0F;
+
+const SimpleFontData* SimpleFontData::getFontData(uint32_t codepoint, uint32_t variationSelector) const
 {
-    if(preferColor && !m_info.hasColor)
+    if ((m_info.hasColor && variationSelector == kTextVariationSelector)
+        || (!m_info.hasColor && variationSelector == kEmojiVariationSelector)) {
         return nullptr;
+    }
     return graphicsManager().hasCodepoint(m_hbFont, codepoint) ? this : nullptr;
 }
 
@@ -354,21 +359,20 @@ SimpleFontData::~SimpleFontData()
     graphicsManager().destroyFont(m_hbFont);
 }
 
-const SimpleFontData* FontDataRange::getFontData(uint32_t codepoint, bool preferColor) const
+const SimpleFontData* FontDataRange::getFontData(uint32_t codepoint, uint32_t variationSelector) const
 {
-    if(m_from <= codepoint && m_to >= codepoint)
-        return m_data->getFontData(codepoint, preferColor);
+    if (m_from <= codepoint && m_to >= codepoint)
+        return m_data->getFontData(codepoint, variationSelector);
     return nullptr;
 }
 
-const SimpleFontData* SegmentedFontData::getFontData(uint32_t codepoint, bool preferColor) const
+const SimpleFontData* SegmentedFontData::getFontData(uint32_t codepoint, uint32_t variationSelector) const
 {
-    for(const auto& font : m_fonts) {
-        if(auto fontData = font.getFontData(codepoint, preferColor)) {
+    for (const auto& font : m_fonts) {
+        if (auto fontData = font.getFontData(codepoint, variationSelector)) {
             return fontData;
         }
     }
-
     return nullptr;
 }
 
@@ -562,7 +566,7 @@ RefPtr<SimpleFontData> FontDataCache::getFontData(GlobalString family, const Fon
     return it->second;
 }
 
-RefPtr<SimpleFontData> FontDataCache::getFontData(uint32_t codepoint, bool preferColor, const FontDataDescription& description)
+RefPtr<SimpleFontData> FontDataCache::getFontData(uint32_t codepoint, uint32_t variationSelector, const FontDataDescription& description)
 {
     std::lock_guard guard(m_mutex);
     auto pattern = FcPatternCreate();
@@ -575,7 +579,7 @@ RefPtr<SimpleFontData> FontDataCache::getFontData(uint32_t codepoint, bool prefe
     FcPatternAddInteger(pattern, FC_WIDTH, fcWidth(description.request.width));
     FcPatternAddInteger(pattern, FC_SLANT, fcSlant(description.request.slope));
     FcPatternAddBool(pattern, FC_SCALABLE, FcTrue);
-    if(preferColor) {
+    if (variationSelector == kEmojiVariationSelector) {
         FcPatternAddBool(pattern, FC_COLOR, FcTrue);
     }
 
@@ -643,15 +647,15 @@ RefPtr<Font> Font::create(Document* document, const FontDescription& description
     return adoptPtr(new Font(document, description));
 }
 
-const SimpleFontData* Font::getFontData(uint32_t codepoint, bool preferColor)
+const SimpleFontData* Font::getFontData(uint32_t codepoint, uint32_t variationSelector)
 {
-    for(const auto& font : m_fonts) {
-        if(auto fontData = font->getFontData(codepoint, preferColor)) {
+    for (const auto& font : m_fonts) {
+        if (auto fontData = font->getFontData(codepoint, variationSelector)) {
             return fontData;
         }
     }
 
-    if(preferColor) {
+    if (variationSelector == kEmojiVariationSelector) {
         if(m_emojiFont == nullptr) {
             static const auto emoji = GlobalString::get("emoji");
             if(auto fontData = m_document->fontDataCache()->getFontData(emoji, m_description.data)) {
@@ -663,7 +667,7 @@ const SimpleFontData* Font::getFontData(uint32_t codepoint, bool preferColor)
         return m_emojiFont;
     }
 
-    if(auto fontData = m_document->fontDataCache()->getFontData(codepoint, preferColor, m_description.data)) {
+    if (auto fontData = m_document->fontDataCache()->getFontData(codepoint, variationSelector, m_description.data)) {
         m_fonts.push_back(fontData);
         return fontData.get();
     }
@@ -678,7 +682,7 @@ Font::Font(Document* document, const FontDescription& description)
     for(const auto& family : description.families) {
         if(auto font = document->styleSheet().getFontData(family, description.data)) {
             if(m_primaryFont == nullptr)
-                m_primaryFont = font->getFontData(' ', false);
+                m_primaryFont = font->getFontData(' ', 0);
             m_fonts.push_back(std::move(font));
         }
     }

@@ -548,8 +548,8 @@ void HtmlTableElement::collectAdditionalCellAttributeStyle(AttributeStyle& style
     }
 
     if(m_border > 0 && m_rules == Rules::Unset) {
-        style.addProperty(CssPropertyID::BorderWidth, CssValueID::Inset);
-        style.addProperty(CssPropertyID::BorderStyle, CssValueID::Solid);
+        style.addProperty(CssPropertyID::BorderWidth, CssValueID::Thin);
+        style.addProperty(CssPropertyID::BorderStyle, CssValueID::Inset);
         style.addProperty(CssPropertyID::BorderColor, CssInheritValue::create());
     } else {
         switch(m_rules) {

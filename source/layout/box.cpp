@@ -895,6 +895,7 @@ void BoxModel::updatePaddingWidths(const BlockBox* container)
 
 void BoxModel::computeBorderWidths(float& borderTop, float& borderBottom, float& borderLeft, float& borderRight) const
 {
+    assert(!isBorderCollapsed());
     constexpr auto calc = [](LineStyle style, float width) {
         return style > LineStyle::Hidden ? width : 0.f;
     };

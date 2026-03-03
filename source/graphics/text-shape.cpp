@@ -98,6 +98,42 @@ uint32_t TextShapeRun::offsetForPosition(float position, Direction direction) co
     return direction == Direction::Rtl ? 0 : m_length;
 }
 
+constexpr bool isVariationSelector(uint16_t character)
+{
+    return character >= 0xFE00 && character <= 0xFE0F;
+}
+
+static uint32_t resolveVariationSelector(FontVariantEmoji variantEmoji, uint32_t codepoint, const uint16_t* characters, int offset, int length)
+{
+    if (length > 1) {
+        const auto lastCharacter = characters[offset + length - 1];
+        if (isVariationSelector(lastCharacter)) {
+            return lastCharacter;
+        }
+    }
+
+    switch (variantEmoji) {
+    case FontVariantEmoji::Normal:
+        if (codepoint > 0xFF && u_hasBinaryProperty(codepoint, UCHAR_EMOJI_PRESENTATION))
+            return kVariationSelector16Character;
+        break;
+    case FontVariantEmoji::Text:
+        return kVariationSelector15Character;
+    case FontVariantEmoji::Emoji:
+        if (u_hasBinaryProperty(codepoint, UCHAR_EMOJI))
+            return kVariationSelector16Character;
+        break;
+    case FontVariantEmoji::Unicode:
+        if (u_hasBinaryProperty(codepoint, UCHAR_EMOJI)) {
+            if (u_hasBinaryProperty(codepoint, UCHAR_EMOJI_PRESENTATION))
+                return kVariationSelector16Character;
+            return kVariationSelector15Character;
+        }
+    }
+
+    return 0;
+}
+
 constexpr int kMaxGlyphs = 1 << 16;
 constexpr int kMaxCharacters = kMaxGlyphs;
 
@@ -107,13 +143,9 @@ inline float HBFixedToFloat(hb_position_t v) {
     return scalbnf(v, -8);
 }
 
-static bool isEmojiCodepoint(uint32_t codepoint, FontVariantEmoji variantEmoji)
-{
-    return variantEmoji != FontVariantEmoji::Text && codepoint > 0xFF && u_hasBinaryProperty(codepoint, UCHAR_EMOJI);
-}
-
 RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direction, bool disableSpacing, const BoxStyle* style)
 {
+    assert(!text.isEmpty());
     const auto& font = style->font();
     const auto fontFeatures = style->fontFeatures();
     const auto fontVariantEmoji = style->fontVariantEmoji();
@@ -122,105 +154,115 @@ RefPtr<TextShape> TextShape::createForText(const UString& text, Direction direct
 
     const auto hbBuffer = hb_buffer_create();
     const auto hbDirection = direction == Direction::Ltr ? HB_DIRECTION_LTR : HB_DIRECTION_RTL;
-    const auto textBuffer = (const uint16_t*)(text.getBuffer());
+    const auto textBuffer = reinterpret_cast<const uint16_t*>(text.getBuffer());
 
     float totalWidth = 0.f;
     int startIndex = 0;
     int totalLength = text.length();
     TextShapeRunList textRuns;
 
-    std::vector<hb_feature_t> hbFeatures;
-    const auto addFeatures = [&hbFeatures](const FontFeatureList& features) {
-        hbFeatures.reserve(hbFeatures.size() + features.size());
-        for (const auto& feature : features) {
-            hb_feature_t hbFeature;
-            hbFeature.tag = feature.first;
-            hbFeature.value = feature.second;
-            hbFeature.start = 0;
-            hbFeature.end = static_cast<unsigned>(-1);
-            hbFeatures.push_back(hbFeature);
-        }
-    };
-    addFeatures(fontFeatures);
-
     CharacterBreakIterator iterator(text);
-    while(totalLength > 0) {
+    auto character = text.char32At(startIndex);
+    auto currentIndex = iterator.nextBreakOpportunity(startIndex, totalLength);
+    auto nextFontData = font->getFontData(character, resolveVariationSelector(fontVariantEmoji, character, textBuffer, startIndex, currentIndex));
+    while (totalLength > 0) {
+        auto fontData = nextFontData;
         auto errorCode = U_ZERO_ERROR;
-        auto character = text.char32At(startIndex);
-        auto fontData = font->getFontData(character, isEmojiCodepoint(character, fontVariantEmoji));
         auto scriptCode = uscript_getScript(character, &errorCode);
-        if(!fontData || U_FAILURE(errorCode))
+        if (!fontData || U_FAILURE(errorCode))
             break;
-        auto nextIndex = iterator.nextBreakOpportunity(startIndex, totalLength);
-        auto endIndex = startIndex + std::min(totalLength, kMaxCharacters);
-        for(; nextIndex < endIndex; nextIndex = iterator.nextBreakOpportunity(nextIndex, endIndex)) {
-            auto nextCharacter = text.char32At(nextIndex);
-            if(treatAsZeroWidthSpace(nextCharacter))
-                continue;
-            auto nextFontData = font->getFontData(nextCharacter, isEmojiCodepoint(nextCharacter, fontVariantEmoji));
-            auto nextScriptCode = uscript_getScript(nextCharacter, &errorCode);
-            if(fontData != nextFontData || U_FAILURE(errorCode))
-                break;
-            if(scriptCode == USCRIPT_INHERITED || scriptCode == USCRIPT_COMMON)
-                scriptCode = nextScriptCode;
-            if(scriptCode != nextScriptCode && nextScriptCode != USCRIPT_INHERITED && nextScriptCode != USCRIPT_COMMON
-                && !uscript_hasScript(nextCharacter, scriptCode)) {
-                break;
-            }
-        }
+        auto numCharacters = currentIndex - startIndex;
+        const auto endIndex = startIndex + totalLength;
+        while (currentIndex < endIndex) {
+            const auto clusterOffset = currentIndex;
+            character = text.char32At(currentIndex);
+            currentIndex = iterator.nextBreakOpportunity(currentIndex, endIndex);
 
-        assert(nextIndex > startIndex);
-        const auto numCharacters = nextIndex - startIndex;
-        const auto scriptName = uscript_getShortName(scriptCode);
-        const auto hbScript = hb_script_from_string(scriptName, -1);
-
-        hbFeatures.resize(fontFeatures.size());
-        addFeatures(fontData->features());
-
-        hb_buffer_reset(hbBuffer);
-        hb_buffer_add_utf16(hbBuffer, textBuffer + startIndex, numCharacters, 0, numCharacters);
-        hb_buffer_set_direction(hbBuffer, hbDirection);
-        hb_buffer_set_script(hbBuffer, hbScript);
-        hb_shape(graphicsManager().getHBFont(fontData->font()), hbBuffer, hbFeatures.data(), hbFeatures.size());
-
-        unsigned numGlyphs = 0;
-        const auto glyphInfos = hb_buffer_get_glyph_infos(hbBuffer, &numGlyphs);
-        const auto glyphPositions = hb_buffer_get_glyph_positions(hbBuffer, &numGlyphs);
-
-        float width = 0.f;
-        TextShapeRunGlyphDataList glyphs(numGlyphs);
-        for(unsigned index = 0; index != numGlyphs; ++index) {
-            const auto& glyphInfo = glyphInfos[index];
-            const auto& glyphPosition = glyphPositions[index];
-
-            auto& glyphData = glyphs[index];
-            glyphData.glyphIndex = glyphInfo.codepoint;
-            glyphData.characterIndex = glyphInfo.cluster;
-            glyphData.xOffset = HB_TO_FLT(glyphPosition.x_offset);
-            glyphData.yOffset = -HB_TO_FLT(glyphPosition.y_offset);
-            glyphData.advance = HB_TO_FLT(glyphPosition.x_advance - glyphPosition.y_advance);
-
-            if(!disableSpacing) {
-                auto character = text.charAt(startIndex + glyphData.characterIndex);
-                if(letterSpacing && !treatAsZeroWidthSpace(character))
-                    glyphData.advance += letterSpacing;
-                if(wordSpacing && treatAsSpace(character)) {
-                    glyphData.advance += wordSpacing;
+            const auto clusterLength = currentIndex - clusterOffset;
+            if (!treatAsZeroWidthSpace(character)) {
+                nextFontData = font->getFontData(character, resolveVariationSelector(fontVariantEmoji, character, textBuffer, clusterOffset, clusterLength));
+                auto nextScriptCode = uscript_getScript(character, &errorCode);
+                if (fontData != nextFontData || U_FAILURE(errorCode))
+                    break;
+                if (scriptCode == USCRIPT_INHERITED || scriptCode == USCRIPT_COMMON)
+                    scriptCode = nextScriptCode;
+                if (scriptCode != nextScriptCode && nextScriptCode != USCRIPT_INHERITED && nextScriptCode != USCRIPT_COMMON
+                    && !uscript_hasScript(character, scriptCode)) {
+                    break;
                 }
             }
 
-            width += glyphData.advance;
+            numCharacters += clusterLength;
         }
 
-        auto textRun = TextShapeRun::create(fontData, startIndex, numCharacters, width, std::move(glyphs));
-        totalWidth += width;
-        startIndex += numCharacters;
-        totalLength -= numCharacters;
-        textRuns.push_back(std::move(textRun));
+        assert(numCharacters > 0);
+        auto scriptName = uscript_getShortName(scriptCode);
+        auto hbScript = hb_script_from_string(scriptName, -1);
+
+        std::vector<hb_feature_t> hbFeatures;
+        auto addFeatures = [&hbFeatures](const FontFeatureList& features) {
+            for (const auto& feature : features) {
+                hb_feature_t hbFeature;
+                hbFeature.tag = feature.first;
+                hbFeature.value = feature.second;
+                hbFeature.start = 0;
+                hbFeature.end = static_cast<unsigned>(-1);
+                hbFeatures.push_back(hbFeature);
+            }
+        };
+
+        addFeatures(fontFeatures);
+        addFeatures(fontData->features());
+
+        while (numCharacters > 0) {
+            const auto itemLength = std::min(numCharacters, kMaxCharacters);
+
+            hb_buffer_reset(hbBuffer);
+            hb_buffer_add_utf16(hbBuffer, textBuffer + startIndex, itemLength, 0, itemLength);
+            hb_buffer_set_direction(hbBuffer, hbDirection);
+            hb_buffer_set_script(hbBuffer, hbScript);
+            hb_shape(graphicsManager().getHBFont(fontData->font()), hbBuffer, hbFeatures.data(), hbFeatures.size());
+
+            auto glyphInfos = hb_buffer_get_glyph_infos(hbBuffer, nullptr);
+            auto glyphPositions = hb_buffer_get_glyph_positions(hbBuffer, nullptr);
+            auto numGlyphs = hb_buffer_get_length(hbBuffer);
+
+            float width = 0.f;
+            TextShapeRunGlyphDataList glyphs(numGlyphs);
+            for (size_t index = 0; index < numGlyphs; ++index) {
+                const auto& glyphInfo = glyphInfos[index];
+                const auto& glyphPosition = glyphPositions[index];
+
+                auto& glyphData = glyphs[index];
+                glyphData.glyphIndex = glyphInfo.codepoint;
+                glyphData.characterIndex = glyphInfo.cluster;
+                glyphData.xOffset = HB_TO_FLT(glyphPosition.x_offset);
+                glyphData.yOffset = -HB_TO_FLT(glyphPosition.y_offset);
+                glyphData.advance = HB_TO_FLT(glyphPosition.x_advance - glyphPosition.y_advance);
+
+                if (letterSpacing || wordSpacing) {
+                    auto character = text.charAt(startIndex + glyphData.characterIndex);
+                    if (letterSpacing && !treatAsZeroWidthSpace(character))
+                        glyphData.advance += letterSpacing;
+                    if (wordSpacing && treatAsSpace(character)) {
+                        glyphData.advance += wordSpacing;
+                    }
+                }
+
+                width += glyphData.advance;
+            }
+
+            auto textRun = TextShapeRun::create(fontData, startIndex, itemLength, width, std::move(glyphs));
+            totalWidth += width;
+            startIndex += itemLength;
+            totalLength -= itemLength;
+            numCharacters -= itemLength;
+            textRuns.push_back(std::move(textRun));
+        }
     }
 
     hb_buffer_destroy(hbBuffer);
-    if(direction == Direction::Rtl)
+    if (direction == Direction::Rtl)
         std::reverse(textRuns.begin(), textRuns.end());
     return adoptPtr(new TextShape(text, direction, totalWidth, std::move(textRuns)));
 }
@@ -234,7 +276,7 @@ RefPtr<TextShape> TextShape::createForTabs(const UString& text, Direction direct
     int totalLength = text.length();
 
     TextShapeRunList runs;
-    if(auto fontData = font->getFontData(kSpaceCharacter, false)) {
+    if (auto fontData = font->getFontData(kSpaceCharacter, 0)) {
         auto tabWidth = style->tabWidth(fontData->spaceWidth());
         auto spaceGlyph = fontData->spaceGlyph();
         while(totalLength > 0) {

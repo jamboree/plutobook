@@ -1398,12 +1398,17 @@ void TableSectionBox::build()
 
 void TableSectionBox::paintCollapsedBorders(const PaintInfo& info, const Point& offset, const TableCollapsedBorderEdge& currentEdge) const
 {
-    for (auto row : m_rows | std::views::reverse) {
-        Point adjustedOffset(offset + location() + row->location());
-        for (const auto& [col, cell] : row->cells()) {
+    Point adjustedOffset(offset + location());
+    if (!info.shouldPaintBox(this, adjustedOffset))
+        return;
+    for (auto rowBox : m_rows | std::views::reverse) {
+        Point rowOffset(adjustedOffset + rowBox->location());
+        if (!info.shouldPaintBox(rowBox, rowOffset))
+            continue;
+        for (const auto& [col, cell] : rowBox->cells()) {
             auto cellBox = cell.box();
             if (!cell.inColOrRowSpan()) {
-                cellBox->paintCollapsedBorders(info, adjustedOffset, currentEdge);
+                cellBox->paintCollapsedBorders(info, rowOffset, currentEdge);
             }
         }
     }
@@ -1411,37 +1416,42 @@ void TableSectionBox::paintCollapsedBorders(const PaintInfo& info, const Point& 
 
 void TableSectionBox::paint(const PaintInfo& info, const Point& offset, PaintPhase phase)
 {
-    for(auto rowBox : m_rows) {
+    Point adjustedOffset(offset + location());
+    if (!info.shouldPaintBox(this, adjustedOffset))
+        return;
+    for (auto rowBox : m_rows) {
+        Point rowOffset(adjustedOffset + rowBox->location());
+        if (!info.shouldPaintBox(rowBox, rowOffset))
+            continue;
         if (phase == PaintPhase::Outlines && !rowBox->hasLayer() && rowBox->style()->visibility() == Visibility::Visible) {
-            rowBox->paintOutlines(info, offset + location() + rowBox->location());
+            rowBox->paintOutlines(info, rowOffset);
         }
 
-        for(const auto& [col, cell] : rowBox->cells()) {
+        for (const auto& [col, cell] : rowBox->cells()) {
             auto cellBox = cell.box();
-            if(cell.inColOrRowSpan() || (cellBox->emptyCells() == EmptyCells::Hide && !cellBox->firstChild()))
+            if (cell.inColOrRowSpan())
                 continue;
-            Point adjustedOffset(offset + location() + rowBox->location());
-            if(phase == PaintPhase::Decorations) {
-                if(auto columnBox = table()->columnAt(col)) {
+            if (phase == PaintPhase::Decorations) {
+                if (auto columnBox = table()->columnAt(col)) {
                     if (auto columnGroupBox = columnBox->columnGroup())
-                        cellBox->paintBackgroundBehindCell(info, adjustedOffset, columnGroupBox->style());
-                    cellBox->paintBackgroundBehindCell(info, adjustedOffset, columnBox->style());
+                        cellBox->paintBackgroundBehindCell(info, rowOffset, columnGroupBox->style());
+                    cellBox->paintBackgroundBehindCell(info, rowOffset, columnBox->style());
                 }
 
-                cellBox->paintBackgroundBehindCell(info, adjustedOffset, style());
-                if(!rowBox->hasLayer()) {
-                    cellBox->paintBackgroundBehindCell(info, adjustedOffset, rowBox->style());
+                cellBox->paintBackgroundBehindCell(info, rowOffset, style());
+                if (!rowBox->hasLayer()) {
+                    cellBox->paintBackgroundBehindCell(info, rowOffset, rowBox->style());
                 }
             }
 
-            if(!cellBox->hasLayer() && !rowBox->hasLayer()) {
-                cellBox->paint(info, adjustedOffset, phase);
+            if (!cellBox->hasLayer() && !rowBox->hasLayer()) {
+                cellBox->paint(info, rowOffset, phase);
             }
         }
     }
 
     if (phase == PaintPhase::Outlines && style()->visibility() == Visibility::Visible) {
-        paintOutlines(info, offset + location());
+        paintOutlines(info, adjustedOffset);
     }
 }
 
@@ -1475,6 +1485,17 @@ void TableRowBox::updateOverflowRect()
         auto cellBox = cell.box();
         if (!cell.inColOrRowSpan()) {
             addOverflowRect(cellBox, cellBox->x(), cellBox->y());
+            if (table()->isBorderCollapsed()) {
+                const auto& edges = cellBox->collapsedBorderEdges();
+                auto topHalfWidth = edges.topEdge().width() / 2.f;
+                auto bottomHalfWidth = edges.bottomEdge().width() / 2.f;
+                auto leftHalfWidth = edges.leftEdge().width() / 2.f;
+                auto rightHalfWidth = edges.rightEdge().width() / 2.f;
+
+                Rect borderRect(cellBox->location(), cellBox->size());
+                borderRect.expand(topHalfWidth, rightHalfWidth, bottomHalfWidth, leftHalfWidth);
+                addOverflowRect(borderRect);
+            }
         }
     }
 }
@@ -1489,15 +1510,15 @@ TableCellBox* TableRowBox::cellAt(uint32_t columnIndex) const
 
 void TableRowBox::paint(const PaintInfo& info, const Point& offset, PaintPhase phase)
 {
+    Point adjustedOffset(offset + location());
     if (phase == PaintPhase::Outlines && style()->visibility() == Visibility::Visible) {
-        paintOutlines(info, offset + location());
+        paintOutlines(info, adjustedOffset);
     }
 
     for(const auto& [col, cell] : m_cells) {
         auto cellBox = cell.box();
-        if(cell.inColOrRowSpan() || (cellBox->emptyCells() == EmptyCells::Hide && !cellBox->firstChild()))
+        if (cell.inColOrRowSpan())
             continue;
-        Point adjustedOffset(offset + location());
         if(phase == PaintPhase::Decorations)
             cellBox->paintBackgroundBehindCell(info, adjustedOffset, style());
         if(!cellBox->hasLayer()) {
@@ -1917,11 +1938,14 @@ const TableCollapsedBorderEdges& TableCellBox::collapsedBorderEdges() const
 
 void TableCellBox::paintBackgroundBehindCell(const PaintInfo& info, const Point& offset, const BoxStyle* backgroundStyle) const
 {
-    if(style()->visibility() == Visibility::Visible) {
-        Point adjustedOffset(offset + location());
-        Rect borderRect(adjustedOffset, size());
-        paintBackgroundStyle(info, borderRect, backgroundStyle);
-    }
+    if (style()->visibility() != Visibility::Visible)
+        return;
+    const auto collapseBorders = table()->isBorderCollapsed();
+    if (!collapseBorders && style()->emptyCells() == EmptyCells::Hide && !firstChild())
+        return;
+    Point adjustedOffset(offset + location());
+    Rect borderRect(adjustedOffset, size());
+    paintBackgroundStyle(info, borderRect, backgroundStyle);
 }
 
 void TableCellBox::paintCollapsedBorders(const PaintInfo& info, const Point& offset, const TableCollapsedBorderEdge& currentEdge) const
@@ -2011,9 +2035,12 @@ void TableCellBox::paintCollapsedBorders(const PaintInfo& info, const Point& off
 
 void TableCellBox::paintDecorations(const PaintInfo& info, const Point& offset)
 {
+    const auto collapseBorders = table()->isBorderCollapsed();
+    if (!collapseBorders && style()->emptyCells() == EmptyCells::Hide && !firstChild())
+        return;
     Rect borderRect(offset, size());
     paintBackground(info, borderRect);
-    if (!table()->isBorderCollapsed()) {
+    if (!collapseBorders) {
         paintBorder(info, borderRect);
     }
 }
