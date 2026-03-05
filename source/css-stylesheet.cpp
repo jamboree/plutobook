@@ -40,19 +40,58 @@ using CssPropertyDataList = std::vector<CssPropertyData>;
 
 class FontDescriptionBuilder {
 public:
-    FontDescriptionBuilder(const BoxStyle* parentStyle, std::span<const CssPropertyData> properties);
+    bool consume(const CssPropertyData& property) {
+        switch (property.id()) {
+        case CssPropertyID::FontFamily:
+            if (isRegular(property)) {
+                m_family = property.value();
+            }
+            return true;
+        case CssPropertyID::FontSize:
+            if (isRegular(property)) {
+                m_size = property.value();
+            }
+            return true;
+        case CssPropertyID::FontWeight:
+            if (isRegular(property)) {
+                m_weight = property.value();
+            }
+            return true;
+        case CssPropertyID::FontStretch:
+            if (isRegular(property)) {
+                m_stretch = property.value();
+            }
+            return true;
+        case CssPropertyID::FontStyle:
+            if (isRegular(property)) {
+                m_style = property.value();
+            }
+            return true;
+        case CssPropertyID::FontVariationSettings:
+            if (isRegular(property)) {
+                m_variationSettings = property.value();
+            }
+            return true;
+        }
+        return false;
+    }
 
-    FontFamilyList family() const;
-    FontSelectionValue size() const;
-    FontSelectionValue weight() const;
-    FontSelectionValue stretch() const;
-    FontSelectionValue slope() const;
-    FontVariationList variationSettings() const;
-
-    FontDescription build() const;
+    FontDescription build(const BoxStyle* parentStyle) const;
 
 private:
-    const BoxStyle* m_parentStyle;
+    static bool isRegular(const CssPropertyData& property) {
+        return !(is<CssInheritValue>(*property.value()) ||
+            is<CssUnsetValue>(*property.value()) ||
+            is<CssVariableReferenceValue>(*property.value()));
+    }
+
+    FontFamilyList family(const BoxStyle* parentStyle) const;
+    FontSelectionValue size(const BoxStyle* parentStyle) const;
+    FontSelectionValue weight(const BoxStyle* parentStyle) const;
+    FontSelectionValue stretch(const BoxStyle* parentStyle) const;
+    FontSelectionValue slope(const BoxStyle* parentStyle) const;
+    FontVariationList variationSettings(const BoxStyle* parentStyle) const;
+
     CssValuePtr m_family;
     CssValuePtr m_size;
     CssValuePtr m_weight;
@@ -61,45 +100,10 @@ private:
     CssValuePtr m_variationSettings;
 };
 
-FontDescriptionBuilder::FontDescriptionBuilder(const BoxStyle* parentStyle, std::span<const CssPropertyData> properties)
-    : m_parentStyle(parentStyle)
-{
-    for(const auto& property : properties) {
-        if(is<CssInheritValue>(*property.value())
-            || is<CssUnsetValue>(*property.value())
-            || is<CssVariableReferenceValue>(*property.value())) {
-            continue;
-        }
-
-        switch(property.id()) {
-        case CssPropertyID::FontFamily:
-            m_family = property.value();
-            break;
-        case CssPropertyID::FontSize:
-            m_size = property.value();
-            break;
-        case CssPropertyID::FontWeight:
-            m_weight = property.value();
-            break;
-        case CssPropertyID::FontStretch:
-            m_stretch = property.value();
-            break;
-        case CssPropertyID::FontStyle:
-            m_style = property.value();
-            break;
-        case CssPropertyID::FontVariationSettings:
-            m_variationSettings = property.value();
-            break;
-        default:
-            break;
-        }
-    }
-}
-
-FontFamilyList FontDescriptionBuilder::family() const
+FontFamilyList FontDescriptionBuilder::family(const BoxStyle* parentStyle) const
 {
     if(m_family == nullptr)
-        return m_parentStyle->fontFamily();
+        return parentStyle->fontFamily();
     if(is<CssInitialValue>(*m_family))
         return FontFamilyList();
     FontFamilyList families;
@@ -110,10 +114,10 @@ FontFamilyList FontDescriptionBuilder::family() const
     return families;
 }
 
-FontSelectionValue FontDescriptionBuilder::size() const
+FontSelectionValue FontDescriptionBuilder::size(const BoxStyle* parentStyle) const
 {
     if(m_size == nullptr)
-        return m_parentStyle->fontSize();
+        return parentStyle->fontSize();
     if(is<CssInitialValue>(*m_size))
         return kMediumFontSize;
     if(auto ident = to<CssIdentValue>(m_size)) {
@@ -135,17 +139,17 @@ FontSelectionValue FontDescriptionBuilder::size() const
         case CssValueID::XxxLarge:
             return kMediumFontSize * 3.0;
         case CssValueID::Smaller:
-            return m_parentStyle->fontSize() / 1.2;
+            return parentStyle->fontSize() / 1.2;
         case CssValueID::Larger:
-            return m_parentStyle->fontSize() * 1.2;
+            return parentStyle->fontSize() * 1.2;
         default:
             assert(false);
         }
     }
 
     if(auto percent = to<CssPercentValue>(m_size))
-        return percent->value() * m_parentStyle->fontSize() / 100.0;
-    return m_parentStyle->convertLengthValue(*m_size);
+        return percent->value() * parentStyle->fontSize() / 100.0;
+    return parentStyle->convertLengthValue(*m_size);
 }
 
 constexpr FontSelectionValue lighterFontWeight(FontSelectionValue weight)
@@ -177,10 +181,10 @@ static FontSelectionValue convertFontWeightNumber(const CssValue& value)
     return std::clamp<FontSelectionValue>(to<CssNumberValue>(value).value(), kMinFontWeight, kMaxFontWeight);
 }
 
-FontSelectionValue FontDescriptionBuilder::weight() const
+FontSelectionValue FontDescriptionBuilder::weight(const BoxStyle* parentStyle) const
 {
     if(m_weight == nullptr)
-        return m_parentStyle->fontWeight();
+        return parentStyle->fontWeight();
     if(is<CssInitialValue>(*m_weight))
         return kNormalFontWeight;
     if(auto ident = to<CssIdentValue>(m_weight)) {
@@ -190,9 +194,9 @@ FontSelectionValue FontDescriptionBuilder::weight() const
         case CssValueID::Bold:
             return kBoldFontWeight;
         case CssValueID::Lighter:
-            return lighterFontWeight(m_parentStyle->fontWeight());
+            return lighterFontWeight(parentStyle->fontWeight());
         case CssValueID::Bolder:
-            return bolderFontWeight(m_parentStyle->fontWeight());
+            return bolderFontWeight(parentStyle->fontWeight());
         default:
             assert(false);
         }
@@ -230,10 +234,10 @@ static FontSelectionValue convertFontStretchIdent(const CssValue& value)
     return kNormalFontWidth;
 }
 
-FontSelectionValue FontDescriptionBuilder::stretch() const
+FontSelectionValue FontDescriptionBuilder::stretch(const BoxStyle* parentStyle) const
 {
     if(m_stretch == nullptr)
-        return m_parentStyle->fontStretch();
+        return parentStyle->fontStretch();
     if(is<CssInitialValue>(*m_stretch))
         return kNormalFontWidth;
     if(auto percent = to<CssPercentValue>(m_stretch))
@@ -263,10 +267,10 @@ static FontSelectionValue convertFontSlopeAngle(const CssValue& value)
     return std::clamp<FontSelectionValue>(to<CssAngleValue>(value).valueInDegrees(), kMinFontSlope, kMaxFontSlope);
 }
 
-FontSelectionValue FontDescriptionBuilder::slope() const
+FontSelectionValue FontDescriptionBuilder::slope(const BoxStyle* parentStyle) const
 {
     if(m_style == nullptr)
-        return m_parentStyle->fontSlope();
+        return parentStyle->fontSlope();
     if(is<CssInitialValue>(*m_style))
         return kNormalFontSlope;
     if(auto ident = to<CssIdentValue>(m_style))
@@ -277,10 +281,10 @@ FontSelectionValue FontDescriptionBuilder::slope() const
     return convertFontSlopeAngle(*pair.second());
 }
 
-FontVariationList FontDescriptionBuilder::variationSettings() const
+FontVariationList FontDescriptionBuilder::variationSettings(const BoxStyle* parentStyle) const
 {
     if(m_variationSettings == nullptr)
-        return m_parentStyle->fontVariationSettings();
+        return parentStyle->fontVariationSettings();
     FontVariationList variationSettings;
     if(is<CssInitialValue>(*m_variationSettings))
         return variationSettings;
@@ -302,15 +306,15 @@ FontVariationList FontDescriptionBuilder::variationSettings() const
     return variationSettings;
 }
 
-FontDescription FontDescriptionBuilder::build() const
+FontDescription FontDescriptionBuilder::build(const BoxStyle* parentStyle) const
 {
     FontDescription description;
-    description.families = family();
-    description.data.size = size();
-    description.data.request.weight = weight();
-    description.data.request.width = stretch();
-    description.data.request.slope = slope();
-    description.data.variations = variationSettings();
+    description.families = family(parentStyle);
+    description.data.size = size(parentStyle);
+    description.data.request.weight = weight(parentStyle);
+    description.data.request.width = stretch(parentStyle);
+    description.data.request.slope = slope(parentStyle);
+    description.data.variations = variationSettings(parentStyle);
     return description;
 }
 
@@ -326,10 +330,6 @@ public:
 
     std::span<const CssPropertyData> customProperties() const {
         return {m_allProperties.data() + m_propertyCount, m_allProperties.size() - m_propertyCount};
-    }
-
-    FontDescription fontDescription() const {
-        return FontDescriptionBuilder(m_parentStyle, properties()).build();
     }
 
     void merge(uint32_t specificity, uint32_t position, const CssPropertyList& properties);
@@ -395,20 +395,14 @@ void StyleBuilder::buildStyle(BoxStyle* newStyle)
         merge(variable.specificity(), variable.position(), value.resolve(newStyle));
     }
 
-    newStyle->setFontDescription(fontDescription());
+    FontDescriptionBuilder fontDescriptionBuilder;
 
     for(const auto& property : properties()) {
-        const auto id = property.id();
-        switch(id) {
-        case CssPropertyID::FontFamily:
-        case CssPropertyID::FontSize:
-        case CssPropertyID::FontWeight:
-        case CssPropertyID::FontStretch:
-        case CssPropertyID::FontStyle:
-        case CssPropertyID::FontVariationSettings:
+        if (fontDescriptionBuilder.consume(property)) {
             continue;
         }
 
+        const auto id = property.id();
         auto value = property.value();
         switch (value->type()) {
         case CssValueType::Unset:
@@ -428,6 +422,8 @@ void StyleBuilder::buildStyle(BoxStyle* newStyle)
             value = newStyle->resolveLength(value);
         newStyle->set(id, std::move(value));
     }
+
+    newStyle->setFontDescription(fontDescriptionBuilder.build(m_parentStyle));
 }
 
 class ElementStyleBuilder final : public StyleBuilder {
@@ -838,7 +834,7 @@ void CssStyleSheet::addStyleRule(const RefPtr<CssStyleRule>& rule)
         }
 
         CssRuleData ruleData(rule, selector, specificity, m_position);
-        if(pseudoType > PseudoType::None) {
+        if(pseudoType != PseudoType::None) {
             m_pseudoRules.add(pseudoType, std::move(ruleData));
         } else if(!idName.empty()) {
             m_idRules.add(idName, std::move(ruleData));

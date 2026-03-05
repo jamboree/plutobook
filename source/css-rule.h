@@ -1334,7 +1334,7 @@ namespace plutobook {
             return m_attributeCaseType == AttributeCaseType::Sensitive;
         }
 
-        bool matchnth(int count) const;
+        bool matchNth(int count) const;
         PseudoType pseudoType() const;
         uint32_t specificity() const;
 
@@ -1671,57 +1671,40 @@ namespace plutobook {
         void push(const Element* element);
         void pop();
 
-    private:
         bool contains(unsigned hash) const {
             return isSet(hash) && isSet(hash >> 16);
         }
 
-        void add(unsigned hash);
-        void remove(unsigned hash);
-
-        bool isSet(unsigned key) const {
-            return m_table && m_table[key & keyMask];
+    private:
+        void add(unsigned hash) {
+            set(hash);
+            set(hash >> 16);
         }
 
-        void set(unsigned key);
-        void unset(unsigned key);
+        bool isSet(unsigned key) const {
+            const auto idx = key & keyMask;
+            const auto& block = m_bitset[idx >> 5];
+            const auto bit = 1u << (idx & 31u);
+            return block & bit;
+        }
+
+        void set(unsigned key) {
+            const auto idx = key & keyMask;
+            auto& block = m_bitset[idx >> 5];
+            const auto bit = 1u << (idx & 31u);
+            if (!(block & bit)) {
+                block |= bit;
+                m_stack.push_back(idx);
+            }
+        }
 
         static const unsigned keyBits = 12;
         static const unsigned keyMask = (1 << keyBits) - 1;
         static const unsigned maxCount = (1 << 8) - 1;
 
-        using HashVector = std::vector<unsigned>;
-
-        std::unique_ptr<uint8_t[]> m_table;
-        std::vector<HashVector> m_stack;
-
-        friend class CssRuleData;
+        uint32_t m_bitset[((1 << keyBits) + 31u) >> 5] = {};
+        std::vector<unsigned> m_stack;
     };
-
-    inline void SelectorFilter::add(unsigned hash) {
-        set(hash);
-        set(hash >> 16);
-    }
-
-    inline void SelectorFilter::remove(unsigned hash) {
-        unset(hash);
-        unset(hash >> 16);
-    }
-
-    inline void SelectorFilter::set(unsigned key) {
-        auto& value = m_table[key & keyMask];
-        if (value < maxCount) {
-            value++;
-        }
-    }
-
-    inline void SelectorFilter::unset(unsigned key) {
-        auto& value = m_table[key & keyMask];
-        assert(value > 0);
-        if (value < maxCount) {
-            value--;
-        }
-    }
 
     class CssRuleData {
     public:

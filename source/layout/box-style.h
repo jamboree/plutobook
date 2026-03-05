@@ -487,16 +487,7 @@ namespace plutobook {
         boost::unordered_flat_map<GlobalString, RefPtr<CssVariableData>,
                                   StrHash, StrEqual>;
 
-    struct CssPropertyIDSet {
-        CssPropertyIDSet() = default;
-
-        void clear() { std::memset(m_bitset, 0, sizeof(m_bitset)); }
-
-    protected:
-        uint32_t m_bitset[(unsigned(CssPropertyID::Custom) + 31u) >> 5] = {};
-    };
-
-    struct CssPropertyMap : private CssPropertyIDSet {
+    struct CssPropertyMap {
         CssPropertyMap() = default;
         CssPropertyMap(const CssPropertyMap&) = delete;
         CssPropertyMap& operator=(const CssPropertyMap&) = delete;
@@ -507,12 +498,11 @@ namespace plutobook {
 
         CssValuePtr get(CssPropertyID id) const;
 
-        const CssPropertyIDSet& idSet() const { return *this; }
-
         template<class Fn>
         void foreach (Fn fn) const;
 
     private:
+        uint32_t m_bitset[(unsigned(CssPropertyID::Custom) + 31u) >> 5] = {};
         std::vector<CssValuePtr> m_values;
     };
 
@@ -547,10 +537,6 @@ namespace plutobook {
 
         Node* node() const { return m_node; }
         PseudoType pseudoType() const { return m_pseudoType; }
-        const CssPropertyMap& properties() const { return m_properties; }
-        const CssCustomPropertyMap& customProperties() const {
-            return m_customProperties;
-        }
 
         const RefPtr<Font>& font() const { return m_font; }
         void setFont(RefPtr<Font> font);

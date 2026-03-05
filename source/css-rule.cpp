@@ -7,6 +7,7 @@
 #include "ua-stylesheet.h"
 #include "string-utils.h"
 
+#include <span>
 #include <numbers>
 #include <unicode/uiter.h>
 
@@ -341,7 +342,7 @@ CssImageValue::CssImageValue(Url value)
 {
 }
 
-bool CssSimpleSelector::matchnth(int count) const
+bool CssSimpleSelector::matchNth(int count) const
 {
     auto [a, b] = m_matchPattern;
     if(a > 0)
@@ -456,29 +457,30 @@ static unsigned hashString(std::string_view value)
 
 void SelectorFilter::push(const Element* element)
 {
-    HashVector hashes;
+    const auto oldSize = m_stack.size();
     do {
         if (element->hasID())
-            hashes.push_back(hashString(element->id()));
-        hashes.push_back(hashString(element->foldTagNameCase()));
+            add(hashString(element->id()));
+        add(hashString(element->foldTagNameCase()));
         for (const auto& className : element->classNames()) {
-            hashes.push_back(hashString(className));
+            add(hashString(className));
         }
 
         element = element->parentElement();
-    } while (element && m_stack.empty());
-    if (m_stack.empty())
-        m_table = std::make_unique<uint8_t[]>(1 << keyBits);
-    for (auto hash : hashes)
-        add(hash);
-    m_stack.push_back(std::move(hashes));
+    } while (element && !oldSize);
+    m_stack.push_back(m_stack.size() - oldSize);
 }
 
 void SelectorFilter::pop()
 {
-    for (auto hash : m_stack.back())
-        remove(hash);
-    m_stack.pop_back();
+    const auto count = m_stack.back();
+    const auto start = m_stack.size() - (count + 1);
+    for (const auto idx : std::span(m_stack.data() + start, count)) {
+        auto& block = m_bitset[idx >> 5];
+        const auto bit = 1u << (idx & 31u);
+        block &= ~bit;
+    }
+    m_stack.resize(start);
 }
 
 CssRuleData::CssRuleData(const RefPtr<CssStyleRule>& rule, const CssSelector& selector, uint32_t specificity, uint32_t position)
@@ -914,7 +916,7 @@ bool CssRuleData::matchPseudoClassNthChildSelector(const Element* element, const
     int index = 0;
     for(auto sibling = element->previousSiblingElement(); sibling; sibling = sibling->previousSiblingElement())
         ++index;
-    return selector.matchnth(index + 1);
+    return selector.matchNth(index + 1);
 }
 
 bool CssRuleData::matchPseudoClassNthLastChildSelector(const Element* element, const CssSimpleSelector& selector)
@@ -922,7 +924,7 @@ bool CssRuleData::matchPseudoClassNthLastChildSelector(const Element* element, c
     int index = 0;
     for(auto sibling = element->nextSiblingElement(); sibling; sibling = sibling->nextSiblingElement())
         ++index;
-    return selector.matchnth(index + 1);
+    return selector.matchNth(index + 1);
 }
 
 bool CssRuleData::matchPseudoClassNthOfTypeSelector(const Element* element, const CssSimpleSelector& selector)
@@ -934,7 +936,7 @@ bool CssRuleData::matchPseudoClassNthOfTypeSelector(const Element* element, cons
         }
     }
 
-    return selector.matchnth(index + 1);
+    return selector.matchNth(index + 1);
 }
 
 bool CssRuleData::matchPseudoClassNthLastOfTypeSelector(const Element* element, const CssSimpleSelector& selector)
@@ -946,7 +948,7 @@ bool CssRuleData::matchPseudoClassNthLastOfTypeSelector(const Element* element, 
         }
     }
 
-    return selector.matchnth(index + 1);
+    return selector.matchNth(index + 1);
 }
 
 bool CssPageRuleData::match(GlobalString pageName, uint32_t pageIndex, PseudoType pseudoType) const
@@ -976,7 +978,7 @@ bool CssPageRuleData::matchSelector(GlobalString pageName, uint32_t pageIndex, P
     case CssSimpleSelector::MatchType::PseudoPageBlank:
         return pseudoType == PseudoType::BlankPage;
     case CssSimpleSelector::MatchType::PseudoPageNth:
-        return selector.matchnth(pageIndex + 1);
+        return selector.matchNth(pageIndex + 1);
     default:
         assert(false);
     }

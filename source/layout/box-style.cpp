@@ -1759,7 +1759,7 @@ void BoxStyle::inheritFrom(const BoxStyle* parentStyle)
     m_borderCollapse = parentStyle->m_borderCollapse;
     m_color = parentStyle->m_color;
     m_customProperties = parentStyle->m_customProperties;
-    parentStyle->properties().foreach([this](CssPropertyID id, const CssValuePtr& value) {
+    parentStyle->m_properties.foreach([this](CssPropertyID id, const CssValuePtr& value) {
         switch (id) {
         case CssPropertyID::BorderCollapse:
         case CssPropertyID::CaptionSide:
@@ -2155,7 +2155,7 @@ void FontFeaturesBuilder::buildFeatureSettings(FontFeatureList& features) const
 
 FontFeatureList BoxStyle::fontFeatures() const
 {
-    return FontFeaturesBuilder(properties()).build();
+    return FontFeaturesBuilder(m_properties).build();
 }
 
 float BoxStyle::viewportWidth() const
