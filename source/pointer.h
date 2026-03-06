@@ -307,4 +307,16 @@ namespace plutobook {
             return nullptr;
         return static_cast<T&>(*value);
     }
+
+    template<class T, class... A>
+    T* recreate(typename T::ClassRoot* p, A&&... a) {
+        if (p) {
+            if (is<T>(*p)) {
+                to<T>(*p).~T();
+                return new (p) T(std::forward<A>(a)...);
+            }
+            delete p;
+        }
+        return new T(std::forward<A>(a)...);
+    }
 } // namespace plutobook

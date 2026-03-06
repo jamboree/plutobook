@@ -50,12 +50,10 @@ Node::Node(ClassKind type, Document* document)
 
 Node::~Node()
 {
-    if(m_parentNode)
+    if (m_parentNode)
         m_parentNode->removeChild(this);
-    if (m_box) {
-        m_box->setNode(nullptr);
+    if (m_box)
         delete m_box;
-    }
 }
 
 void Node::reparent(ContainerNode* newParent)
@@ -169,8 +167,8 @@ Node* TextNode::cloneNode(bool deep)
 Box* TextNode::createBox(const RefPtr<BoxStyle>& style)
 {
     if(is<SvgElement>(*parentNode()))
-        return new SvgInlineTextBox(this, style);
-    auto box = new TextBox(this, style);
+        return recreate<SvgInlineTextBox>(Node::box(), this, style);
+    auto box = recreate<TextBox>(Node::box(), this, style);
     box->setText(m_data);
     return box;
 }
@@ -970,7 +968,7 @@ Node* Document::cloneNode(bool deep)
 
 Box* Document::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new BoxView(this, style);
+    return recreate<BoxView>(Node::box(), this, style);
 }
 
 void Document::finishParsingDocument()
@@ -994,9 +992,14 @@ void Document::serialize(OutputStream& o) const
 
 void Document::buildBox(Counters& counters, SelectorFilter& selectorFilter, Box* parent)
 {
-    auto rootStyle = BoxStyle::create(this, PseudoType::None, Display::Block);
-    rootStyle->setPosition(Position::Absolute);
-    rootStyle->setFontDescription(FontDescription());
+    RefPtr<BoxStyle> rootStyle;
+    if (const auto rootBox = box()) {
+        rootStyle = RefPtr<BoxStyle>(rootBox->style());
+    } else {
+        rootStyle = BoxStyle::create(this, PseudoType::None, Display::Block);
+        rootStyle->setPosition(Position::Absolute);
+        rootStyle->setFontDescription(FontDescription());
+    }
 
     auto rootBox = createBox(rootStyle);
     counters.push();

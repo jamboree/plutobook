@@ -385,7 +385,7 @@ Box* HtmlImageElement::createBox(const RefPtr<BoxStyle>& style)
     if(image == nullptr) {
         const auto& text = altText();
         if (text.empty())
-            return new ImageBox(this, style);
+            return recreate<ImageBox>(Node::box(), this, style);
         auto container = Box::create(this, style);
         auto box = new TextBox(nullptr, style);
         box->setText(text);
@@ -393,7 +393,7 @@ Box* HtmlImageElement::createBox(const RefPtr<BoxStyle>& style)
         return container;
     }
 
-    auto box = new ImageBox(this, style);
+    auto box = recreate<ImageBox>(Node::box(), this, style);
     box->setImage(std::move(image));
     return box;
 }
@@ -449,7 +449,7 @@ HtmlBrElement::HtmlBrElement(Document* document)
 
 Box* HtmlBrElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new LineBreakBox(this, style);
+    return recreate<LineBreakBox>(Node::box(), this, style);
 }
 
 HtmlWbrElement::HtmlWbrElement(Document* document)
@@ -459,7 +459,7 @@ HtmlWbrElement::HtmlWbrElement(Document* document)
 
 Box* HtmlWbrElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new WordBreakBox(this, style);
+    return recreate<WordBreakBox>(Node::box(), this, style);
 }
 
 HtmlLiElement::HtmlLiElement(Document* document)
@@ -871,7 +871,7 @@ Box* HtmlInputElement::createBox(const RefPtr<BoxStyle>& style)
         }
     }
 
-    auto box = new TextInputBox(this, style);
+    auto box = recreate<TextInputBox>(Node::box(), this, style);
     box->setCols(size());
     return box;
 }
@@ -893,7 +893,7 @@ unsigned HtmlTextAreaElement::cols() const
 
 Box* HtmlTextAreaElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    auto box = new TextInputBox(this, style);
+    auto box = recreate<TextInputBox>(Node::box(), this, style);
     box->setRows(rows());
     box->setCols(cols());
     return box;
@@ -913,7 +913,7 @@ unsigned HtmlSelectElement::size() const
 
 Box* HtmlSelectElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new SelectBox(this, style);
+    return recreate<SelectBox>(Node::box(), this, style);
 }
 
 HtmlStyleElement::HtmlStyleElement(Document* document)

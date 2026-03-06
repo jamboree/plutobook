@@ -207,33 +207,35 @@ Box* Box::create(Node* node, const RefPtr<BoxStyle>& style)
         return new OutsideListMarkerBox(style);
     }
 
-    switch(style->display()) {
+    const auto p = node ? node->box() : nullptr;
+
+    switch (style->display()) {
     case Display::Inline:
-        return new InlineBox(node, style);
+        return recreate<InlineBox>(p, node, style);
     case Display::Block:
     case Display::InlineBlock:
-        return new BlockFlowBox(node, style);
+        return recreate<BlockFlowBox>(p, node, style);
     case Display::Flex:
     case Display::InlineFlex:
-        return new FlexBox(node, style);
+        return recreate<FlexBox>(p, node, style);
     case Display::Table:
     case Display::InlineTable:
-        return new TableBox(node, style);
+        return recreate<TableBox>(p, node, style);
     case Display::ListItem:
-        return new ListItemBox(node, style);
+        return recreate<ListItemBox>(p, node, style);
     case Display::TableCell:
-        return new TableCellBox(node, style);
+        return recreate<TableCellBox>(p, node, style);
     case Display::TableRow:
-        return new TableRowBox(node, style);
+        return recreate <TableRowBox>(p, node, style);
     case Display::TableCaption:
-        return new TableCaptionBox(node, style);
+        return recreate<TableCaptionBox>(p, node, style);
     case Display::TableColumn:
     case Display::TableColumnGroup:
-        return new TableColumnBox(node, style);
+        return recreate<TableColumnBox>(p, node, style);
     case Display::TableRowGroup:
     case Display::TableHeaderGroup:
     case Display::TableFooterGroup:
-        return new TableSectionBox(node, style);
+        return recreate<TableSectionBox>(p, node, style);
     default:
         std::unreachable();
     }
