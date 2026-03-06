@@ -61,5 +61,5 @@ namespace plutobook {
 
     using enum GlobalStringId;
 
-    constexpr GlobalString emptyGlo(GlobalStringId::_emptyGlo);
+    constexpr GlobalString emptyGlo(_emptyGlo);
 } // namespace plutobook

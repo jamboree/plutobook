@@ -99,6 +99,7 @@ namespace plutobook {
 
         ClassKind type() const noexcept { return m_type; }
 
+        void setNode(Node* node) { m_node = node; }
         Node* node() const { return m_node; }
         BoxStyle* style() const { return m_style.get(); }
         Box* parentBox() const { return m_parentBox; }

@@ -52,7 +52,10 @@ Node::~Node()
 {
     if(m_parentNode)
         m_parentNode->removeChild(this);
-    delete m_box;
+    if (m_box) {
+        m_box->setNode(nullptr);
+        delete m_box;
+    }
 }
 
 void Node::reparent(ContainerNode* newParent)
