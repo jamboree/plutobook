@@ -121,6 +121,16 @@ void Box::addChild(Box* newChild)
     appendChild(newChild);
 }
 
+void Box::reparent(Box* parent)
+{
+    if (parent == m_parentBox)
+        return;
+    if (m_parentBox)
+        m_parentBox->removeChild(this);
+    if (parent)
+        parent->appendChild(this);
+}
+
 void Box::insertChild(Box* newChild, Box* nextChild)
 {
     if(nextChild == nullptr) {

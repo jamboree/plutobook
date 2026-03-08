@@ -157,20 +157,32 @@ void HtmlElement::buildElementBox(Counters& counters, SelectorFilter& selectorFi
 
 void HtmlElement::buildBox(Counters& counters, SelectorFilter& selectorFilter, Box* parent)
 {
-    auto style = document()->styleSheet().styleForElement(this, selectorFilter, parent->style());
-    if(style == nullptr || style->display() == Display::None)
-        return;
-    if(style->position() == Position::Running) {
-        const auto value = style->get(CssPropertyID::Position);
-        const auto& position = to<CssUnaryFunctionValue>(*value);
-        assert(position.id() == CssFunctionID::Running);
-        const auto& name = to<CssCustomIdentValue>(*position.value());
-        document()->addRunningStyle(name.value(), std::move(style));
-        return;
+    RefPtr<BoxStyle> style(Node::style());
+    if (m_dirtyStyle) {
+        m_dirtyStyle = false;
+        auto newStyle = document()->styleSheet().styleForElement(this, selectorFilter, parent->style());
+        if (isDifferent(style, newStyle)) {
+            style = std::move(newStyle);
+            m_dirtyContent = true;
+        }
     }
-    if (auto box = createBox(style)) {
-        parent->addChild(box);
-        buildElementBox(counters, selectorFilter, box);
+    if (m_dirtyContent) {
+        m_dirtyContent = false;
+        if (style == nullptr || style->display() == Display::None) {
+            delete m_box;
+        } else if (style->position() == Position::Running) {
+            delete m_box;
+            const auto value = style->get(CssPropertyID::Position);
+            const auto& position = to<CssUnaryFunctionValue>(*value);
+            assert(position.id() == CssFunctionID::Running);
+            const auto& name = to<CssCustomIdentValue>(*position.value());
+            document()->addRunningStyle(name.value(), std::move(style));
+        } else if (auto box = createBox(style)) {
+            parent->addChild(box);
+            buildElementBox(counters, selectorFilter, box);
+        }
+    } else if (m_box) {
+        m_box->reparent(parent);
     }
 }
 
@@ -385,7 +397,7 @@ Box* HtmlImageElement::createBox(const RefPtr<BoxStyle>& style)
     if(image == nullptr) {
         const auto& text = altText();
         if (text.empty())
-            return recreate<ImageBox>(Node::box(), this, style);
+            return recreate<ImageBox>(m_box, this, style);
         auto container = Box::create(this, style);
         auto box = new TextBox(nullptr, style);
         box->setText(text);
@@ -393,7 +405,7 @@ Box* HtmlImageElement::createBox(const RefPtr<BoxStyle>& style)
         return container;
     }
 
-    auto box = recreate<ImageBox>(Node::box(), this, style);
+    auto box = recreate<ImageBox>(m_box, this, style);
     box->setImage(std::move(image));
     return box;
 }
@@ -449,7 +461,7 @@ HtmlBrElement::HtmlBrElement(Document* document)
 
 Box* HtmlBrElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<LineBreakBox>(Node::box(), this, style);
+    return recreate<LineBreakBox>(m_box, this, style);
 }
 
 HtmlWbrElement::HtmlWbrElement(Document* document)
@@ -459,7 +471,7 @@ HtmlWbrElement::HtmlWbrElement(Document* document)
 
 Box* HtmlWbrElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<WordBreakBox>(Node::box(), this, style);
+    return recreate<WordBreakBox>(m_box, this, style);
 }
 
 HtmlLiElement::HtmlLiElement(Document* document)
@@ -871,7 +883,7 @@ Box* HtmlInputElement::createBox(const RefPtr<BoxStyle>& style)
         }
     }
 
-    auto box = recreate<TextInputBox>(Node::box(), this, style);
+    auto box = recreate<TextInputBox>(m_box, this, style);
     box->setCols(size());
     return box;
 }
@@ -893,7 +905,7 @@ unsigned HtmlTextAreaElement::cols() const
 
 Box* HtmlTextAreaElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    auto box = recreate<TextInputBox>(Node::box(), this, style);
+    auto box = recreate<TextInputBox>(m_box, this, style);
     box->setRows(rows());
     box->setCols(cols());
     return box;
@@ -913,7 +925,7 @@ unsigned HtmlSelectElement::size() const
 
 Box* HtmlSelectElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SelectBox>(Node::box(), this, style);
+    return recreate<SelectBox>(m_box, this, style);
 }
 
 HtmlStyleElement::HtmlStyleElement(Document* document)

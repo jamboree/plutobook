@@ -18,7 +18,7 @@ namespace plutobook {
     class AttributeStyle;
     class FontDataCache;
 
-    enum class NodeType {
+    enum class NodeType : unsigned {
         Text,
         Element,
         HtmlElement,
@@ -85,9 +85,10 @@ namespace plutobook {
 
     protected:
         Node(ClassKind type, Document* document);
-        ClassKind m_type;
 
-    private:
+        ClassKind m_type : 4;
+        unsigned m_dirtyStyle : 1 = true;
+        unsigned m_dirtyContent : 1 = true;
         Document* m_document;
         ContainerNode* m_parentNode{nullptr};
         Node* m_nextSibling{nullptr};

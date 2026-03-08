@@ -457,14 +457,15 @@ void FlexBox::layout(FragmentBuilder* fragmentainer)
         float totalFlexBaseSize = 0;
 
         auto begin = it;
-        for(; it != end; ++it) {
-            if (isMultiLine() && it != begin && totalHypotheticalMainSize + it->targetMainMarginBoxSize() > lineBreakLength + kLayoutEpsilon)
-                break;
-            totalFlexGrow += it->flexGrow();
-            totalFlexShrink += it->flexShrink();
-            totalScaledFlexShrink += it->flexShrink() * it->flexBaseSize();
-            totalHypotheticalMainSize += m_gapBetweenItems + it->targetMainMarginBoxSize();
-            totalFlexBaseSize += m_gapBetweenItems + it->flexBaseMarginBoxSize();
+        if (it != end) {
+            do {
+                totalFlexGrow += it->flexGrow();
+                totalFlexShrink += it->flexShrink();
+                totalScaledFlexShrink += it->flexShrink() * it->flexBaseSize();
+                totalHypotheticalMainSize += m_gapBetweenItems + it->targetMainMarginBoxSize();
+                totalFlexBaseSize += m_gapBetweenItems + it->flexBaseMarginBoxSize();
+                ++it;
+            } while (it != end && !(isMultiLine() && totalHypotheticalMainSize + it->targetMainMarginBoxSize() > lineBreakLength + kLayoutEpsilon));
         }
 
         totalHypotheticalMainSize -= m_gapBetweenItems;

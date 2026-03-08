@@ -126,7 +126,7 @@ bool Node::inXmlDocument() const {
 }
 
 TextNode::TextNode(Document* document, const HeapString& data)
-    : Node(classKind,document)
+    : Node(classKind, document)
     , m_data(data)
 {
 }
@@ -167,18 +167,23 @@ Node* TextNode::cloneNode(bool deep)
 Box* TextNode::createBox(const RefPtr<BoxStyle>& style)
 {
     if(is<SvgElement>(*parentNode()))
-        return recreate<SvgInlineTextBox>(Node::box(), this, style);
-    auto box = recreate<TextBox>(Node::box(), this, style);
+        return recreate<SvgInlineTextBox>(m_box, this, style);
+    auto box = recreate<TextBox>(m_box, this, style);
     box->setText(m_data);
     return box;
 }
 
 void TextNode::buildBox(Counters& counters, SelectorFilter& selectorFilter, Box* parent)
 {
-    if(isHidden(parent))
-        return;
-    if(auto box = createBox(parent->style())) {
-        parent->addChild(box);
+    if (m_dirtyContent) {
+        m_dirtyContent = false;
+        if (isHidden(parent)) {
+            delete m_box;
+        } else if (auto box = createBox(parent->style())) {
+            parent->addChild(box);
+        }
+    } else if (m_box) {
+        m_box->reparent(parent);
     }
 }
 
@@ -531,14 +536,27 @@ void Element::buildElementChildrenBox(Counters& counters, SelectorFilter& select
 
 void Element::buildBox(Counters& counters, SelectorFilter& selectorFilter, Box* parent)
 {
-    auto style = document()->styleSheet().styleForElement(this, selectorFilter, parent->style());
-    if (style == nullptr || style->display() == Display::None)
-        return;
-    auto box = createBox(style);
-    if (box == nullptr)
-        return;
-    parent->addChild(box);
-    buildElementChildrenBox(counters, selectorFilter, box);
+    RefPtr<BoxStyle> style(Node::style());
+    if (m_dirtyStyle) {
+        m_dirtyStyle = false;
+        auto newStyle = document()->styleSheet().styleForElement(
+            this, selectorFilter, parent->style());
+        if (isDifferent(style, newStyle)) {
+            style = std::move(newStyle);
+            m_dirtyContent = true;
+        }
+    }
+    if (m_dirtyContent) {
+        m_dirtyContent = false;
+        if (style == nullptr || style->display() == Display::None) {
+            delete m_box;
+        } else if (auto box = createBox(style)) {
+            parent->addChild(box);
+            buildElementChildrenBox(counters, selectorFilter, box);
+        }
+    } else if (m_box) {
+        m_box->reparent(parent);
+    }
 }
 
 void Element::finishParsingDocument()
@@ -586,7 +604,7 @@ bool Document::isSvgImageDocument() const {
 
 BoxView* Document::box() const
 {
-    return static_cast<BoxView*>(Node::box());
+    return static_cast<BoxView*>(m_box);
 }
 
 float Document::width() const
@@ -968,7 +986,7 @@ Node* Document::cloneNode(bool deep)
 
 Box* Document::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<BoxView>(Node::box(), this, style);
+    return recreate<BoxView>(m_box, this, style);
 }
 
 void Document::finishParsingDocument()
@@ -1001,11 +1019,14 @@ void Document::buildBox(Counters& counters, SelectorFilter& selectorFilter, Box*
         rootStyle->setFontDescription(FontDescription());
     }
 
-    auto rootBox = createBox(rootStyle);
-    counters.push();
-    buildChildrenBox(counters, selectorFilter, rootBox);
-    counters.pop();
-    rootBox->build();
+    if (m_dirtyContent) {
+        m_dirtyContent = false;
+        auto rootBox = createBox(rootStyle);
+        counters.push();
+        buildChildrenBox(counters, selectorFilter, rootBox);
+        counters.pop();
+        rootBox->build();
+    }
 }
 
 void Document::build()

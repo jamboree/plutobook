@@ -940,6 +940,8 @@ namespace plutobook {
         Color m_color{Color::Black};
     };
 
+    bool isDifferent(const BoxStyle* a, const BoxStyle* b);
+
     inline bool BoxStyle::isDisplayBlockType(Display display) {
         switch (display) {
         case Display::Block:

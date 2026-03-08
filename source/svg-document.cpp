@@ -265,8 +265,8 @@ void SvgSvgElement::collectAttributeStyle(AttributeStyle& style) const
 Box* SvgSvgElement::createBox(const RefPtr<BoxStyle>& style)
 {
     if(isSvgRootNode())
-        return recreate<SvgRootBox>(Node::box(), this, style);
-    return recreate<SvgViewportContainerBox>(Node::box(), this, style);
+        return recreate<SvgRootBox>(m_box, this, style);
+    return recreate<SvgViewportContainerBox>(m_box, this, style);
 }
 
 SvgUseElement::SvgUseElement(Document* document)
@@ -292,7 +292,7 @@ SvgPropertyPtr SvgUseElement::getProperty(GlobalString name)
 
 Box* SvgUseElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgTransformableContainerBox>(Node::box(), this, style);
+    return recreate<SvgTransformableContainerBox>(m_box, this, style);
 }
 
 void SvgUseElement::finishParsingDocument()
@@ -391,7 +391,7 @@ SvgPropertyPtr SvgImageElement::getProperty(GlobalString name)
 
 Box* SvgImageElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgImageBox>(Node::box(), this, style);
+    return recreate<SvgImageBox>(m_box, this, style);
 }
 
 RefPtr<Image> SvgImageElement::image() const
@@ -419,7 +419,7 @@ SvgPropertyPtr SvgSymbolElement::getProperty(GlobalString name)
 
 Box* SvgSymbolElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgHiddenContainerBox>(Node::box(), this, style);
+    return recreate<SvgHiddenContainerBox>(m_box, this, style);
 }
 
 SvgAElement::SvgAElement(Document* document)
@@ -438,7 +438,7 @@ SvgPropertyPtr SvgAElement::getProperty(GlobalString name)
 
 Box* SvgAElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgTransformableContainerBox>(Node::box(), this, style);
+    return recreate<SvgTransformableContainerBox>(m_box, this, style);
 }
 
 SvgGElement::SvgGElement(Document* document)
@@ -448,7 +448,7 @@ SvgGElement::SvgGElement(Document* document)
 
 Box* SvgGElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgTransformableContainerBox>(Node::box(), this, style);
+    return recreate<SvgTransformableContainerBox>(m_box, this, style);
 }
 
 SvgDefsElement::SvgDefsElement(Document* document)
@@ -458,7 +458,7 @@ SvgDefsElement::SvgDefsElement(Document* document)
 
 Box* SvgDefsElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgHiddenContainerBox>(Node::box(), this, style);
+    return recreate<SvgHiddenContainerBox>(m_box, this, style);
 }
 
 SvgGeometryElement::SvgGeometryElement(Document* document, GlobalString tagName)
@@ -484,7 +484,7 @@ SvgPropertyPtr SvgPathElement::getProperty(GlobalString name)
 
 Box* SvgPathElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgPathBox>(Node::box(), this, style);
+    return recreate<SvgPathBox>(m_box, this, style);
 }
 
 SvgShapeElement::SvgShapeElement(Document* document, GlobalString tagName)
@@ -494,7 +494,7 @@ SvgShapeElement::SvgShapeElement(Document* document, GlobalString tagName)
 
 Box* SvgShapeElement::createBox(const RefPtr<BoxStyle> &style)
 {
-    return recreate<SvgShapeBox>(Node::box(), this, style);
+    return recreate<SvgShapeBox>(m_box, this, style);
 }
 
 SvgLineElement::SvgLineElement(Document* document)
@@ -697,7 +697,7 @@ SvgTSpanElement::SvgTSpanElement(Document* document)
 
 Box* SvgTSpanElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgTSpanBox>(Node::box(), this, style);
+    return recreate<SvgTSpanBox>(m_box, this, style);
 }
 
 SvgTextElement::SvgTextElement(Document* document)
@@ -707,7 +707,7 @@ SvgTextElement::SvgTextElement(Document* document)
 
 Box* SvgTextElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgTextBox>(Node::box(), this, style);
+    return recreate<SvgTextBox>(m_box, this, style);
 }
 
 SvgMarkerElement::SvgMarkerElement(Document* document)
@@ -737,7 +737,7 @@ SvgPropertyPtr SvgMarkerElement::getProperty(GlobalString name)
 
 Box* SvgMarkerElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgResourceMarkerBox>(Node::box(), this, style);
+    return recreate<SvgResourceMarkerBox>(m_box, this, style);
 }
 
 SvgClipPathElement::SvgClipPathElement(Document* document)
@@ -754,7 +754,7 @@ SvgPropertyPtr SvgClipPathElement::getProperty(GlobalString name)
 
 Box* SvgClipPathElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgResourceClipperBox>(Node::box(), this, style);
+    return recreate<SvgResourceClipperBox>(m_box, this, style);
 }
 
 SvgMaskElement::SvgMaskElement(Document* document)
@@ -782,7 +782,7 @@ SvgPropertyPtr SvgMaskElement::getProperty(GlobalString name)
 
 Box* SvgMaskElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgResourceMaskerBox>(Node::box(), this, style);
+    return recreate<SvgResourceMaskerBox>(m_box, this, style);
 }
 
 SvgPatternElement::SvgPatternElement(Document* document)
@@ -863,7 +863,7 @@ SvgPatternAttributes SvgPatternElement::collectPatternAttributes() const
 
 Box* SvgPatternElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgResourcePatternBox>(Node::box(), this, style);
+    return recreate<SvgResourcePatternBox>(m_box, this, style);
 }
 
 SvgStopElement::SvgStopElement(Document* document)
@@ -886,7 +886,7 @@ Color SvgStopElement::stopColorIncludingOpacity() const
 
 Box* SvgStopElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgGradientStopBox>(Node::box(), this, style);
+    return recreate<SvgGradientStopBox>(m_box, this, style);
 }
 
 SvgGradientElement::SvgGradientElement(Document* document, GlobalString tagName)
@@ -980,7 +980,7 @@ SvgLinearGradientAttributes SvgLinearGradientElement::collectGradientAttributes(
 
 Box* SvgLinearGradientElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgResourceLinearGradientBox>(Node::box(), this, style);
+    return recreate<SvgResourceLinearGradientBox>(m_box, this, style);
 }
 
 SvgRadialGradientElement::SvgRadialGradientElement(Document* document)
@@ -1042,7 +1042,7 @@ SvgRadialGradientAttributes SvgRadialGradientElement::collectGradientAttributes(
 
 Box* SvgRadialGradientElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    return recreate<SvgResourceRadialGradientBox>(Node::box(), this, style);
+    return recreate<SvgResourceRadialGradientBox>(m_box, this, style);
 }
 
 SvgStyleElement::SvgStyleElement(Document* document)

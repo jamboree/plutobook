@@ -107,6 +107,7 @@ namespace plutobook {
         Box* firstChild() const { return m_firstChild; }
         Box* lastChild() const { return m_lastChild; }
 
+        void reparent(Box* parent);
         void setParentBox(Box* box) { m_parentBox = box; }
         void setPrevSibling(Box* box) { m_prevSibling = box; }
         void setNextSibling(Box* box) { m_nextSibling = box; }
