@@ -161,7 +161,7 @@ void HtmlElement::buildBox(Counters& counters, SelectorFilter& selectorFilter, B
     if (m_dirtyStyle) {
         m_dirtyStyle = false;
         auto newStyle = document()->styleSheet().styleForElement(this, selectorFilter, parent->style());
-        if (isDifferent(style, newStyle)) {
+        if (!isSame(style, newStyle)) {
             style = std::move(newStyle);
             m_dirtyContent = true;
         }
@@ -989,9 +989,8 @@ HtmlTitleElement::HtmlTitleElement(Document* document)
 
 void HtmlTitleElement::finishParsingDocument()
 {
-    auto book = document()->book();
-    if(book && book->title().empty())
-        book->setTitle(textFromChildren());
+    if(document()->title().empty())
+        document()->setTitle(textFromChildren());
     HtmlElement::finishParsingDocument();
 }
 
@@ -1008,9 +1007,9 @@ void HtmlBaseElement::finishParsingDocument()
     HtmlElement::finishParsingDocument();
 }
 
-std::unique_ptr<HtmlDocument> HtmlDocument::create(Book* book, ResourceFetcher* fetcher, Url baseUrl)
+std::unique_ptr<HtmlDocument> HtmlDocument::create(Context* context, ResourceFetcher* fetcher, Url baseUrl)
 {
-    return std::unique_ptr<HtmlDocument>(new HtmlDocument(book, fetcher, std::move(baseUrl)));
+    return std::unique_ptr<HtmlDocument>(new HtmlDocument(context, fetcher, std::move(baseUrl)));
 }
 
 bool HtmlDocument::parse(std::string_view content)
@@ -1018,8 +1017,8 @@ bool HtmlDocument::parse(std::string_view content)
     return HtmlParser(this, content).parse();
 }
 
-HtmlDocument::HtmlDocument(Book* book, ResourceFetcher* fetcher, Url baseUrl)
-    : Document(classKind, book, fetcher, std::move(baseUrl))
+HtmlDocument::HtmlDocument(Context* context, ResourceFetcher* fetcher, Url baseUrl)
+    : Document(classKind, context, fetcher, std::move(baseUrl))
 {
 }
 

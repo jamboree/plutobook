@@ -806,9 +806,9 @@ namespace plutobook {
         static constexpr ClassKind classKind = ClassKind::SvgDocument;
 
         static std::unique_ptr<SvgDocument>
-        create(Book* book, ResourceFetcher* fetcher, Url baseUrl);
+        create(Context* context, ResourceFetcher* fetcher, Url baseUrl);
 
     private:
-        SvgDocument(Book* book, ResourceFetcher* fetcher, Url baseUrl);
+        SvgDocument(Context* context, ResourceFetcher* fetcher, Url baseUrl);
     };
 } // namespace plutobook

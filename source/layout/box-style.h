@@ -487,7 +487,18 @@ namespace plutobook {
         boost::unordered_flat_map<GlobalString, RefPtr<CssVariableData>,
                                   StrHash, StrEqual>;
 
-    struct CssPropertyMap {
+    struct CssPropertyIDSet {
+        CssPropertyIDSet() = default;
+
+        void clear() { std::memset(m_bitset, 0, sizeof(m_bitset)); }
+
+        bool operator==(const CssPropertyIDSet&) const = default;
+
+    protected:
+        uint32_t m_bitset[(unsigned(CssPropertyID::Custom) + 31u) >> 5] = {};
+    };
+
+    struct CssPropertyMap : private CssPropertyIDSet {
         CssPropertyMap() = default;
         CssPropertyMap(const CssPropertyMap&) = delete;
         CssPropertyMap& operator=(const CssPropertyMap&) = delete;
@@ -498,11 +509,14 @@ namespace plutobook {
 
         CssValuePtr get(CssPropertyID id) const;
 
+        const CssPropertyIDSet& idSet() const { return *this; }
+
         template<class Fn>
         void foreach (Fn fn) const;
 
+        bool operator==(const CssPropertyMap& other) const;
+
     private:
-        uint32_t m_bitset[(unsigned(CssPropertyID::Custom) + 31u) >> 5] = {};
         std::vector<CssValuePtr> m_values;
     };
 
@@ -533,10 +547,13 @@ namespace plutobook {
                                        Display display);
 
         Document* document() const;
-        Book* book() const;
 
         Node* node() const { return m_node; }
         PseudoType pseudoType() const { return m_pseudoType; }
+        const CssPropertyMap& properties() const { return m_properties; }
+        const CssCustomPropertyMap& customProperties() const {
+            return m_customProperties;
+        }
 
         const RefPtr<Font>& font() const { return m_font; }
         void setFont(RefPtr<Font> font);
@@ -940,7 +957,7 @@ namespace plutobook {
         Color m_color{Color::Black};
     };
 
-    bool isDifferent(const BoxStyle* a, const BoxStyle* b);
+    bool isSame(const BoxStyle* a, const BoxStyle* b);
 
     inline bool BoxStyle::isDisplayBlockType(Display display) {
         switch (display) {

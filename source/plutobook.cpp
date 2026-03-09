@@ -567,7 +567,7 @@ bool Book::writeToPdf(plutobook_stream_write_callback_t callback, void* closure,
     if(canvas.isNull())
         return false;
     canvas.scale(PLUTOBOOK_UNITS_PX, PLUTOBOOK_UNITS_PX);
-    canvas.setTitle(m_title);
+    canvas.setTitle(document()->title());
     canvas.setSubject(m_subject);
     canvas.setAuthor(m_author);
     canvas.setCreator("PlutoBook " PLUTOBOOK_VERSION_STRING " (https://github.com/plutoprint)");

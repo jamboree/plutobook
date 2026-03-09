@@ -81,6 +81,16 @@ void CssPropertyMap::foreach(Fn fn) const {
     }
 }
 
+bool CssPropertyMap::operator==(const CssPropertyMap& other) const {
+    return idSet() == other.idSet() &&
+           std::ranges::equal(m_values, other.m_values,
+                              [](const CssValuePtr& a, const CssValuePtr& b) {
+                                  return a == b ||
+                                         (a.isHeap() && b.isHeap() &&
+                                          a.asHeap().isSame(b.asHeap()));
+                              });
+}
+
 RefPtr<BoxStyle> BoxStyle::create(Node* node, PseudoType pseudoType, Display display)
 {
     return adoptPtr(new BoxStyle(node, pseudoType, display));
@@ -106,11 +116,6 @@ RefPtr<BoxStyle> BoxStyle::create(const BoxStyle* parentStyle, Display display)
 Document* BoxStyle::document() const
 {
     return m_node->document();
-}
-
-Book* BoxStyle::book() const
-{
-    return document()->book();
 }
 
 void BoxStyle::setFont(RefPtr<Font> font)
@@ -3085,6 +3090,15 @@ BoxStyle::~BoxStyle() = default;
 BoxStyle::BoxStyle(Node* node, PseudoType pseudoType, Display display)
     : m_node(node), m_pseudoType(pseudoType), m_display(display)
 {
+}
+
+bool isSame(const BoxStyle* a, const BoxStyle* b)
+{
+    if (a == b)
+        return true;
+    if (a == nullptr || b == nullptr)
+        return false;
+    return a->properties() == b->properties();
 }
 
 } // namespace plutobook

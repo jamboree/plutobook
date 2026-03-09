@@ -282,6 +282,7 @@ namespace plutobook {
         bool m_hasColumnFlowBox : 1 {false};
         bool m_hasTransform : 1 {false};
         bool m_hasLayer : 1 {false};
+        bool m_dirtyLayout : 1 = true;
         Node* m_node;
         RefPtr<BoxStyle> m_style;
         Box* m_parentBox{nullptr};

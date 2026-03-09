@@ -39,6 +39,8 @@ namespace plutobook {
 
         constexpr Point operator-() const { return Point(-x, -y); }
 
+        bool operator==(const Point&) const = default;
+
     public:
         float x{0};
         float y{0};

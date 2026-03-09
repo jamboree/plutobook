@@ -343,6 +343,8 @@ namespace plutobook {
         using CssValue::CssValue;
 
         virtual ~CssHeapValue() = default;
+
+        bool isSame(const CssHeapValue& other) const;
     };
 
     class CssValuePtr {

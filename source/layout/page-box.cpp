@@ -644,11 +644,11 @@ void PageLayout::layout()
         return;
     }
 
-    auto book = m_document->book();
+    auto context = m_document->context();
     auto box = m_document->box();
 
     auto pageStyle = m_document->styleSheet().styleForPage(emptyGlo, 0, PseudoType::FirstPage);
-    auto pageSize = pageStyle->getPageSize(book->pageSize());
+    auto pageSize = pageStyle->getPageSize(context->pageSize());
     auto pageScale = pageStyle->pageScale();
 
     auto pageWidth = pageStyle->width().calc(pageSize.width() / units::px);
@@ -659,7 +659,7 @@ void PageLayout::layout()
     auto marginTopLength = pageStyle->margin(TopEdge);
     auto marginBottomLength = pageStyle->margin(BottomEdge);
 
-    const auto& deviceMargins = book->pageMargins();
+    const auto& deviceMargins = context->pageMargins();
     auto marginTop = marginTopLength.isAuto() ? deviceMargins.top() / units::px : marginTopLength.calcMin(pageHeight);
     auto marginRight = marginRightLength.isAuto() ? deviceMargins.right() / units::px : marginRightLength.calcMin(pageWidth);
     auto marginBottom = marginBottomLength.isAuto() ? deviceMargins.bottom() / units::px : marginBottomLength.calcMin(pageHeight);

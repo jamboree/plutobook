@@ -13,6 +13,19 @@
 
 namespace plutobook {
 
+#if 0
+    bool CssHeapValue::isSame(const CssHeapValue& other) const {
+        if (type() != other.type())
+            return false;
+        switch (type())
+        {
+        case ClassKind::CustomProperty:
+        default:
+            break;
+        }
+    }
+#endif // 0
+
 CssLengthResolver::CssLengthResolver(const Document* document, const Font* font)
     : m_document(document), m_font(font)
 {

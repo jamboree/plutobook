@@ -1067,13 +1067,13 @@ void SvgStyleElement::finishParsingDocument()
     SvgElement::finishParsingDocument();
 }
 
-std::unique_ptr<SvgDocument> SvgDocument::create(Book* book, ResourceFetcher* fetcher, Url baseUrl)
+std::unique_ptr<SvgDocument> SvgDocument::create(Context* context, ResourceFetcher* fetcher, Url baseUrl)
 {
-    return std::unique_ptr<SvgDocument>(new SvgDocument(book, fetcher, std::move(baseUrl)));
+    return std::unique_ptr<SvgDocument>(new SvgDocument(context, fetcher, std::move(baseUrl)));
 }
 
-SvgDocument::SvgDocument(Book* book, ResourceFetcher* fetcher, Url baseUrl)
-    : XmlDocument(classKind, book, fetcher, std::move(baseUrl))
+SvgDocument::SvgDocument(Context* context, ResourceFetcher* fetcher, Url baseUrl)
+    : XmlDocument(classKind, context, fetcher, std::move(baseUrl))
 {
 }
 

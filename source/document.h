@@ -253,6 +253,8 @@ namespace plutobook {
                       Box* parent) override;
         void finishParsingDocument() override;
 
+        bool dispatchEvent();
+
     private:
         GlobalString m_namespaceURI;
         GlobalString m_tagName;
@@ -327,7 +329,7 @@ namespace plutobook {
     class Size;
     class Rect;
 
-    class Book;
+    class Context;
     class PageSize;
     class PageMargins;
     class PageBox;
@@ -336,13 +338,25 @@ namespace plutobook {
 
     class Document : public ContainerNode, public FragmentBuilder {
     public:
-        Document(ClassKind type, Book* book, ResourceFetcher* fetcher,
+        Document(ClassKind type, Context* context, ResourceFetcher* fetcher,
                  Url baseUrl);
         ~Document() override;
 
+        /**
+         * @brief Sets the title of the document.
+         * @param title The title of the document.
+         */
+        void setTitle(std::string title) { m_title = std::move(title); }
+
+        /**
+         * @brief Gets the title of the document.
+         * @return The title of the document.
+         */
+        const std::string& title() const { return m_title; }
+
         bool isSvgImageDocument() const;
 
-        Book* book() const { return m_book; }
+        Context* context() const { return m_context; }
         ResourceFetcher* customResourceFetcher() const {
             return m_customResourceFetcher;
         }
@@ -449,7 +463,7 @@ namespace plutobook {
         template<typename ResourceType>
         RefPtr<ResourceType> fetchResource(const Url& url);
         Element* m_rootElement{nullptr};
-        Book* m_book;
+        Context* m_context;
         ResourceFetcher* m_customResourceFetcher;
         Url m_baseUrl;
         PageBoxList m_pages;
@@ -463,6 +477,8 @@ namespace plutobook {
 
         float m_containerWidth{0};
         float m_containerHeight{0};
+
+        std::string m_title;
     };
 
     extern template bool is<Document>(const Node& value);

@@ -654,7 +654,7 @@ static const CssRuleList& userAgentRules()
 CssStyleSheet::CssStyleSheet(Document* document)
     : m_document(document)
 {
-    if(document->book()) {
+    if(document->context()) {
         addRuleList(userAgentRules());
     }
 }

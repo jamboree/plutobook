@@ -1,4 +1,5 @@
 #include "plutobook.hpp"
+#include "document.h"
 
 #include <cairo/cairo-pdf.h>
 
@@ -521,7 +522,7 @@ void plutobook_set_metadata(plutobook_t* book, plutobook_pdf_metadata_t metadata
 {
     switch(metadata) {
     case PLUTOBOOK_PDF_METADATA_TITLE:
-        book->setTitle(value);
+        book->document()->setTitle(value);
         break;
     case PLUTOBOOK_PDF_METADATA_AUTHOR:
         book->setAuthor(value);
@@ -548,7 +549,7 @@ const char* plutobook_get_metadata(const plutobook_t* book, plutobook_pdf_metada
 {
     switch(metadata) {
     case PLUTOBOOK_PDF_METADATA_TITLE:
-        return book->title().data();
+        return book->document()->title().data();
     case PLUTOBOOK_PDF_METADATA_AUTHOR:
         return book->author().data();
     case PLUTOBOOK_PDF_METADATA_SUBJECT:

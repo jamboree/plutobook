@@ -1033,7 +1033,40 @@ namespace plutobook {
         Screen = PLUTOBOOK_MEDIA_TYPE_SCREEN
     };
 
-    class PLUTOBOOK_API Book {
+    class Context {
+    public:
+        /**
+         * @brief Returns the width of the viewport.
+         * @return The width of the viewport in pixels.
+         */
+        virtual float viewportWidth() const = 0;
+
+        /**
+         * @brief Returns the height of the viewport.
+         * @return The height of the viewport in pixels.
+         */
+        virtual float viewportHeight() const = 0;
+
+        /**
+         * @brief Returns the media type used for media queries.
+         * @return The media type used for media queries.
+         */
+        virtual MediaType mediaType() const = 0;
+
+        /**
+         * @brief Returns the initial page size.
+         * @return The initial page size.
+         */
+        virtual PageSize pageSize() const = 0;
+
+        /**
+         * @brief Returns the initial page margins.
+         * @return The initial page margins.
+         */
+        virtual PageMargins pageMargins() const = 0;
+    };
+
+    class PLUTOBOOK_API Book : Context {
     public:
         /**
          * @brief Constructs a Book object with the given page size, margins,
@@ -1051,18 +1084,6 @@ namespace plutobook {
          * @brief Destructor
          */
         ~Book();
-
-        /**
-         * @brief Sets the title of the document.
-         * @param title The title of the document.
-         */
-        void setTitle(std::string title) { m_title = std::move(title); }
-
-        /**
-         * @brief Gets the title of the document.
-         * @return The title of the document.
-         */
-        const std::string& title() const { return m_title; }
 
         /**
          * @brief Sets the author of the document.
@@ -1156,13 +1177,13 @@ namespace plutobook {
          * @brief Returns the width of the viewport.
          * @return The width of the viewport in pixels.
          */
-        float viewportWidth() const;
+        float viewportWidth() const override;
 
         /**
          * @brief Returns the height of the viewport.
          * @return The height of the viewport in pixels.
          */
-        float viewportHeight() const;
+        float viewportHeight() const override;
 
         /**
          * @brief Returns the width of the document.
@@ -1180,19 +1201,19 @@ namespace plutobook {
          * @brief Returns the initial page size.
          * @return The initial page size.
          */
-        const PageSize& pageSize() const { return m_pageSize; }
+        PageSize pageSize() const override { return m_pageSize; }
 
         /**
          * @brief Returns the initial page margins.
          * @return The initial page margins.
          */
-        const PageMargins& pageMargins() const { return m_pageMargins; }
+        PageMargins pageMargins() const override { return m_pageMargins; }
 
         /**
          * @brief Returns the media type used for media queries.
          * @return The media type used for media queries.
          */
-        MediaType mediaType() const { return m_mediaType; }
+        MediaType mediaType() const override { return m_mediaType; }
 
         /**
          * @brief Returns the number of pages in the document.
@@ -1501,7 +1522,6 @@ namespace plutobook {
         mutable bool m_needsLayout{true};
         mutable bool m_needsPagination{true};
 
-        std::string m_title;
         std::string m_author;
         std::string m_subject;
         std::string m_keywords;

@@ -541,7 +541,7 @@ void Element::buildBox(Counters& counters, SelectorFilter& selectorFilter, Box* 
         m_dirtyStyle = false;
         auto newStyle = document()->styleSheet().styleForElement(
             this, selectorFilter, parent->style());
-        if (isDifferent(style, newStyle)) {
+        if (!isSame(style, newStyle)) {
             style = std::move(newStyle);
             m_dirtyContent = true;
         }
@@ -586,9 +586,9 @@ void Element::finishParsingDocument()
     ContainerNode::finishParsingDocument();
 }
 
-Document::Document(ClassKind type, Book* book, ResourceFetcher* fetcher, Url baseUrl)
+Document::Document(ClassKind type, Context* context, ResourceFetcher* fetcher, Url baseUrl)
     : ContainerNode(type, this)
-    , m_book(book)
+    , m_context(context)
     , m_customResourceFetcher(fetcher)
     , m_baseUrl(std::move(baseUrl))
     , m_styleSheet(this)
@@ -599,7 +599,7 @@ Document::Document(ClassKind type, Book* book, ResourceFetcher* fetcher, Url bas
 Document::~Document() = default;
 
 bool Document::isSvgImageDocument() const {
-    return !m_book && is<SvgDocument>(*this);
+    return !m_context && is<SvgDocument>(*this);
 }
 
 BoxView* Document::box() const
@@ -619,12 +619,12 @@ float Document::height() const
 
 float Document::viewportWidth() const
 {
-    return m_book ? m_book->viewportWidth() : 0.f;
+    return m_context ? m_context->viewportWidth() : 0.f;
 }
 
 float Document::viewportHeight() const
 {
-    return m_book ? m_book->viewportHeight() : 0.f;
+    return m_context ? m_context->viewportHeight() : 0.f;
 }
 
 bool Document::setContainerSize(float containerWidth, float containerHeight)
@@ -882,8 +882,8 @@ void Document::addUserStyleSheet(std::string_view content)
 
 bool Document::supportsMediaFeature(const CssMediaFeature& feature) const
 {
-    const auto viewportWidth = m_book->viewportWidth();
-    const auto viewportHeight = m_book->viewportHeight();
+    const auto viewportWidth = m_context->viewportWidth();
+    const auto viewportHeight = m_context->viewportHeight();
 
     if(feature.id() == CssPropertyID::Orientation) {
         const auto& orientation = to<CssIdentValue>(*feature.value());
@@ -918,9 +918,9 @@ bool Document::supportsMediaFeatures(const CssMediaFeatureList& features) const
 
 bool Document::supportsMediaQuery(const CssMediaQuery& query) const
 {
-    if(query.type() == CssMediaQuery::Type::Print && m_book->mediaType() != MediaType::Print)
+    if(query.type() == CssMediaQuery::Type::Print && m_context->mediaType() != MediaType::Print)
         return query.restrictor() == CssMediaQuery::Restrictor::Not;
-    if(query.type() == CssMediaQuery::Type::Screen && m_book->mediaType() != MediaType::Screen) {
+    if(query.type() == CssMediaQuery::Type::Screen && m_context->mediaType() != MediaType::Screen) {
         return query.restrictor() == CssMediaQuery::Restrictor::Not;
     }
 
@@ -931,7 +931,7 @@ bool Document::supportsMediaQuery(const CssMediaQuery& query) const
 
 bool Document::supportsMediaQueries(const CssMediaQueryList& queries) const
 {
-    if(m_book == nullptr || queries.empty())
+    if(m_context == nullptr || queries.empty())
         return true;
     for(const auto& query : queries) {
         if(supportsMediaQuery(query)) {
@@ -944,7 +944,7 @@ bool Document::supportsMediaQueries(const CssMediaQueryList& queries) const
 
 bool Document::supportsMedia(std::string_view type, std::string_view media) const
 {
-    if(m_book == nullptr || media.empty())
+    if(m_context == nullptr || media.empty())
         return true;
     if(type.empty() || equals(type, "text/css", is<XmlDocument>(*this))) {
         CssParserContext context(this, CssStyleOrigin::Author, m_baseUrl);

@@ -248,11 +248,11 @@ namespace plutobook {
         static constexpr ClassKind classKind = ClassKind::HtmlDocument;
 
         static std::unique_ptr<HtmlDocument>
-        create(Book* book, ResourceFetcher* fetcher, Url baseUrl);
+        create(Context* context, ResourceFetcher* fetcher, Url baseUrl);
 
         bool parse(std::string_view content) final;
 
     private:
-        HtmlDocument(Book* book, ResourceFetcher* fetcher, Url baseUrl);
+        HtmlDocument(Context* context, ResourceFetcher* fetcher, Url baseUrl);
     };
 } // namespace plutobook

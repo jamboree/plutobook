@@ -6,12 +6,12 @@ namespace plutobook {
     class XmlDocument : public Document {
     public:
         static std::unique_ptr<XmlDocument>
-        create(Book* book, ResourceFetcher* fetcher, Url baseUrl);
+        create(Context* context, ResourceFetcher* fetcher, Url baseUrl);
 
         bool parse(std::string_view content) override;
 
     protected:
-        XmlDocument(ClassKind type, Book* book, ResourceFetcher* fetcher,
+        XmlDocument(ClassKind type, Context* context, ResourceFetcher* fetcher,
                     Url baseUrl);
     };
 

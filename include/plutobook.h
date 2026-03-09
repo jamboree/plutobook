@@ -717,14 +717,14 @@ PLUTOBOOK_API plutobook_t* plutobook_create(plutobook_page_size_t size, plutoboo
 /**
  * @brief Destroys a `plutobook_t` object and frees all associated resources.
  *
- * @param book A pointer to the `plutobook_t` object to destroy.
+ * @param context A pointer to the `plutobook_t` object to destroy.
  */
 PLUTOBOOK_API void plutobook_destroy(plutobook_t* book);
 
 /**
  * @brief Clears the content of the document.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  */
 PLUTOBOOK_API void plutobook_clear_content(plutobook_t* book);
 
@@ -734,7 +734,7 @@ PLUTOBOOK_API void plutobook_clear_content(plutobook_t* book);
  * The `PDF_METADATA_CREATION_DATE` and `PDF_METADATA_MODIFICATION_DATE` values must be in ISO-8601 format: YYYY-MM-DDThh:mm:ss.
  * An optional timezone of the form "[+/-]hh:mm" or "Z" for UTC time can be appended. All other metadata values can be any string.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param metadata The metadata type to set.
  * @param value The value of the metadata field.
  */
@@ -743,7 +743,7 @@ PLUTOBOOK_API void plutobook_set_metadata(plutobook_t* book, plutobook_pdf_metad
 /**
  * @brief Gets the value of the specified metadata.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param metadata The type of metadata to get.
  * @return The value of the specified metadata.
  */
@@ -752,7 +752,7 @@ PLUTOBOOK_API const char* plutobook_get_metadata(const plutobook_t* book, plutob
 /**
  * @brief Returns the width of the viewport.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @return The width of the viewport in pixels.
  */
 PLUTOBOOK_API float plutobook_get_viewport_width(const plutobook_t* book);
@@ -760,7 +760,7 @@ PLUTOBOOK_API float plutobook_get_viewport_width(const plutobook_t* book);
 /**
  * @brief Returns the height of the viewport.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @return The height of the viewport in pixels.
  */
 PLUTOBOOK_API float plutobook_get_viewport_height(const plutobook_t* book);
@@ -768,7 +768,7 @@ PLUTOBOOK_API float plutobook_get_viewport_height(const plutobook_t* book);
 /**
  * @brief Returns the width of the document.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @return The width of the document in pixels.
  */
 PLUTOBOOK_API float plutobook_get_document_width(const plutobook_t* book);
@@ -776,7 +776,7 @@ PLUTOBOOK_API float plutobook_get_document_width(const plutobook_t* book);
 /**
  * @brief Returns the height of the document.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @return The height of the document in pixels.
  */
 PLUTOBOOK_API float plutobook_get_document_height(const plutobook_t* book);
@@ -784,7 +784,7 @@ PLUTOBOOK_API float plutobook_get_document_height(const plutobook_t* book);
 /**
  * @brief Returns the initial page size.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @return The initial page size.
  */
 PLUTOBOOK_API plutobook_page_size_t plutobook_get_page_size(const plutobook_t* book);
@@ -792,7 +792,7 @@ PLUTOBOOK_API plutobook_page_size_t plutobook_get_page_size(const plutobook_t* b
 /**
  * @brief Returns the initial page margins.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @return The initial page margins.
  */
 PLUTOBOOK_API plutobook_page_margins_t plutobook_get_page_margins(const plutobook_t* book);
@@ -800,7 +800,7 @@ PLUTOBOOK_API plutobook_page_margins_t plutobook_get_page_margins(const plutoboo
 /**
  * @brief Returns the media type used for media queries.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @return The media type used for media queries.
  */
 PLUTOBOOK_API plutobook_media_type_t plutobook_get_media_type(const plutobook_t* book);
@@ -808,7 +808,7 @@ PLUTOBOOK_API plutobook_media_type_t plutobook_get_media_type(const plutobook_t*
 /**
  * @brief Returns the number of pages in the document.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @return The number of pages in the document.
  */
 PLUTOBOOK_API unsigned int plutobook_get_page_count(const plutobook_t* book);
@@ -816,7 +816,7 @@ PLUTOBOOK_API unsigned int plutobook_get_page_count(const plutobook_t* book);
 /**
  * @brief Returns the page size at the specified index.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param index The index of the page.
  * @return The size of the page at the specified index.
  */
@@ -825,7 +825,7 @@ PLUTOBOOK_API plutobook_page_size_t plutobook_get_page_size_at(const plutobook_t
 /**
  * @brief Loads the document from the specified URL.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param url The URL to load the document from.
  * @param user_style An optional user-defined slope to apply.
  * @param user_script An optional user-defined script to run after the document has loaded.
@@ -836,7 +836,7 @@ PLUTOBOOK_API bool plutobook_load_url(plutobook_t* book, const char* url, const 
 /**
  * @brief Loads the document from the specified data.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param data The data to load the document from.
  * @param length The length of the data in bytes.
  * @param mime_type The MIME type of the data.
@@ -851,7 +851,7 @@ PLUTOBOOK_API bool plutobook_load_data(plutobook_t* book, const char* data, unsi
 /**
  * @brief Loads the document from the specified image data.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param data The image data to load the document from.
  * @param length The length of the image data in bytes.
  * @param mime_type The MIME type of the image data.
@@ -866,7 +866,7 @@ PLUTOBOOK_API bool plutobook_load_image(plutobook_t* book, const char* data, uns
 /**
  * @brief Loads the document from the specified XML data.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param data The XML data to load the document from, encoded in UTF-8.
  * @param length The length of the XML data in bytes, or `-1` if null-terminated.
  * @param user_style An optional user-defined slope to apply.
@@ -879,7 +879,7 @@ PLUTOBOOK_API bool plutobook_load_xml(plutobook_t* book, const char* data, int l
 /**
  * @brief Loads the document from the specified HTML data.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param data The HTML data to load the document from, encoded in UTF-8.
  * @param length The length of the HTML data in bytes, or `-1` if null-terminated.
  * @param user_style An optional user-defined slope to apply.
@@ -892,7 +892,7 @@ PLUTOBOOK_API bool plutobook_load_html(plutobook_t* book, const char* data, int 
 /**
  * @brief Renders the specified page to the given canvas.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param canvas The canvas to render the page on.
  * @param page_index The index of the page to render.
  */
@@ -901,7 +901,7 @@ PLUTOBOOK_API void plutobook_render_page(const plutobook_t* book, plutobook_canv
 /**
  * @brief Renders the specified page to the given cairo context.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param context The cairo context to render the page on.
  * @param page_index The index of the page to render.
  */
@@ -910,7 +910,7 @@ PLUTOBOOK_API void plutobook_render_page_cairo(const plutobook_t* book, cairo_t*
 /**
  * @brief Renders the entire document to the given canvas.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param canvas The canvas to render the entire document on.
  */
 PLUTOBOOK_API void plutobook_render_document(const plutobook_t* book, plutobook_canvas_t* canvas);
@@ -918,7 +918,7 @@ PLUTOBOOK_API void plutobook_render_document(const plutobook_t* book, plutobook_
 /**
  * @brief Renders the entire document to the given cairo context.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param canvas The cairo context to render the entire document on.
  */
 PLUTOBOOK_API void plutobook_render_document_cairo(const plutobook_t* book, cairo_t* context);
@@ -926,7 +926,7 @@ PLUTOBOOK_API void plutobook_render_document_cairo(const plutobook_t* book, cair
 /**
  * @brief Renders a specific rectangular portion of the document to the given canvas.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param canvas The canvas to render the document portion on.
  * @param x The x-coordinate of the top-left corner of the rectangle.
  * @param y The y-coordinate of the top-left corner of the rectangle.
@@ -938,7 +938,7 @@ PLUTOBOOK_API void plutobook_render_document_rect(const plutobook_t* book, pluto
 /**
  * @brief Renders a specific rectangular portion of the document to the given cairo context.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param canvas The cairo context to render the document portion on.
  * @param x The x-coordinate of the top-left corner of the rectangle.
  * @param y The y-coordinate of the top-left corner of the rectangle.
@@ -950,7 +950,7 @@ PLUTOBOOK_API void plutobook_render_document_rect_cairo(const plutobook_t* book,
 /**
  * @brief Writes the entire document to a PDF file.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param filename The file path where the PDF document will be written.
  * @return `true` on success, or `false` on failure.
  */
@@ -959,7 +959,7 @@ PLUTOBOOK_API bool plutobook_write_to_pdf(const plutobook_t* book, const char* f
 /**
  * @brief Writes a range of pages from the document to a PDF file.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param filename The file path where the PDF document will be written.
  * @param page_start The first page in the range to be written (inclusive).
  * @param page_end The last page in the range to be written (inclusive).
@@ -971,7 +971,7 @@ PLUTOBOOK_API bool plutobook_write_to_pdf_range(const plutobook_t* book, const c
 /**
  * @brief Writes the entire document to a PDF stream using a callback function.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param callback A callback function used for writing the PDF stream.
  * @param closure A user-defined pointer passed to the callback function for additional data.
  * @return `true` on success, or `false` on failure.
@@ -981,7 +981,7 @@ PLUTOBOOK_API bool plutobook_write_to_pdf_stream(const plutobook_t* book, plutob
 /**
  * @brief Writes a specified range of pages from the document to a PDF stream using a callback function.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param callback A callback function used for writing the PDF stream.
  * @param closure A user-defined pointer passed to the callback function for additional data.
  * @param page_start The first page in the range to be written (inclusive).
@@ -994,7 +994,7 @@ PLUTOBOOK_API bool plutobook_write_to_pdf_stream_range(const plutobook_t* book, 
 /**
  * @brief Writes the entire document to a PNG image file.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param filename The file path where the PNG image will be written.
  * @param width The desired width in pixels, or -1 to auto-scale based on the document size.
  * @param height The desired height in pixels, or -1 to auto-scale based on the document size.
@@ -1005,7 +1005,7 @@ PLUTOBOOK_API bool plutobook_write_to_png(const plutobook_t* book, const char* f
 /**
  * @brief Writes the entire document to a PNG image stream using a callback function.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param callback A callback function to handle the image data stream.
  * @param closure A pointer to user-defined data to pass to the callback function.
  * @param width The desired width in pixels, or -1 to auto-scale based on the document size.
@@ -1017,7 +1017,7 @@ PLUTOBOOK_API bool plutobook_write_to_png_stream(const plutobook_t* book, plutob
 /**
  * @brief Sets a custom resource fetcher callback for the document.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @param callback A function pointer to the custom resource fetch callback.
  * @param closure A pointer to user-defined data to pass to the callback function.
  */
@@ -1026,7 +1026,7 @@ PLUTOBOOK_API void plutobook_set_custom_resource_fetcher(plutobook_t* book, plut
 /**
  * @brief Gets the custom resource fetcher callback set for the document.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @return A function pointer to the custom resource fetch callback, or `NULL` if no callback is set.
  */
 PLUTOBOOK_API plutobook_resource_fetch_callback_t plutobook_get_custom_resource_fetcher_callback(const plutobook_t* book);
@@ -1034,7 +1034,7 @@ PLUTOBOOK_API plutobook_resource_fetch_callback_t plutobook_get_custom_resource_
 /**
  * @brief Gets the user-defined closure data passed to the custom resource fetcher callback.
  *
- * @param book A pointer to a `plutobook_t` object.
+ * @param context A pointer to a `plutobook_t` object.
  * @return A pointer to the closure data, or `NULL` if no closure is set.
  */
 PLUTOBOOK_API void* plutobook_get_custom_resource_fetcher_closure(const plutobook_t* book);
