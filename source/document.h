@@ -83,12 +83,29 @@ namespace plutobook {
                               SelectorFilter& selectorFilter, Box* parent) = 0;
         virtual void finishParsingDocument() {}
 
+        bool active() const { return m_active; }
+        void setActive(bool active) { m_active = active; }
+        bool hover() const { return m_hover; }
+        void setHover(bool hover) { m_hover = hover; }
+        bool focus() const { return m_focus; }
+        void setFocus(bool focus) { m_focus = focus; }
+
+        void setDirtyStyle();
+
+        bool isDirty() const {
+            return m_dirtyStyle || m_dirtyContent || m_dirtyLayout;
+        }
+
     protected:
         Node(ClassKind type, Document* document);
 
         ClassKind m_type : 4;
         unsigned m_dirtyStyle : 1 = true;
         unsigned m_dirtyContent : 1 = true;
+        unsigned m_dirtyLayout : 1 = true;
+        unsigned m_active : 1 = false;
+        unsigned m_hover : 1 = false;
+        unsigned m_focus : 1 = false;
         Document* m_document;
         ContainerNode* m_parentNode{nullptr};
         Node* m_nextSibling{nullptr};

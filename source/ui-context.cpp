@@ -1,5 +1,10 @@
-#include "plutobook.hpp"
+#include "plutobook-ui.h"
+#include "box-view.h"
 #include "html-document.h"
+#include "xml-document.h"
+#include "text-resource.h"
+#include "image-resource.h"
+#include "font-resource.h"
 #include <boost/unordered/unordered_flat_map.hpp>
 
 namespace plutobook {
@@ -108,26 +113,62 @@ namespace plutobook {
     using ElementEventHandlerMap =
         boost::unordered_flat_map<Element*, EventHandlerList>;
 
-    class PLUTOBOOK_API UIContext final : Context {
+    class UIContext final : Context {
     public:
-        UIContext(const PageSize& pageSize, const PageMargins& pageMargins,
-                  MediaType mediaType)
-            : m_pageSize(pageSize), m_pageMargins(pageMargins),
-              m_mediaType(mediaType) {}
+        friend UIContext* createUIContext() { return new UIContext(); }
 
-        float viewportWidth() const override {
-            return std::max(0.f, m_pageSize.width() - m_pageMargins.left() -
-                                     m_pageMargins.right()) /
-                   units::px;
+        friend void destroyUIContext(UIContext* ui) { delete ui; }
+
+        friend void setSize(UIContext* ui, float width, float height) {
+            ui->m_document->setContainerSize(width, height);
         }
-        float viewportHeight() const override {
-            return std::max(0.f, m_pageSize.height() - m_pageMargins.top() -
-                                     m_pageMargins.bottom()) /
-                   units::px;
+
+        friend void getSize(UIContext* ui, float& width, float& height) {
+            width = ui->m_document->width();
+            height = ui->m_document->height();
         }
-        MediaType mediaType() const override { return m_mediaType; }
-        PageSize pageSize() const override { return m_pageSize; }
-        PageMargins pageMargins() const override { return m_pageMargins; }
+
+        friend bool loadUrl(UIContext* ui, std::string_view url) {
+            auto completeUrl = ResourceLoader::completeUrl(url);
+            auto resource = ResourceLoader::loadUrl(completeUrl);
+            if (resource.isNull())
+                return false;
+            if (ui->loadData(resource.content(), resource.contentLength(),
+                             resource.mimeType(), resource.textEncoding(),
+                             completeUrl.base())) {
+                return true;
+            }
+
+            plutobook_set_error_message("Unable to load URL '%s': %s",
+                                        completeUrl.value().data(),
+                                        plutobook_get_error_message());
+            return false;
+        }
+
+        friend bool update(UIContext* ui) {
+            if (ui->m_document->isDirty()) {
+                ui->m_document->build();
+                ui->m_document->layout();
+                return true;
+            }
+            return false;
+        }
+
+        friend void processMouseMoveEvent(UIContext* ui, float x, float y) {
+            ui->processEvent(MouseMoveEvent(Point{x, y}, {}));
+        }
+
+        friend void renderDocument(const UIContext* ui,
+                                   GraphicsContext& context, float x, float y,
+                                   float width, float height) {
+            ui->m_document->render(context, Rect(x, y, width, height));
+        }
+
+        float viewportWidth() const override { return 0.f; }
+        float viewportHeight() const override { return 0.f; }
+        MediaType mediaType() const override { return MediaType::Screen; }
+        PageSize pageSize() const override { return PageSize(); }
+        PageMargins pageMargins() const override { return PageMargins::None; }
 
         void addEventHandler(Element* elem, EventID evtID,
                              EventHandler* handler) {
@@ -157,41 +198,77 @@ namespace plutobook {
                         return true;
                 }
             }
-            return false;
+            return processDefaultEvent(elem, evt);
         }
 
-        bool processMouseMove(const MouseMoveEvent& evt) {
-            if (Element* newHoverElem = findElementAtPoint(evt.m_pt)) {
-                if (newHoverElem != m_hoverElem) {
-                    if (m_hoverElem) {
-                        dispatchEvent(m_hoverElem,
-                                      MouseEvent(EventID::MouseOut, evt.m_pt,
-                                                 evt.m_buttons));
+        bool processEvent(const MouseMoveEvent& evt) {
+            updateHoverChain(evt.m_pt, evt.m_buttons);
+            return true;
+        }
+
+        bool processDefaultEvent(Element* elem, const Event& evt) {
+            switch (evt.m_id) {
+            case EventID::MouseDown: {
+                const auto& mouseEvt = static_cast<const MouseEvent&>(evt);
+                if (mouseEvt.m_buttons & MouseButton::Left) {
+                    if (!elem->active()) {
+                        elem->setActive(true);
+                        elem->setDirtyStyle();
                     }
-                    if (newHoverElem) {
-                        dispatchEvent(newHoverElem,
-                                      MouseEvent(EventID::MouseIn, evt.m_pt,
-                                                 evt.m_buttons));
-                    }
-                    m_hoverElem = newHoverElem;
                 }
-            } else {
-                if (m_hoverElem) {
-                    dispatchEvent(
-                        m_hoverElem,
-                        MouseEvent(EventID::MouseOut, evt.m_pt, evt.m_buttons));
-                    m_hoverElem = nullptr;
+                return true;
+            }
+            case EventID::MouseIn:
+                if (!elem->hover()) {
+                    elem->setHover(true);
+                    elem->setDirtyStyle();
                 }
+                return true;
+            case EventID::MouseOut:
+                if (elem->hover()) {
+                    elem->setHover(false);
+                    elem->setDirtyStyle();
+                }
+                return true;
             }
             return true;
         }
 
     private:
-        Element* findElementAtPoint(Point pt) const;
+        bool loadData(const char* data, size_t length,
+                      std::string_view mimeType, std::string_view textEncoding,
+                      std::string_view baseUrl) {
+            if (TextResource::isXmlMimeType(mimeType))
+                return loadXml(
+                    TextResource::decode(data, length, mimeType, textEncoding),
+                    baseUrl);
+            return loadHtml(
+                TextResource::decode(data, length, mimeType, textEncoding),
+                baseUrl);
+        }
+
+        bool loadXml(std::string_view content, std::string_view baseUrl) {
+            m_document = XmlDocument::create(
+                this, nullptr, ResourceLoader::completeUrl(baseUrl));
+            return m_document->parse(content);
+        }
+
+        bool loadHtml(std::string_view content, std::string_view baseUrl) {
+            m_document = HtmlDocument::create(
+                this, nullptr, ResourceLoader::completeUrl(baseUrl));
+            return m_document->parse(content);
+        }
+
+        Element* getElementAtPoint(Point pt) const {
+            if (const auto box = m_document->box()->getBoxAtPoint(pt)) {
+                return to<Element>(box->node());
+            }
+            return nullptr;
+        }
 
         void updateHoverChain(Point pt, FlagSet<MouseButton> buttons) {
             std::vector<Element*> hoverChain;
-            auto elem = findElementAtPoint(pt);
+            auto elem = getElementAtPoint(pt);
             while (elem) {
                 hoverChain.push_back(elem);
                 elem = elem->parentElement();
@@ -214,11 +291,8 @@ namespace plutobook {
                 }
                 m_mousePos = pt;
             }
+            m_hoverChain = std::move(hoverChain);
         }
-
-        PageSize m_pageSize;
-        PageMargins m_pageMargins;
-        MediaType m_mediaType;
 
         std::unique_ptr<Document> m_document;
         // The element that currently has input focus.

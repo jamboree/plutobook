@@ -1231,4 +1231,18 @@ void BoxFrame::layout(FragmentBuilder* fragmentainer)
     assert(false);
 }
 
+const BoxFrame* BoxFrame::getBoxAtPoint(Point pt) const
+{
+    const auto localPt = pt - location();
+    for (auto child = firstChild(); child; child = child->nextSibling()) {
+        if (const BoxFrame* box = to<BoxFrame>(child)) {
+            box = box->getBoxAtPoint(localPt);
+            if (box) {
+                return box;
+            }
+        }
+    }
+    return borderBoundingBox().contains(pt) ? this : nullptr;
+}
+
 } // namespace plutobook

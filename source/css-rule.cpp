@@ -13,18 +13,25 @@
 
 namespace plutobook {
 
-#if 0
-    bool CssHeapValue::isSame(const CssHeapValue& other) const {
-        if (type() != other.type())
-            return false;
-        switch (type())
-        {
-        case ClassKind::CustomProperty:
-        default:
-            break;
+bool CssHeapValue::isSame(const CssHeapValue& other) const {
+    if (type() == other.type()) {
+        switch (type()) {
+        case ClassKind::Attr:
+            return static_cast<const CssAttrValue&>(*this).isSame(
+                static_cast<const CssAttrValue&>(other));
+        case ClassKind::String:
+            return static_cast<const CssStringValue&>(*this).isSame(
+                static_cast<const CssStringValue&>(other));
+        case ClassKind::LocalUrl:
+            return static_cast<const CssLocalUrlValue&>(*this).isSame(
+                static_cast<const CssLocalUrlValue&>(other));
+        case ClassKind::Url:
+            return static_cast<const CssUrlValue&>(*this).isSame(
+                static_cast<const CssUrlValue&>(other));
         }
     }
-#endif // 0
+    return false;
+}
 
 CssLengthResolver::CssLengthResolver(const Document* document, const Font* font)
     : m_document(document), m_font(font)
@@ -631,6 +638,12 @@ bool CssRuleData::matchSimpleSelector(const Element* element, const CssSimpleSel
         return matchAttributeStartsWithSelector(element, selector);
     case CssSimpleSelector::MatchType::AttributeEndsWith:
         return matchAttributeEndsWithSelector(element, selector);
+    case CssSimpleSelector::MatchType::PseudoClassHover:
+        return element->hover();
+    case CssSimpleSelector::MatchType::PseudoClassActive:
+        return element->active();
+    case CssSimpleSelector::MatchType::PseudoClassFocus:
+        return element->focus();
     case CssSimpleSelector::MatchType::PseudoClassIs:
     case CssSimpleSelector::MatchType::PseudoClassWhere:
         return matchPseudoClassIsSelector(element, selector);

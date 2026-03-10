@@ -872,6 +872,10 @@ namespace plutobook {
         GlobalString name() const { return valueAs<GlobalString>(); }
         const HeapString& fallback() const { return m_fallback; }
 
+        bool isSame(const CssAttrValue& other) const {
+            return name() == other.name() && fallback() == other.fallback();
+        }
+
     private:
         CssAttrValue(GlobalString name, const HeapString& fallback)
             : CssHeapValue(classKind), m_fallback(fallback) {
@@ -894,6 +898,10 @@ namespace plutobook {
 
         const HeapString& value() const { return m_value; }
 
+        bool isSame(const CssStringValue& other) const {
+            return value() == other.value();
+        }
+
     private:
         CssStringValue(const HeapString& value)
             : CssHeapValue(classKind), m_value(value) {}
@@ -913,6 +921,10 @@ namespace plutobook {
 
         const HeapString& value() const { return m_value; }
 
+        bool isSame(const CssLocalUrlValue& other) const {
+            return value() == other.value();
+        }
+
     private:
         CssLocalUrlValue(const HeapString& value)
             : CssHeapValue(classKind), m_value(value) {}
@@ -931,6 +943,10 @@ namespace plutobook {
         static ValPtr<CssUrlValue> create(Url value);
 
         const Url& value() const { return m_value; }
+
+        bool isSame(const CssUrlValue& other) const {
+            return value() == other.value();
+        }
 
     private:
         CssUrlValue(Url value)

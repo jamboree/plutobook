@@ -63,6 +63,16 @@ void Node::reparent(ContainerNode* newParent)
     newParent->appendChild(this);
 }
 
+void Node::setDirtyStyle()
+{
+    m_dirtyStyle = true;
+    auto parent = m_parentNode;
+    while (parent) {
+        parent->m_dirtyContent = true;
+        parent = parent->parentNode();
+    }
+}
+
 void Node::remove()
 {
     if(m_parentNode) {
@@ -635,6 +645,7 @@ bool Document::setContainerSize(float containerWidth, float containerHeight)
         return false;
     m_containerWidth = width;
     m_containerHeight = height;
+    m_dirtyLayout = true;
     return true;
 }
 
@@ -1010,16 +1021,15 @@ void Document::serialize(OutputStream& o) const
 
 void Document::buildBox(Counters& counters, SelectorFilter& selectorFilter, Box* parent)
 {
-    RefPtr<BoxStyle> rootStyle;
-    if (const auto rootBox = box()) {
-        rootStyle = RefPtr<BoxStyle>(rootBox->style());
-    } else {
+    RefPtr<BoxStyle> rootStyle(Node::style());
+    if (m_dirtyStyle) {
+        m_dirtyStyle = false;
         rootStyle = BoxStyle::create(this, PseudoType::None, Display::Block);
         rootStyle->setPosition(Position::Absolute);
         rootStyle->setFontDescription(FontDescription());
     }
-
     if (m_dirtyContent) {
+        m_dirtyLayout = true;
         m_dirtyContent = false;
         auto rootBox = createBox(rootStyle);
         counters.push();
@@ -1038,7 +1048,10 @@ void Document::build()
 
 void Document::layout()
 {
-    box()->layout(nullptr);
+    if (m_dirtyLayout) {
+        m_dirtyLayout = false;
+        box()->layout(nullptr);
+    }
 }
 
 void Document::paginate()
