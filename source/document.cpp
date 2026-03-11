@@ -66,11 +66,16 @@ void Node::reparent(ContainerNode* newParent)
 void Node::setDirtyStyle()
 {
     m_dirtyStyle = true;
+    m_document->m_dirtyContent = true;
+#if 0
     auto parent = m_parentNode;
     while (parent) {
+        if (parent->m_dirtyContent)
+            break;
         parent->m_dirtyContent = true;
         parent = parent->parentNode();
     }
+#endif // 0
 }
 
 void Node::remove()
@@ -185,16 +190,16 @@ Box* TextNode::createBox(const RefPtr<BoxStyle>& style)
 
 void TextNode::buildBox(Counters& counters, SelectorFilter& selectorFilter, Box* parent)
 {
-    if (m_dirtyContent) {
-        m_dirtyContent = false;
+    //if (m_dirtyContent) {
+    //    m_dirtyContent = false;
         if (isHidden(parent)) {
             delete m_box;
         } else if (auto box = createBox(parent->style())) {
             parent->addChild(box);
         }
-    } else if (m_box) {
-        m_box->reparent(parent);
-    }
+    //} else if (m_box) {
+    //    m_box->reparent(parent);
+    //}
 }
 
 ContainerNode::ContainerNode(ClassKind type, Document* document)
@@ -556,17 +561,17 @@ void Element::buildBox(Counters& counters, SelectorFilter& selectorFilter, Box* 
             m_dirtyContent = true;
         }
     }
-    if (m_dirtyContent) {
-        m_dirtyContent = false;
+    //if (m_dirtyContent) {
+    //    m_dirtyContent = false;
         if (style == nullptr || style->display() == Display::None) {
             delete m_box;
         } else if (auto box = createBox(style)) {
             parent->addChild(box);
             buildElementChildrenBox(counters, selectorFilter, box);
         }
-    } else if (m_box) {
-        m_box->reparent(parent);
-    }
+    //} else if (m_box) {
+    //    m_box->reparent(parent);
+    //}
 }
 
 void Element::finishParsingDocument()

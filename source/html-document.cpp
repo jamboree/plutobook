@@ -166,8 +166,8 @@ void HtmlElement::buildBox(Counters& counters, SelectorFilter& selectorFilter, B
             m_dirtyContent = true;
         }
     }
-    if (m_dirtyContent) {
-        m_dirtyContent = false;
+    //if (m_dirtyContent) {
+    //    m_dirtyContent = false;
         if (style == nullptr || style->display() == Display::None) {
             delete m_box;
         } else if (style->position() == Position::Running) {
@@ -181,9 +181,9 @@ void HtmlElement::buildBox(Counters& counters, SelectorFilter& selectorFilter, B
             parent->addChild(box);
             buildElementBox(counters, selectorFilter, box);
         }
-    } else if (m_box) {
-        m_box->reparent(parent);
-    }
+    //} else if (m_box) {
+    //    m_box->reparent(parent);
+    //}
 }
 
 void HtmlElement::collectAttributeStyle(AttributeStyle& style) const

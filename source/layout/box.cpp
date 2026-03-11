@@ -21,6 +21,7 @@
 #include "document.h"
 
 #include <cmath>
+#include <format>
 
 namespace plutobook {
 template<class F>
@@ -105,7 +106,8 @@ Box::~Box()
         child->setParentBox(nullptr);
         child->setNextSibling(nullptr);
         child->setPrevSibling(nullptr);
-        delete child;
+        if (!child->m_node)
+            delete child;
         child = nextChild;
     }
 
@@ -128,7 +130,7 @@ void Box::reparent(Box* parent)
     if (m_parentBox)
         m_parentBox->removeChild(this);
     if (parent)
-        parent->appendChild(this);
+        parent->addChild(this);
 }
 
 void Box::insertChild(Box* newChild, Box* nextChild)
@@ -480,6 +482,8 @@ void Box::serializeStart(OutputStream& o, int indent, bool selfClosing, const Bo
         }
     }
     o << '\'';
+
+    o << std::format(" {}", (const void*)box);
 
     if(box->isAnonymous())
         o << " anonymous";

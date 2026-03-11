@@ -8,44 +8,6 @@
 #include <boost/unordered/unordered_flat_map.hpp>
 
 namespace plutobook {
-    template<class Flag>
-    struct FlagSet {
-        using UnderlyingT = std::underlying_type_t<Flag>;
-
-        FlagSet() = default;
-
-        constexpr FlagSet(Flag val) : flags(static_cast<UnderlyingT>(val)) {}
-
-        constexpr explicit FlagSet(UnderlyingT val) : flags(val) {}
-
-        constexpr explicit operator bool() const { return flags != 0; }
-
-        constexpr bool contains(FlagSet other) const {
-            return (flags & other.flags) == other.flags;
-        }
-
-        friend constexpr UnderlyingT toUnderlying(FlagSet self) {
-            return self.flags;
-        }
-
-        friend bool operator==(FlagSet a, FlagSet b) = default;
-
-        friend constexpr FlagSet operator|(FlagSet a, FlagSet b) noexcept {
-            return FlagSet(a.flags | b.flags);
-        }
-
-        friend constexpr FlagSet operator&(FlagSet a, FlagSet b) noexcept {
-            return FlagSet(a.flags & b.flags);
-        }
-
-        friend constexpr FlagSet operator^(FlagSet a, FlagSet b) noexcept {
-            return FlagSet(a.flags ^ b.flags);
-        }
-
-    private:
-        UnderlyingT flags = 0;
-    };
-
     enum class EventID : uint16_t {
         // Core events
         MouseUp,
@@ -63,22 +25,36 @@ namespace plutobook {
     };
 
     struct Event {
+        Event(EventID id) : m_id(id) {}
+
         EventID m_id;
     };
 
-    enum class MouseButton : uint8_t { Left = 1, Middle = 2, Right = 4 };
+    struct MouseButtonEvent : Event {
+        MouseButtonEvent(EventID id, MouseButton button)
+            : Event{id}, m_button(button) {}
 
-    struct MouseEvent : Event {
-        MouseEvent(EventID id, Point pt, FlagSet<MouseButton> buttons)
-            : Event{id}, m_pt(pt), m_buttons(buttons) {}
-
-        Point m_pt;
-        FlagSet<MouseButton> m_buttons;
+        MouseButton m_button;
     };
 
-    struct MouseMoveEvent final : MouseEvent {
-        MouseMoveEvent(Point pt, FlagSet<MouseButton> buttons)
-            : MouseEvent(EventID::MouseMove, pt, buttons) {}
+    struct MousePointEvent : Event {
+        MousePointEvent(EventID id, Point pt) : Event{id}, m_pt(pt) {}
+
+        Point m_pt;
+    };
+
+    struct MouseMoveEvent final : MousePointEvent {
+        MouseMoveEvent(Point pt) : MousePointEvent(EventID::MouseMove, pt) {}
+    };
+
+    struct MouseUpEvent final : MouseButtonEvent {
+        MouseUpEvent(MouseButton button)
+            : MouseButtonEvent(EventID::MouseUp, button) {}
+    };
+
+    struct MouseDownEvent final : MouseButtonEvent {
+        MouseDownEvent(MouseButton button)
+            : MouseButtonEvent(EventID::MouseDown, button) {}
     };
 
     struct EventHandlerHeader {
@@ -112,6 +88,18 @@ namespace plutobook {
 
     using ElementEventHandlerMap =
         boost::unordered_flat_map<Element*, EventHandlerList>;
+
+    class FdOutputStream final : public OutputStream {
+    public:
+        explicit FdOutputStream(FILE* fd) : m_handle(fd) {}
+
+        size_t write(const char* data, size_t length) final {
+            return fwrite(data, 1, length, m_handle);
+        }
+
+    private:
+        FILE* m_handle;
+    };
 
     class UIContext final : Context {
     public:
@@ -154,8 +142,17 @@ namespace plutobook {
             return false;
         }
 
+        friend void output(UIContext* ui, FILE* fd) {
+            FdOutputStream output(fd);
+            ui->m_document->serialize(output);
+        }
+
         friend void processMouseMoveEvent(UIContext* ui, float x, float y) {
-            ui->processEvent(MouseMoveEvent(Point{x, y}, {}));
+            ui->processEvent(MouseMoveEvent(Point{x, y}));
+        }
+
+        friend void processMouseDownEvent(UIContext* ui, MouseButton button) {
+            ui->processEvent(MouseDownEvent(button));
         }
 
         friend void renderDocument(const UIContext* ui,
@@ -202,15 +199,27 @@ namespace plutobook {
         }
 
         bool processEvent(const MouseMoveEvent& evt) {
-            updateHoverChain(evt.m_pt, evt.m_buttons);
+            updateHoverChain(evt.m_pt);
+            return true;
+        }
+
+        bool processEvent(const MouseDownEvent& evt) {
+            if (evt.m_button == MouseButton::Left) {
+                if (!m_hoverChain.empty()) {
+                    const auto focusElem =
+                        findFocusElement(m_hoverChain.back());
+                    // m_focusElem
+                }
+            }
             return true;
         }
 
         bool processDefaultEvent(Element* elem, const Event& evt) {
             switch (evt.m_id) {
             case EventID::MouseDown: {
-                const auto& mouseEvt = static_cast<const MouseEvent&>(evt);
-                if (mouseEvt.m_buttons & MouseButton::Left) {
+                const auto& mouseEvt =
+                    static_cast<const MouseButtonEvent&>(evt);
+                if (mouseEvt.m_button == MouseButton::Left) {
                     if (!elem->active()) {
                         elem->setActive(true);
                         elem->setDirtyStyle();
@@ -266,7 +275,17 @@ namespace plutobook {
             return nullptr;
         }
 
-        void updateHoverChain(Point pt, FlagSet<MouseButton> buttons) {
+        Element* findFocusElement(Element* elem) {
+            if (!m_document->focus()) {
+                return nullptr;
+            }
+            while (elem && !elem->focus()) {
+                elem = elem->parentElement();
+            }
+            return elem;
+        }
+
+        void updateHoverChain(Point pt) {
             std::vector<Element*> hoverChain;
             auto elem = getElementAtPoint(pt);
             while (elem) {
@@ -277,17 +296,16 @@ namespace plutobook {
             const auto diff = std::ranges::mismatch(m_hoverChain, hoverChain);
             for (const auto elem :
                  std::ranges::subrange(diff.in1, m_hoverChain.end())) {
-                dispatchEvent(elem, MouseEvent(EventID::MouseOut, pt, buttons));
+                dispatchEvent(elem, MousePointEvent(EventID::MouseOut, pt));
             }
             for (const auto elem :
                  std::ranges::subrange(diff.in2, hoverChain.end())) {
-                dispatchEvent(elem, MouseEvent(EventID::MouseIn, pt, buttons));
+                dispatchEvent(elem, MousePointEvent(EventID::MouseIn, pt));
             }
             if (m_mousePos != pt) {
                 for (const auto elem :
                      std::ranges::subrange(m_hoverChain.begin(), diff.in1)) {
-                    dispatchEvent(elem,
-                                  MouseEvent(EventID::MouseMove, pt, buttons));
+                    dispatchEvent(elem, MouseMoveEvent(pt));
                 }
                 m_mousePos = pt;
             }
@@ -297,11 +315,13 @@ namespace plutobook {
         std::unique_ptr<Document> m_document;
         // The element that currently has input focus.
         Element* m_focusElem = nullptr;
+#if 0
         // The top-most element being hovered over.
         Element* m_hoverElem = nullptr;
         // The element that was being hovered over when the primary mouse button
         // was pressed most recently.
         Element* m_activeElem = nullptr;
+#endif // 0
 
         // The element that was clicked on last.
         Element* m_lastClickElem = nullptr;
