@@ -384,18 +384,22 @@ namespace plutobook {
         }
 
         void updateHoverChain(Point pt, Element* hoverElem) {
+            auto cursor = Cursor::Default;
             std::vector<Element*> hoverChain;
             if (hoverElem) {
-                const auto cursor =
-                    getCursor(hoverElem->style()->get(CssPropertyID::Cursor));
-                if (m_cursor != cursor) {
-                    m_system->setCursor(cursor);
-                    m_cursor = cursor;
-                }
+                cursor =
+                    m_hoverChain.empty() || hoverElem != m_hoverChain.back()
+                        ? getCursor(
+                              hoverElem->style()->get(CssPropertyID::Cursor))
+                        : m_cursor;
                 do {
                     hoverChain.push_back(hoverElem);
                     hoverElem = hoverElem->parentElement();
                 } while (hoverElem);
+            }
+            if (m_cursor != cursor) {
+                m_system->setCursor(cursor);
+                m_cursor = cursor;
             }
             std::ranges::reverse(hoverChain);
             const auto diff = std::ranges::mismatch(m_hoverChain, hoverChain);

@@ -357,6 +357,7 @@ sub, sup { line-height: normal; font-size: smaller; }
 
 :link {
     color: #0000EE;
+    cursor: pointer;
     text-decoration: underline;
 }
 
