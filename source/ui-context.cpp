@@ -1,5 +1,6 @@
 #include "plutobook-ui.h"
 #include "box-view.h"
+#include "css-rule.h"
 #include "html-document.h"
 #include "xml-document.h"
 #include "text-resource.h"
@@ -121,7 +122,11 @@ namespace plutobook {
 
     class UIContext final : Context {
     public:
-        friend UIContext* createUIContext() { return new UIContext(); }
+        UIContext(UISystem* system) : m_system(system) {}
+
+        friend UIContext* createUIContext(UISystem* system) {
+            return new UIContext(system);
+        }
 
         friend void destroyUIContext(UIContext* ui) { delete ui; }
 
@@ -366,11 +371,31 @@ namespace plutobook {
             return elem;
         }
 
+        static Cursor getCursor(CssValuePtr valuePtr) {
+            if (const auto ident = to<CssIdentValue>(valuePtr)) {
+                switch (ident->value()) {
+                case CssValueID::Default: return Cursor::Default;
+                case CssValueID::None: return Cursor::None;
+                case CssValueID::Pointer: return Cursor::Pointer;
+                case CssValueID::Text: return Cursor::Text;
+                }
+            }
+            return Cursor::Default;
+        }
+
         void updateHoverChain(Point pt, Element* hoverElem) {
             std::vector<Element*> hoverChain;
-            while (hoverElem) {
-                hoverChain.push_back(hoverElem);
-                hoverElem = hoverElem->parentElement();
+            if (hoverElem) {
+                const auto cursor =
+                    getCursor(hoverElem->style()->get(CssPropertyID::Cursor));
+                if (m_cursor != cursor) {
+                    m_system->setCursor(cursor);
+                    m_cursor = cursor;
+                }
+                do {
+                    hoverChain.push_back(hoverElem);
+                    hoverElem = hoverElem->parentElement();
+                } while (hoverElem);
             }
             std::ranges::reverse(hoverChain);
             const auto diff = std::ranges::mismatch(m_hoverChain, hoverChain);
@@ -402,6 +427,7 @@ namespace plutobook {
             m_activeChain.clear();
         }
 
+        UISystem* m_system;
         std::unique_ptr<Document> m_document;
         // The element that currently has input focus.
         Element* m_focusElem = nullptr;
@@ -423,6 +449,8 @@ namespace plutobook {
 
         std::vector<Element*> m_hoverChain;
         std::vector<Element*> m_activeChain;
+
+        Cursor m_cursor = Cursor::Default;
 
         ElementEventHandlerMap m_eventMap[uint16_t(EventID::COUNT)];
     };

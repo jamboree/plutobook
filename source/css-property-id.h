@@ -70,6 +70,7 @@ namespace plutobook {
         ClipPath,
         ClipRule,
         Color,
+        Cursor,
         ColumnBreakAfter,
         ColumnBreakBefore,
         ColumnBreakInside,

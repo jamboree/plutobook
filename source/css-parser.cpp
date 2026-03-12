@@ -1190,6 +1190,7 @@ CssPropertyID csspropertyid(std::string_view name)
         {"clip-path", CssPropertyID::ClipPath},
         {"clip-rule", CssPropertyID::ClipRule},
         {"color", CssPropertyID::Color},
+        {"cursor", CssPropertyID::Cursor},
         {"column-break-after", CssPropertyID::ColumnBreakAfter},
         {"column-break-before", CssPropertyID::ColumnBreakBefore},
         {"column-break-inside", CssPropertyID::ColumnBreakInside},
@@ -3985,6 +3986,17 @@ CssValuePtr CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID id)
             {"left", CssValueID::Left},
             {"right", CssValueID::Right},
             {"both", CssValueID::Both}
+        });
+
+        return consumeIdent(input, table);
+    }
+
+    case CssPropertyID::Cursor: {
+        static constexpr auto table = makeIdentTable<CssValueID>({
+            {"default", CssValueID::Default},
+            {"none", CssValueID::None},
+            {"pointer", CssValueID::Pointer},
+            {"text", CssValueID::Text},
         });
 
         return consumeIdent(input, table);

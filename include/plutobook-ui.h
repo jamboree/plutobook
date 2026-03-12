@@ -4,10 +4,15 @@
 
 namespace plutobook {
     enum class MouseButton : uint8_t { Left, Right, Middle };
-    enum class InputAction { Release, Press, Repeat };
+    enum class InputAction : uint8_t { Release, Press, Repeat };
+    enum class Cursor : uint8_t { Default, None, Pointer, Text };
+
+    struct UISystem {
+        virtual void setCursor(Cursor cursor) = 0;
+    };
 
     class UIContext;
-    PLUTOBOOK_API UIContext* createUIContext();
+    PLUTOBOOK_API UIContext* createUIContext(UISystem* system);
     PLUTOBOOK_API void destroyUIContext(UIContext* ui);
     PLUTOBOOK_API void setSize(UIContext* ui, float width, float height);
     PLUTOBOOK_API void getSize(UIContext* ui, float& width, float& height);
