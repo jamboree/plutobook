@@ -5,7 +5,20 @@
 namespace plutobook {
     enum class MouseButton : uint8_t { Left, Right, Middle };
     enum class InputAction : uint8_t { Release, Press, Repeat };
-    enum class Cursor : uint8_t { Default, None, Pointer, Text };
+    enum class Cursor : uint8_t {
+        Default,
+        None,
+        Pointer,
+        Text,
+        Move,
+        NotAllowed,
+        Grab,
+        Grabbing,
+        EWResize,
+        NSResize,
+        ZoomIn,
+        ZoomOut
+    };
 
     struct UISystem {
         virtual void setCursor(Cursor cursor) = 0;

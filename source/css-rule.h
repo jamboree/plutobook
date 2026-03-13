@@ -260,6 +260,16 @@ namespace plutobook {
         XxLarge,
         XxSmall,
         XxxLarge,
+
+        Move,
+        NotAllowed,
+        Grab,
+        Grabbing,
+        EWResize,
+        NSResize,
+        ZoomIn,
+        ZoomOut,
+
         LastCssValueID
     };
 

@@ -378,6 +378,14 @@ namespace plutobook {
                 case CssValueID::None: return Cursor::None;
                 case CssValueID::Pointer: return Cursor::Pointer;
                 case CssValueID::Text: return Cursor::Text;
+                case CssValueID::Move: return Cursor::Move;
+                case CssValueID::NotAllowed: return Cursor::NotAllowed;
+                case CssValueID::Grab: return Cursor::Grab;
+                case CssValueID::Grabbing: return Cursor::Grabbing;
+                case CssValueID::EWResize: return Cursor::EWResize;
+                case CssValueID::NSResize: return Cursor::NSResize;
+                case CssValueID::ZoomIn: return Cursor::ZoomIn;
+                case CssValueID::ZoomOut: return Cursor::ZoomOut;
                 }
             }
             return Cursor::Default;

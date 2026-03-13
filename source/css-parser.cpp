@@ -3993,10 +3993,19 @@ CssValuePtr CssParser::consumeLonghand(CssTokenStream& input, CssPropertyID id)
 
     case CssPropertyID::Cursor: {
         static constexpr auto table = makeIdentTable<CssValueID>({
+            {"auto", CssValueID::Auto},
             {"default", CssValueID::Default},
             {"none", CssValueID::None},
             {"pointer", CssValueID::Pointer},
             {"text", CssValueID::Text},
+            {"move", CssValueID::Move},
+            {"not-allowed", CssValueID::NotAllowed},
+            {"grab", CssValueID::Grab},
+            {"grabbing", CssValueID::Grabbing},
+            {"ew-resize", CssValueID::EWResize},
+            {"ns-resize", CssValueID::NSResize},
+            {"zoom-in", CssValueID::ZoomIn},
+            {"zoom-out", CssValueID::ZoomOut}
         });
 
         return consumeIdent(input, table);

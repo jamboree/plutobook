@@ -270,8 +270,6 @@ namespace plutobook {
                       Box* parent) override;
         void finishParsingDocument() override;
 
-        bool dispatchEvent();
-
     private:
         GlobalString m_namespaceURI;
         GlobalString m_tagName;
